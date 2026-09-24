@@ -1,0 +1,6 @@
+{
+  "name": "Curowit — Home of Creatives",
+  "description": "Discover handmade products, creative gifts, independent creators and unique artistic experiences on Curowit.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

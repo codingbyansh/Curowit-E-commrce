@@ -1,0 +1,595 @@
+export interface Product {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  originalPrice?: number;
+  discountBadge?: string;
+  rating: number;
+  reviewCount: number;
+  creatorId: string;
+  creatorName: string;
+  creatorAvatar: string;
+  creatorSpecialty: string;
+  image: string;
+  gallery: string[];
+  description: string;
+  materials: string[];
+  dimensions?: string;
+  careInstructions?: string;
+  shippingInfo: string;
+  returnsInfo: string;
+  inStock: boolean;
+  featured?: boolean;
+  trending?: boolean;
+  newArrival?: boolean;
+  personalizationAvailable?: boolean;
+  personalizationPlaceholder?: string;
+  tags: string[];
+}
+
+export interface Creator {
+  id: string;
+  name: string;
+  handle: string;
+  avatar: string;
+  bio: string;
+  specialty: string;
+  location: string;
+  rating: number;
+  salesCount: number;
+  joinedYear: string;
+  story: string;
+  badge?: string;
+}
+
+export interface Workshop {
+  id: string;
+  title: string;
+  creatorName: string;
+  date: string;
+  time: string;
+  duration: string;
+  format: 'Live Online' | 'Studio Offline';
+  location?: string;
+  price: number;
+  seatsLeft: number;
+  image: string;
+  description: string;
+}
+
+export interface Story {
+  id: string;
+  title: string;
+  subtitle: string;
+  author: string;
+  date: string;
+  readTime: string;
+  tag: string;
+  image: string;
+  excerpt: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  itemCount: number;
+  description: string;
+  image: string;
+}
+
+// Official categories as specified
+export const CATEGORIES: Category[] = [
+  {
+    id: 'crochet',
+    name: 'Crochet & Knits',
+    slug: 'crochet-knits',
+    itemCount: 42,
+    description: 'Plushies, flower bouquets, scarves and heirloom knitwear made by hand.',
+    image: '/src/assets/images/curated_crochet_1790261016242.jpg',
+  },
+  {
+    id: 'candles',
+    name: 'Candles',
+    slug: 'candles',
+    itemCount: 28,
+    description: 'Soy wax, botanicals & wildflower hand-poured scents for mindful spaces.',
+    image: '/src/assets/images/botanical_candle_1790261028567.jpg',
+  },
+  {
+    id: 'jewellery',
+    name: 'Jewellery',
+    slug: 'jewellery',
+    itemCount: 64,
+    description: 'Artisanal clay drops, pressed floral resin, and delicate handmade wire gems.',
+    image: '/src/assets/images/hero_handmade_1790260978568.jpg',
+  },
+  {
+    id: 'home-decor',
+    name: 'Home Decor',
+    slug: 'home-decor',
+    itemCount: 35,
+    description: 'Ceramics, macrame wall hangings and handcrafted studio pottery.',
+    image: '/src/assets/images/hero_creators_1790260990626.jpg',
+  },
+  {
+    id: 'art-paintings',
+    name: 'Art & Paintings',
+    slug: 'art-paintings',
+    itemCount: 31,
+    description: 'Original botanical watercolors, acrylics, and signed archival art prints.',
+    image: '/src/assets/images/hero_discovery_1790261003059.jpg',
+  },
+  {
+    id: 'accessories',
+    name: 'Accessories',
+    slug: 'accessories',
+    itemCount: 48,
+    description: 'Pastel linen scrunchies, embroidered hair ribbons, and key charms.',
+    image: '/src/assets/images/hero_handmade_1790260978568.jpg',
+  },
+  {
+    id: 'cards-gifts',
+    name: 'Cards & Gifts',
+    slug: 'cards-gifts',
+    itemCount: 26,
+    description: 'Handmade deckle-edge seed paper cards, wax-sealed tokens and gift sets.',
+    image: '/src/assets/images/hero_discovery_1790261003059.jpg',
+  },
+  {
+    id: 'diy-kits',
+    name: 'DIY Kits',
+    slug: 'diy-kits',
+    itemCount: 19,
+    description: 'Everything you need to weave, crochet, or embroider your own pieces.',
+    image: '/src/assets/images/hero_creators_1790260990626.jpg',
+  },
+];
+
+export const CREATORS: Creator[] = [
+  {
+    id: 'siya',
+    name: "Siya's Creations",
+    handle: '@siyacrochet',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    bio: 'Self-taught fiber artist crafting plush companions and eternal crochet flower bouquets with love.',
+    specialty: 'Handmade • Crochet • Creative Decor',
+    location: 'Bengaluru, India',
+    rating: 4.95,
+    salesCount: 420,
+    joinedYear: '2023',
+    story: 'Starting from a single crochet hook during quiet monsoon evenings, Siya weaves stories into every loop of organic cotton yarn.',
+    badge: 'Master Artisan',
+  },
+  {
+    id: 'botanica',
+    name: 'Botanica Wax Studio',
+    handle: '@botanicawax',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
+    bio: 'Hand-pouring clean soy wax infused with real pressed wildflowers collected from Himalayan valleys.',
+    specialty: 'Hand-Poured • Botanical Scents • Pressed Wildflowers',
+    location: 'Dehradun, India',
+    rating: 4.9,
+    salesCount: 310,
+    joinedYear: '2022',
+    story: 'We press wildflowers in heavy vintage wooden presses before delicately setting them into pure biodegradable soy wax.',
+    badge: 'Eco Verified',
+  },
+  {
+    id: 'aura',
+    name: 'Aura Artisan Jewelry',
+    handle: '@aurajewels',
+    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
+    bio: 'Preserving fragile wild petals in crystal bio-resin with handcrafted 14k gold-plated hypoallergenic posts.',
+    specialty: 'Botanical Resin • Clay Drops • Fine Wire Jewelry',
+    location: 'Jaipur, India',
+    rating: 4.88,
+    salesCount: 540,
+    joinedYear: '2023',
+    story: 'Every blossom is hand-picked, dried for 14 days, and encapsulated in clear, non-yellowing botanical resin.',
+    badge: 'Top Rated',
+  },
+  {
+    id: 'mud-petals',
+    name: 'Mud & Petals Pottery',
+    handle: '@mudandpetals',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
+    bio: 'Hand-thrown stoneware mugs and planters featuring hand-painted floral motifs and food-safe matte glazes.',
+    specialty: 'Handmade Ceramics • Stoneware • Studio Pottery',
+    location: 'Pondicherry, India',
+    rating: 4.92,
+    salesCount: 280,
+    joinedYear: '2023',
+    story: 'Crafted on the slow wheel and fired twice in solar-assisted kilns for enduring, heirloom durability.',
+    badge: 'Hand Thrown',
+  },
+];
+
+export const PRODUCTS: Product[] = [
+  {
+    id: 'prod-crochet-bunny',
+    name: 'Heirloom Crochet Bunny with Rose Scarf',
+    category: 'Crochet & Knits',
+    price: 899,
+    originalPrice: 1099,
+    discountBadge: 'Save ₹200',
+    rating: 4.9,
+    reviewCount: 38,
+    creatorId: 'siya',
+    creatorName: "Siya's Creations",
+    creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    creatorSpecialty: 'Handmade • Crochet • Creative Decor',
+    image: '/src/assets/images/curated_crochet_1790261016242.jpg',
+    gallery: [
+      '/src/assets/images/curated_crochet_1790261016242.jpg',
+      '/src/assets/images/hero_handmade_1790260978568.jpg',
+      '/src/assets/images/hero_creators_1790260990626.jpg',
+    ],
+    description: 'Meticulously hand-crocheted from 100% hypoallergenic milk cotton yarn. Features floppy ears, embroidered face accents for infant safety, and a hand-knitted dusky rose neck scarf. Each bunny takes over 8 hours of patient needlework.',
+    materials: ['100% Soft Milk Cotton Yarn', 'Hypoallergenic Polyfill Core', 'Cotton Embroidery Floss'],
+    dimensions: 'Height 24 cm x Width 12 cm',
+    careInstructions: 'Spot clean with cool water and mild wool wash; reshape and air dry flat in shade.',
+    shippingInfo: 'Dispatched within 24–48 hours via express courier with eco-friendly kraft packaging.',
+    returnsInfo: '7-day easy replacement if damaged in transit.',
+    inStock: true,
+    featured: true,
+    trending: true,
+    newArrival: false,
+    personalizationAvailable: true,
+    personalizationPlaceholder: 'Add a custom embroidered name on a small wooden heart tag (max 10 letters)',
+    tags: ['crochet', 'plushie', 'bunny', 'baby gift', 'handmade gift'],
+  },
+  {
+    id: 'prod-botanical-candle',
+    name: 'Botanical Pressed Wildflower Soy Candle',
+    category: 'Candles',
+    price: 699,
+    originalPrice: 850,
+    discountBadge: '18% OFF',
+    rating: 4.85,
+    reviewCount: 44,
+    creatorId: 'botanica',
+    creatorName: 'Botanica Wax Studio',
+    creatorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
+    creatorSpecialty: 'Hand-Poured • Botanical Scents • Pressed Wildflowers',
+    image: '/src/assets/images/botanical_candle_1790261028567.jpg',
+    gallery: [
+      '/src/assets/images/botanical_candle_1790261028567.jpg',
+      '/src/assets/images/hero_handmade_1790260978568.jpg',
+    ],
+    description: 'A slow-burning artisan candle made with 100% natural golden soy wax and lead-free cotton wicks. Enriched with real pressed marigolds, daisies, and botanical stems pressed into the exterior wall so they illuminate like stained glass when lit.',
+    materials: ['Natural Soy Wax', 'Real Pressed Wildflowers', 'Essential Oils (Amber & Sweet Fig)', 'Heavy Clear Glass'],
+    dimensions: 'Diameter 7.5 cm x Height 9 cm (Burn time: ~48 hours)',
+    careInstructions: 'Trim wick to 1/4 inch before lighting; never burn for more than 4 consecutive hours.',
+    shippingInfo: 'Padded in double shockproof corrugated kraft wrap for secure travel.',
+    returnsInfo: 'Eligible for return within 7 days if unburned.',
+    inStock: true,
+    featured: true,
+    trending: true,
+    newArrival: false,
+    personalizationAvailable: false,
+    tags: ['candle', 'botanical', 'wildflowers', 'soy wax', 'home decor'],
+  },
+  {
+    id: 'prod-resin-daisy-earrings',
+    name: 'Sunlit Pressed Daisy Botanical Resin Earrings',
+    category: 'Jewellery',
+    price: 449,
+    originalPrice: 599,
+    discountBadge: 'Best Seller',
+    rating: 4.92,
+    reviewCount: 56,
+    creatorId: 'aura',
+    creatorName: 'Aura Artisan Jewelry',
+    creatorAvatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
+    creatorSpecialty: 'Botanical Resin • Clay Drops • Fine Wire Jewelry',
+    image: '/src/assets/images/hero_handmade_1790260978568.jpg',
+    gallery: [
+      '/src/assets/images/hero_handmade_1790260978568.jpg',
+      '/src/assets/images/hero_creators_1790260990626.jpg',
+    ],
+    description: 'Genuine dried miniature meadow daisies suspended in crystal-clear UV-stable resin droplets, mounted on 14k gold-plated nickel-free brass huggie hoops. Ultra-lightweight so you can wear them comfortably all day.',
+    materials: ['Hand-harvested dried daisies', 'UV Crystal Bio-Resin', '14k Gold Plated Brass (Lead & Nickel free)'],
+    dimensions: 'Drop length: 3.5 cm; Charm diameter: 1.8 cm',
+    careInstructions: 'Avoid direct contact with perfumes, chlorinated water, and harsh chemicals.',
+    shippingInfo: 'Comes in a reusable cotton jewelry pouch and Curowit gift box.',
+    returnsInfo: 'Free 7-day exchange.',
+    inStock: true,
+    featured: true,
+    trending: true,
+    newArrival: false,
+    personalizationAvailable: false,
+    tags: ['earrings', 'jewelry', 'resin', 'daisy', 'botanical'],
+  },
+  {
+    id: 'prod-painted-mug',
+    name: 'Wildflower Hand-Painted Ceramic Stoneware Mug',
+    category: 'Home Decor',
+    price: 749,
+    originalPrice: 899,
+    discountBadge: 'Hand Thrown',
+    rating: 4.9,
+    reviewCount: 29,
+    creatorId: 'mud-petals',
+    creatorName: 'Mud & Petals Pottery',
+    creatorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
+    creatorSpecialty: 'Handmade Ceramics • Stoneware • Studio Pottery',
+    image: '/src/assets/images/hero_creators_1790260990626.jpg',
+    gallery: [
+      '/src/assets/images/hero_creators_1790260990626.jpg',
+      '/src/assets/images/hero_discovery_1790261003059.jpg',
+    ],
+    description: 'Individually wheel-thrown using rich buff stoneware clay and hand-painted with charming botanical blooms by artisan potter Ananya. Finished with a food-safe satin cream glaze that feels warm and comforting in your palms.',
+    materials: ['High-Fire Stoneware Clay', 'Lead-Free Matte Glaze', 'Mineral Oxide Underglazes'],
+    dimensions: 'Capacity: 350 ml (12 oz); Height 9.5 cm',
+    careInstructions: 'Microwave and dishwasher safe, though gentle hand washing extends glaze luster.',
+    shippingInfo: 'Packed in molded biodegradable honeycomb paper.',
+    returnsInfo: 'Safe delivery guarantee with immediate replacement for transit breakage.',
+    inStock: true,
+    featured: false,
+    trending: true,
+    newArrival: true,
+    personalizationAvailable: true,
+    personalizationPlaceholder: 'Add stamped initial on base of handle (1 letter)',
+    tags: ['pottery', 'ceramic', 'mug', 'coffee', 'hand-painted'],
+  },
+  {
+    id: 'prod-crochet-sunflower-pot',
+    name: 'Eternal Crochet Sunflower in Mini Terracotta Pot',
+    category: 'Crochet & Knits',
+    price: 549,
+    originalPrice: 650,
+    rating: 4.88,
+    reviewCount: 19,
+    creatorId: 'siya',
+    creatorName: "Siya's Creations",
+    creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    creatorSpecialty: 'Handmade • Crochet • Creative Decor',
+    image: '/src/assets/images/hero_handmade_1790260978568.jpg',
+    gallery: [
+      '/src/assets/images/hero_handmade_1790260978568.jpg',
+    ],
+    description: 'Brighten any workspace or sunny windowsill with this cheerful everlasting sunflower. Hand-stitched with vibrant yellow petals and textured brown seed center, potted in a miniature clay pot with crocheted soil.',
+    materials: ['Combed Cotton Yarn', 'Clay Pot', 'Floral Craft Wire Stem'],
+    dimensions: 'Height: 18 cm x Pot diameter: 7 cm',
+    careInstructions: 'Gentle dusting with soft dry brush.',
+    shippingInfo: 'Dispatched securely boxed.',
+    returnsInfo: '7-day returns.',
+    inStock: true,
+    featured: false,
+    trending: false,
+    newArrival: true,
+    personalizationAvailable: false,
+    tags: ['crochet', 'sunflower', 'desk decor', 'gift'],
+  },
+  {
+    id: 'prod-macrame-wall-hanging',
+    name: 'Boho Knotted Macrame Tapestry with Driftwood',
+    category: 'Home Decor',
+    price: 1299,
+    originalPrice: 1599,
+    discountBadge: 'Save ₹300',
+    rating: 4.79,
+    reviewCount: 22,
+    creatorId: 'siya',
+    creatorName: "Siya's Creations",
+    creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    creatorSpecialty: 'Handmade • Crochet • Creative Decor',
+    image: '/src/assets/images/hero_discovery_1790261003059.jpg',
+    gallery: [
+      '/src/assets/images/hero_discovery_1790261003059.jpg',
+    ],
+    description: 'An intricate bohemian wall hanging knotted by hand using 100% unbleached natural 4mm cotton cord. Mounted on a hand-sanded smooth natural teak wood dowel.',
+    materials: ['100% Natural Cotton Rope', 'Treated Teak Dowel'],
+    dimensions: 'Width 40 cm x Length 65 cm',
+    careInstructions: 'Lightly shake out dust outdoors; comb fringe with a wide-tooth comb.',
+    shippingInfo: 'Rolled securely in heavy craft cardboard tube.',
+    returnsInfo: '7-day returns.',
+    inStock: true,
+    featured: false,
+    trending: false,
+    newArrival: true,
+    personalizationAvailable: false,
+    tags: ['macrame', 'home decor', 'wall hanging', 'boho'],
+  },
+  {
+    id: 'prod-botanical-card-set',
+    name: 'Deckle-Edge Seed Paper Botanical Card Set (5 Pack)',
+    category: 'Cards & Gifts',
+    price: 299,
+    originalPrice: 350,
+    rating: 4.94,
+    reviewCount: 31,
+    creatorId: 'botanica',
+    creatorName: 'Botanica Wax Studio',
+    creatorAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
+    creatorSpecialty: 'Hand-Poured • Botanical Scents • Pressed Wildflowers',
+    image: '/src/assets/images/hero_handmade_1790260978568.jpg',
+    gallery: [
+      '/src/assets/images/hero_handmade_1790260978568.jpg',
+    ],
+    description: 'Handmade paper embedded with living wildflower seeds. Includes 5 blank cards with deckle edges and matching kraft envelopes tied with natural jute twine. Plant the paper under 1/8 inch soil after use and watch real blooms sprout!',
+    materials: ['Recycled Cotton Pulp Paper', 'Embedded Wildflower Seeds', 'Jute Twine'],
+    dimensions: '10.5 cm x 15 cm (Folded A6 size)',
+    careInstructions: 'Keep in dry place until ready to plant in sunlight.',
+    shippingInfo: 'Ships flat in sturdy protective mailer.',
+    returnsInfo: '7-day return guarantee.',
+    inStock: true,
+    featured: false,
+    trending: true,
+    newArrival: false,
+    personalizationAvailable: true,
+    personalizationPlaceholder: 'Add custom handwritten note inside (up to 30 words)',
+    tags: ['cards', 'seed paper', 'stationery', 'botanical gift'],
+  },
+  {
+    id: 'prod-diy-embroidery-kit',
+    name: 'Wildflower Meadow Beginner DIY Embroidery Kit',
+    category: 'DIY Kits',
+    price: 649,
+    originalPrice: 799,
+    discountBadge: 'All-In-One',
+    rating: 4.87,
+    reviewCount: 42,
+    creatorId: 'siya',
+    creatorName: "Siya's Creations",
+    creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    creatorSpecialty: 'Handmade • Crochet • Creative Decor',
+    image: '/src/assets/images/hero_discovery_1790261003059.jpg',
+    gallery: [
+      '/src/assets/images/hero_discovery_1790261003059.jpg',
+    ],
+    description: 'Curated for complete beginners! Includes an 8-inch bamboo embroidery hoop, pre-printed linen fabric with botanical pattern, 12 skeins of vibrant cotton floss, 2 embroidery needles, thread snips, and a full color booklet with video QR codes.',
+    materials: ['Natural Bamboo Hoop', 'Pure Linen Fabric', 'DMC-quality Cotton Floss', 'Needles & Guidebook'],
+    dimensions: 'Hoop diameter: 20 cm',
+    careInstructions: 'Keep dry until stitching is finished.',
+    shippingInfo: 'Packaged in a giftable illustrated kraft box.',
+    returnsInfo: '7-day returns on unopened craft kits.',
+    inStock: true,
+    featured: true,
+    trending: false,
+    newArrival: false,
+    personalizationAvailable: false,
+    tags: ['diy', 'embroidery', 'craft kit', 'starter kit'],
+  },
+  {
+    id: 'prod-linen-scrunchie-set',
+    name: 'Organic Pastel Floral Linen Scrunchie Trio',
+    category: 'Accessories',
+    price: 249,
+    originalPrice: 349,
+    discountBadge: 'Set of 3',
+    rating: 4.96,
+    reviewCount: 67,
+    creatorId: 'siya',
+    creatorName: "Siya's Creations",
+    creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    creatorSpecialty: 'Handmade • Crochet • Creative Decor',
+    image: '/src/assets/images/hero_handmade_1790260978568.jpg',
+    gallery: [
+      '/src/assets/images/hero_handmade_1790260978568.jpg',
+    ],
+    description: 'Sewn from breathable deadstock washed linen scraps with strong, gentle natural rubber elastics that hold hair securely without snagging or pulling. Three complementary earthy tones: Cream Floral, Terracotta, and Sage.',
+    materials: ['Washed Organic Linen', 'Braided Rubber Elastic'],
+    dimensions: 'Diameter approx 11 cm',
+    careInstructions: 'Machine washable on gentle cycle; air dry.',
+    shippingInfo: 'Shipped in biodegradable glassine pouch.',
+    returnsInfo: 'Non-returnable for hygiene unless defective.',
+    inStock: true,
+    featured: false,
+    trending: true,
+    newArrival: false,
+    personalizationAvailable: false,
+    tags: ['scrunchie', 'linen', 'hair accessories', 'handmade'],
+  },
+  {
+    id: 'prod-wooden-keychain',
+    name: 'Personalized Botanical Wood Engraved Keychain',
+    category: 'Cards & Gifts',
+    price: 349,
+    originalPrice: 420,
+    rating: 4.91,
+    reviewCount: 51,
+    creatorId: 'mud-petals',
+    creatorName: 'Mud & Petals Pottery',
+    creatorAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
+    creatorSpecialty: 'Handmade Ceramics • Stoneware • Studio Pottery',
+    image: '/src/assets/images/hero_handmade_1790260978568.jpg',
+    gallery: [
+      '/src/assets/images/hero_handmade_1790260978568.jpg',
+    ],
+    description: 'Carved from reclaimed natural beech wood with laser-etched botanical motifs and personalized monogram or short name, paired with an antique brass split ring and hand-braided macrame knot charm.',
+    materials: ['Reclaimed Beech Wood', 'Antique Brass Hardware', 'Natural Cotton Twine'],
+    dimensions: 'Diameter: 4.5 cm x Thickness 0.6 cm',
+    careInstructions: 'Condition wood with coconut oil once a year.',
+    shippingInfo: 'Custom engraved and dispatched within 48 hours.',
+    returnsInfo: 'Custom engraved items are final sale unless damaged.',
+    inStock: true,
+    featured: false,
+    trending: false,
+    newArrival: true,
+    personalizationAvailable: true,
+    personalizationPlaceholder: 'Enter Name or Initials to engrave (e.g. "Maya" or "A & R")',
+    tags: ['keychain', 'wood', 'personalized', 'custom gift'],
+  },
+];
+
+export const WORKSHOPS: Workshop[] = [
+  {
+    id: 'ws-1',
+    title: 'Beginner Crochet: Stitch Your First Amigurumi Companion',
+    creatorName: "Siya Sharma (Siya's Creations)",
+    date: 'Saturday, Oct 12',
+    time: '4:00 PM – 6:00 PM IST',
+    duration: '2 Hours',
+    format: 'Live Online',
+    price: 499,
+    seatsLeft: 6,
+    image: '/src/assets/images/curated_crochet_1790261016242.jpg',
+    description: 'Learn the magic ring, single crochet increases, and shaping techniques in an intimate live interactive cohort. Starter materials list sent upon registration.',
+  },
+  {
+    id: 'ws-2',
+    title: 'Wildflower Pressing & Artisanal Candle Pouring',
+    creatorName: 'Ananya Sen (Botanica Wax)',
+    date: 'Sunday, Oct 20',
+    time: '11:00 AM – 2:00 PM IST',
+    duration: '3 Hours',
+    format: 'Studio Offline',
+    location: 'Indiranagar Craft Studio, Bengaluru',
+    price: 1199,
+    seatsLeft: 4,
+    image: '/src/assets/images/botanical_candle_1790261028567.jpg',
+    description: 'Hands-on candle creation with natural soy wax, essential oil scent formulation, and flower pressing techniques. Take home 2 large custom candles.',
+  },
+  {
+    id: 'ws-3',
+    title: 'Botanical Watercolor Floral Painting Masterclass',
+    creatorName: 'Priya Das (Mud & Petals)',
+    date: 'Saturday, Nov 02',
+    time: '3:30 PM – 6:00 PM IST',
+    duration: '2.5 Hours',
+    format: 'Live Online',
+    price: 599,
+    seatsLeft: 9,
+    image: '/src/assets/images/hero_creators_1790260990626.jpg',
+    description: 'Master wet-on-wet watercolor washes, leaf gradients, and delicate petal layering to create framed botanical art for your living space.',
+  },
+];
+
+export const STORIES: Story[] = [
+  {
+    id: 'story-1',
+    title: 'From One Ball of Yarn to 400 Happy Homes: Siya’s Craft Journey',
+    subtitle: 'Behind the Process',
+    author: 'Siya Sharma',
+    date: 'Sep 18, 2026',
+    readTime: '4 min read',
+    tag: 'Craft Journey',
+    image: '/src/assets/images/hero_creators_1790260990626.jpg',
+    excerpt: 'How childhood lessons from my grandmother transformed into a creative studio where hundreds of slow, handmade companions come to life.',
+  },
+  {
+    id: 'story-2',
+    title: 'The Slow Art of Pressing Spring Meadow Wildflowers',
+    subtitle: 'Studio Notes',
+    author: 'Ananya Sen',
+    date: 'Sep 12, 2026',
+    readTime: '3 min read',
+    tag: 'Studio Secrets',
+    image: '/src/assets/images/botanical_candle_1790261028567.jpg',
+    excerpt: 'Timing the morning harvest, using moisture-absorbing cotton blotting boards, and why patience is the secret ingredient behind vibrant botanical clarity.',
+  },
+  {
+    id: 'story-3',
+    title: 'Why Handmade Gifts Carry Meaning Factory Goods Never Can',
+    subtitle: 'Creative Living',
+    author: 'Curowit Editorial',
+    date: 'Sep 05, 2026',
+    readTime: '5 min read',
+    tag: 'Creative Philosophy',
+    image: '/src/assets/images/hero_handmade_1790260978568.jpg',
+    excerpt: 'When you purchase from an independent creator, you aren’t just buying an object; you are supporting hours of experimentation, hope, and human dedication.',
+  },
+];
