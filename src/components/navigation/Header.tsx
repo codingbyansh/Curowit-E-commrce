@@ -128,24 +128,47 @@ export const Header: React.FC = () => {
                 )}
               </button>
 
-              {/* Account Button (Desktop) */}
+              {/* Account / Sign-In Button (Desktop) */}
               <button
                 onClick={() => {
                   if (user.isLoggedIn) {
                     setActiveView('account');
                   } else {
-                    setIsAuthModalOpen(true);
+                    setActiveView('signin');
                   }
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className="hidden sm:flex items-center gap-1.5 p-2 text-[#173B3D]/80 hover:text-[#07545A] hover:bg-[#07545A]/5 rounded-full transition-colors cursor-pointer"
-                aria-label="Account"
-                title={user.isLoggedIn ? user.name : 'Sign In'}
+                className={`hidden sm:flex items-center gap-2 transition-colors cursor-pointer ${
+                  user.isLoggedIn
+                    ? 'p-1.5 pr-3 text-[#173B3D] hover:text-[#07545A] hover:bg-[#07545A]/5 rounded-full'
+                    : 'px-3.5 py-1.5 rounded-full bg-[#07545A]/10 hover:bg-[#07545A] text-[#07545A] hover:text-[#FFF8EA] text-xs font-bold'
+                }`}
+                aria-label={user.isLoggedIn ? 'Account' : 'Sign In'}
+                title={user.isLoggedIn ? user.name : 'Sign In to Curowit'}
               >
-                <User className="w-5 h-5" />
-                {user.isLoggedIn && (
-                  <span className="hidden xl:inline text-xs font-medium text-[#173B3D]">
-                    {user.name.split(' ')[0]}
-                  </span>
+                {user.isLoggedIn ? (
+                  <>
+                    {user.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        referrerPolicy="no-referrer"
+                        className="w-6 h-6 rounded-full object-cover border border-[#07545A]/20"
+                      />
+                    ) : (
+                      <span className="w-6 h-6 rounded-full bg-[#07545A] text-[#FFF8EA] text-[11px] font-bold flex items-center justify-center">
+                        {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                      </span>
+                    )}
+                    <span className="hidden lg:inline text-xs font-bold text-[#173B3D] max-w-[90px] truncate">
+                      {user.name.split(' ')[0]}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <User className="w-4 h-4" />
+                    <span>Sign In</span>
+                  </>
                 )}
               </button>
 

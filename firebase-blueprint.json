@@ -581,6 +581,83 @@
         "itemsSummary",
         "updatedAt"
       ]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Customer product rating and review comment linked to a product ID.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "productId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"],
+          "maxLength": 16
+        },
+        "storeAuthToken": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "userName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "userAvatar": {
+          "type": "string",
+          "maxLength": 500000
+        },
+        "rating": {
+          "type": "number"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "comment": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1500
+        },
+        "verifiedPurchase": {
+          "type": "boolean"
+        },
+        "dateLabel": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "productId",
+        "visibility",
+        "storeAuthToken",
+        "userId",
+        "userName",
+        "rating",
+        "title",
+        "comment",
+        "verifiedPurchase",
+        "dateLabel",
+        "createdAt"
+      ]
     }
   },
   "firestore": {
@@ -615,6 +692,10 @@
     "/orders/{orderId}": {
       "schema": { "$ref": "#/entities/Order" },
       "description": "Storefront order records managed via Admin CMS."
+    },
+    "/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/Review" },
+      "description": "Product reviews submitted by authenticated store patrons."
     }
   }
 }

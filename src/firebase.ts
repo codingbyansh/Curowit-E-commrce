@@ -1,10 +1,24 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import {
+  initializeFirestore,
+  setLogLevel,
+  doc,
+  getDocFromServer,
+} from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
+// Suppress transient WebChannel reconnect console noise in proxied iframe environments
+setLogLevel('silent');
+
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = initializeFirestore(
+  app,
+  {
+    experimentalAutoDetectLongPolling: true,
+  },
+  firebaseConfig.firestoreDatabaseId
+);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
@@ -39,8 +53,18 @@ export function handleFirestoreError(
   operationType: OperationType,
   path: string | null
 ): void {
+  const message = error instanceof Error ? error.message : String(error);
+  // Ignore transient offline/unavailable connection warnings while Firestore reconnects
+  if (
+    message.includes('unavailable') ||
+    message.includes('the client is offline') ||
+    message.includes('Failed to get document because the client is offline')
+  ) {
+    return;
+  }
+
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: message,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,
@@ -65,7 +89,7 @@ async function testConnection() {
     await getDocFromServer(doc(db, 'products', 'prod-crochet-bunny'));
   } catch (error) {
     if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error('Please check your Firebase configuration.');
+      console.warn('Firestore operating in cached mode until connection is established.');
     }
   }
 }

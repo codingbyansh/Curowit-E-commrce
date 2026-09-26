@@ -50,14 +50,14 @@ export const MobileBottomNav: React.FC = () => {
       },
     },
     {
-      id: 'account',
-      label: 'Account',
+      id: user.isLoggedIn ? 'account' : 'signin',
+      label: user.isLoggedIn ? 'Account' : 'Sign In',
       icon: User,
       action: () => {
         if (user.isLoggedIn) {
           setActiveView('account');
         } else {
-          setIsAuthModalOpen(true);
+          setActiveView('signin');
         }
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },

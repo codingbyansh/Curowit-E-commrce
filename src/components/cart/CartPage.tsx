@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore, Order } from '../../context/StoreContext';
-import { Minus, Plus, Trash2, Heart, ArrowRight, ShieldCheck, ShoppingBag, CheckCircle2 } from 'lucide-react';
+import { Minus, Plus, Trash2, Heart, ArrowRight, ShieldCheck, ShoppingBag, CheckCircle2, Lock } from 'lucide-react';
 
 export const CartPage: React.FC = () => {
   const {
@@ -13,6 +13,10 @@ export const CartPage: React.FC = () => {
     toggleWishlist,
     setActiveView,
     placeOrder,
+    user,
+    requireAuthForAction,
+    shouldAutoOpenCheckout,
+    setShouldAutoOpenCheckout,
   } = useStore();
 
   const [promoCode, setPromoCode] = useState('');
@@ -21,13 +25,39 @@ export const CartPage: React.FC = () => {
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
 
-  // Checkout form state
-  const [fullName, setFullName] = useState('Aanya Verma');
-  const [phone, setPhone] = useState('+91 98765 43210');
+  // Checkout form state (pre-populated from signed-in user profile)
+  const [fullName, setFullName] = useState(user.name || '');
+  const [phone, setPhone] = useState(user.phone || '+91 98765 43210');
   const [street, setStreet] = useState('42 Lotus Bloom Lane, Indiranagar');
   const [city, setCity] = useState('Bengaluru, Karnataka');
   const [postalCode, setPostalCode] = useState('560038');
   const [paymentMethod, setPaymentMethod] = useState<'upi' | 'cod' | 'card'>('upi');
+
+  useEffect(() => {
+    if (user.isLoggedIn) {
+      if (user.name) setFullName(user.name);
+      if (user.phone) setPhone(user.phone);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (shouldAutoOpenCheckout && user.isLoggedIn && cart.length > 0) {
+      setIsCheckoutModalOpen(true);
+      setShouldAutoOpenCheckout(false);
+    }
+  }, [shouldAutoOpenCheckout, user.isLoggedIn, cart.length, setShouldAutoOpenCheckout]);
+
+  const handleProceedToCheckout = () => {
+    if (!user.isLoggedIn) {
+      requireAuthForAction({
+        targetView: 'cart',
+        autoOpenCheckout: true,
+        reason: 'checkout',
+      });
+      return;
+    }
+    setIsCheckoutModalOpen(true);
+  };
 
   const applyPromo = (e: React.FormEvent) => {
     e.preventDefault();
@@ -294,10 +324,11 @@ export const CartPage: React.FC = () => {
             </div>
 
             <button
-              onClick={() => setIsCheckoutModalOpen(true)}
+              onClick={handleProceedToCheckout}
               className="w-full py-3.5 px-4 rounded-xl bg-[#F2A900] text-[#07545A] font-bold text-xs hover:bg-[#E69A16] transition-colors cursor-pointer shadow-xs active:scale-98 flex items-center justify-center gap-2"
             >
-              <span>Proceed to Checkout</span>
+              {!user.isLoggedIn && <Lock className="w-3.5 h-3.5" />}
+              <span>{user.isLoggedIn ? 'Proceed to Checkout' : 'Sign In with Google to Buy'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -440,10 +471,10 @@ export const CartPage: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setIsCheckoutModalOpen(true)}
+          onClick={handleProceedToCheckout}
           className="px-5 py-2.5 rounded-xl bg-[#F2A900] text-[#07545A] text-xs font-bold hover:bg-[#E69A16] transition-colors cursor-pointer active:scale-95 flex items-center gap-1.5"
         >
-          <span>Proceed to Checkout</span>
+          <span>{user.isLoggedIn ? 'Proceed to Checkout' : 'Sign In to Buy'}</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>

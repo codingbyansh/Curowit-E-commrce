@@ -150,6 +150,10 @@ export const BreadcrumbNav: React.FC = () => {
     crumbs.push({
       label: 'My Account',
     });
+  } else if (activeView === 'signin') {
+    crumbs.push({
+      label: 'Sign In & Store Checkout',
+    });
   }
 
   return (

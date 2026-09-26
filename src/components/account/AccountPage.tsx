@@ -6,6 +6,27 @@ export const AccountPage: React.FC = () => {
   const { user, orders, logout, setActiveView, showToast } = useStore();
   const [activeTab, setActiveTab] = useState<'orders' | 'addresses' | 'notifications' | 'support'>('orders');
 
+  if (!user.isLoggedIn) {
+    return (
+      <div className="bg-[#F7EBD7] min-h-[70vh] py-16 px-4 flex items-center justify-center">
+        <div className="bg-[#FFF8EA] max-w-md w-full rounded-3xl p-8 border border-[#07545A]/15 shadow-sm text-center">
+          <h2 className="text-2xl font-bold text-[#07545A] font-display mb-2">
+            Sign in to view your account
+          </h2>
+          <p className="text-xs text-[#687778] mb-6">
+            Access your handmade order history, saved addresses, and craft workshop bookings.
+          </p>
+          <button
+            onClick={() => setActiveView('signin')}
+            className="w-full py-3 rounded-xl bg-[#07545A] text-[#FFF8EA] text-xs font-bold hover:bg-[#063F45] transition-colors cursor-pointer"
+          >
+            Go to Sign In Page
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const handleSupport = (topic: string) => {
     showToast(`Support ticket opened for ${topic}`, 'Our team usually replies in under 2 hours.');
   };
@@ -16,9 +37,18 @@ export const AccountPage: React.FC = () => {
         {/* Profile Header */}
         <div className="bg-[#FFF8EA] rounded-3xl p-6 sm:p-8 border border-[#07545A]/10 shadow-xs mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-[#07545A] text-[#FFF8EA] font-bold text-xl flex items-center justify-center font-display">
-              {user.name ? user.name.charAt(0) : 'U'}
-            </div>
+            {user.avatar ? (
+              <img
+                src={user.avatar}
+                alt={user.name}
+                referrerPolicy="no-referrer"
+                className="w-16 h-16 rounded-full object-cover border-2 border-[#07545A]/20"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-[#07545A] text-[#FFF8EA] font-bold text-xl flex items-center justify-center font-display">
+                {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+            )}
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-[#173B3D] font-display">
                 {user.name || 'Creative Patron'}
@@ -26,7 +56,11 @@ export const AccountPage: React.FC = () => {
               <p className="text-xs text-[#687778]">{user.email}</p>
               <div className="inline-flex items-center gap-1.5 mt-1 text-[11px] font-semibold text-[#3F704B]">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Verified Curowit Member</span>
+                <span>
+                  {user.provider === 'google'
+                    ? 'Google Verified Curowit Member'
+                    : 'Verified Curowit Member'}
+                </span>
               </div>
             </div>
           </div>
@@ -158,7 +192,7 @@ export const AccountPage: React.FC = () => {
                   Default Delivery Address
                 </span>
               </div>
-              <h3 className="font-bold text-sm text-[#173B3D] mb-1">Aanya Verma</h3>
+              <h3 className="font-bold text-sm text-[#173B3D] mb-1">{user.name}</h3>
               <p className="text-xs text-[#173B3D]/70 leading-relaxed mb-2">
                 42 Lotus Bloom Lane, Indiranagar<br />
                 Bengaluru, Karnataka - 560038<br />

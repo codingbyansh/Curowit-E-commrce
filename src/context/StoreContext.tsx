@@ -10,7 +10,8 @@ import {
   serverTimestamp,
   getDocs,
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import { db, auth, googleProvider, handleFirestoreError, OperationType } from '../firebase';
 import {
   Product,
   PRODUCTS,
@@ -44,11 +45,20 @@ export interface Order {
 }
 
 export interface UserProfile {
+  uid?: string;
   name: string;
   email: string;
   phone: string;
   avatar?: string;
+  provider?: 'google' | 'email';
   isLoggedIn: boolean;
+}
+
+export interface AuthRedirectIntent {
+  targetView: string;
+  autoOpenCheckout?: boolean;
+  reason?: 'checkout' | 'buy-now' | 'workshop' | 'account';
+  productName?: string;
 }
 
 export interface HeroBannerSlide {
@@ -190,9 +200,17 @@ interface StoreContextType {
   // Auth & Account
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
+  isAuthLoading: boolean;
   user: UserProfile;
+  loginWithGoogle: () => Promise<boolean>;
+  loginWithEmail: (email: string, name?: string, phone?: string) => void;
   loginDemo: (email?: string, name?: string) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
+  authRedirectIntent: AuthRedirectIntent | null;
+  setAuthRedirectIntent: (intent: AuthRedirectIntent | null) => void;
+  requireAuthForAction: (intent: AuthRedirectIntent) => void;
+  shouldAutoOpenCheckout: boolean;
+  setShouldAutoOpenCheckout: (open: boolean) => void;
   orders: Order[];
   placeOrder: (shippingDetails: Order['shippingAddress'], paymentMethod: string) => Order;
 
@@ -336,10 +354,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return DEFAULT_ANNOUNCEMENTS;
   });
 
-  // Persistent Cart
+  // Persistent Cart (starts empty until user adds a product)
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
-      const saved = localStorage.getItem('curowit_cart');
+      const saved = localStorage.getItem('curowit_cart_v2');
       if (saved) {
         const parsed: CartItem[] = JSON.parse(saved);
         return parsed.map((item) => ({
@@ -353,35 +371,44 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }));
       }
     } catch {}
-    return [
-      {
-        product: products[0] || PRODUCTS[0],
-        quantity: 1,
-        personalizationText: 'For Maya ♡',
-      },
-    ];
+    return [];
   });
 
   // Persistent Wishlist
   const [wishlist, setWishlist] = useState<string[]>(() => {
     try {
-      const saved = localStorage.getItem('curowit_wishlist');
+      const saved = localStorage.getItem('curowit_wishlist_v2');
       if (saved) return JSON.parse(saved);
     } catch {}
-    return [PRODUCTS[1]?.id || 'prod-2', PRODUCTS[2]?.id || 'prod-3'];
+    return [];
   });
 
-  // User profile
+  // User profile (synced with Firebase Authentication + localStorage; no guest Aanya Verma fallback)
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
+  const [authRedirectIntent, setAuthRedirectIntent] = useState<AuthRedirectIntent | null>(null);
+  const [shouldAutoOpenCheckout, setShouldAutoOpenCheckout] = useState<boolean>(false);
+
   const [user, setUser] = useState<UserProfile>(() => {
     try {
-      const saved = localStorage.getItem('curowit_user');
-      if (saved) return JSON.parse(saved);
+      const saved = localStorage.getItem('curowit_user_v3');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (
+          parsed &&
+          parsed.isLoggedIn &&
+          parsed.email &&
+          parsed.email !== 'aanya.creative@curowit.com' &&
+          parsed.name !== 'Aanya Verma'
+        ) {
+          return parsed;
+        }
+      }
     } catch {}
     return {
-      name: 'Aanya Verma',
-      email: 'aanya.creative@curowit.com',
-      phone: '+91 98765 43210',
-      isLoggedIn: true,
+      name: '',
+      email: '',
+      phone: '',
+      isLoggedIn: false,
     };
   });
 
@@ -794,21 +821,39 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     try {
-      localStorage.setItem('curowit_cart', JSON.stringify(cart));
+      localStorage.setItem('curowit_cart_v2', JSON.stringify(cart));
     } catch {}
   }, [cart]);
 
   useEffect(() => {
     try {
-      localStorage.setItem('curowit_wishlist', JSON.stringify(wishlist));
+      localStorage.setItem('curowit_wishlist_v2', JSON.stringify(wishlist));
     } catch {}
   }, [wishlist]);
 
   useEffect(() => {
     try {
-      localStorage.setItem('curowit_user', JSON.stringify(user));
+      localStorage.setItem('curowit_user_v3', JSON.stringify(user));
     } catch {}
   }, [user]);
+
+  // Listen to Firebase Auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser((prev) => ({
+          uid: firebaseUser.uid,
+          name: firebaseUser.displayName || prev.name || firebaseUser.email?.split('@')[0] || 'Creative Patron',
+          email: firebaseUser.email || prev.email || '',
+          phone: firebaseUser.phoneNumber || prev.phone || '+91 98765 43210',
+          avatar: firebaseUser.photoURL || prev.avatar,
+          provider: 'google',
+          isLoggedIn: true,
+        }));
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     try {
@@ -905,37 +950,152 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const loginDemo = (email = 'aanya.creative@curowit.com', name = 'Aanya Verma') => {
-    setUser({
-      name,
-      email,
-      phone: '+91 98765 43210',
-      isLoggedIn: true,
-    });
+  const completePostAuthRedirect = (signedInName: string) => {
     setIsAuthModalOpen(false);
-    showToast('Signed in successfully', `Welcome back to Curowit, ${name}`);
+    if (authRedirectIntent) {
+      const { targetView, autoOpenCheckout } = authRedirectIntent;
+      setAuthRedirectIntent(null);
+      if (autoOpenCheckout) {
+        setShouldAutoOpenCheckout(true);
+      }
+      setActiveView(targetView);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      showToast(
+        `Welcome, ${signedInName}!`,
+        autoOpenCheckout
+          ? 'Your creative cart is ready — complete delivery details below.'
+          : 'You are now signed in to Curowit.'
+      );
+    } else {
+      if (activeView === 'signin') {
+        setActiveView('home');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      showToast('Signed in successfully', `Welcome to Curowit, ${signedInName}`);
+    }
   };
 
-  const logout = () => {
+  const requireAuthForAction = (intent: AuthRedirectIntent) => {
+    setAuthRedirectIntent(intent);
+    setIsAuthModalOpen(false);
+    setActiveView('signin');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const loginWithGoogle = async (): Promise<boolean> => {
+    setIsAuthLoading(true);
+    try {
+      googleProvider.setCustomParameters({ prompt: 'select_account' });
+      const credential = await signInWithPopup(auth, googleProvider);
+      const fbUser = credential.user;
+      const displayName =
+        fbUser.displayName || fbUser.email?.split('@')[0] || 'Creative Patron';
+      const profile: UserProfile = {
+        uid: fbUser.uid,
+        name: displayName,
+        email: fbUser.email || '',
+        phone: fbUser.phoneNumber || '+91 98765 43210',
+        avatar: fbUser.photoURL || undefined,
+        provider: 'google',
+        isLoggedIn: true,
+      };
+      setUser(profile);
+      completePostAuthRedirect(displayName);
+      return true;
+    } catch (error: any) {
+      const code = error?.code || '';
+      if (code === 'auth/popup-closed-by-user') {
+        showToast('Google Sign-In Cancelled', 'The sign-in window was closed before completing.', 'info');
+      } else if (code === 'auth/popup-blocked') {
+        showToast('Popup Blocked', 'Please allow popups for this site or use Email Sign-In below.', 'error');
+      } else {
+        showToast('Google Sign-In Notice', error?.message || 'Unable to complete Google sign-in.', 'error');
+      }
+      return false;
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const loginWithEmail = (email: string, name?: string, phone?: string) => {
+    const cleanEmail = email.trim().toLowerCase();
+    const derivedName =
+      name?.trim() ||
+      cleanEmail
+        .split('@')[0]
+        .replace(/[._-]/g, ' ')
+        .replace(/\b\w/g, (l) => l.toUpperCase()) ||
+      'Creative Patron';
+    const deterministicUid = `patron-${cleanEmail.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 80)}`;
+    const profile: UserProfile = {
+      uid: deterministicUid,
+      name: derivedName,
+      email: cleanEmail,
+      phone: phone?.trim() || '+91 98765 43210',
+      provider: 'email',
+      isLoggedIn: true,
+    };
+    setUser(profile);
+    completePostAuthRedirect(derivedName);
+  };
+
+  const loginDemo = (email = '', name = '') => {
+    if (!email.trim()) return;
+    loginWithEmail(email, name, '+91 98765 43210');
+  };
+
+  const logout = async () => {
+    try {
+      await signOut(auth);
+    } catch {}
     setUser({
       name: '',
       email: '',
       phone: '',
       isLoggedIn: false,
     });
+    localStorage.removeItem('curowit_user_v2');
+    localStorage.removeItem('curowit_user_v3');
+    if (activeView === 'account') {
+      setActiveView('home');
+    }
     showToast('Signed out of Curowit');
   };
 
-  const placeOrder = (shippingDetails: Order['shippingAddress'], paymentMethod: string): Order => {
+  const placeOrder = (shippingDetails: Order['shippingAddress'], _paymentMethod: string): Order => {
+    const orderId = `CW-${Math.floor(1000 + Math.random() * 9000)}`;
+    const orderDate = new Date().toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
     const newOrder: Order = {
-      id: `CW-${Math.floor(1000 + Math.random() * 9000)}`,
-      date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+      id: orderId,
+      date: orderDate,
       items: [...cart],
       total: cartTotal,
       status: 'Confirmed',
       shippingAddress: shippingDetails,
     };
     setOrders((prev) => [newOrder, ...prev]);
+
+    // Sync new customer order to Firestore so Admin CMS sees it across all devices
+    const itemsSummary = cart
+      .map((i) => `${i.product.name} (x${i.quantity})`)
+      .join(', ')
+      .slice(0, 1000);
+    setDoc(doc(db, 'orders', orderId), {
+      id: orderId,
+      cmsAccessKey: MASTER_PASSKEY,
+      date: orderDate,
+      total: Math.max(0, Number(cartTotal) || 0),
+      status: 'Confirmed',
+      customerName: String(shippingDetails.fullName || user.name || 'Customer').slice(0, 120),
+      city: String(shippingDetails.city || 'India').slice(0, 120),
+      itemsSummary: itemsSummary || 'Handmade Order',
+      updatedAt: serverTimestamp(),
+    }).catch(() => {});
+
     clearCart();
     return newOrder;
   };
@@ -1274,9 +1434,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setIsSearchOpen,
         isAuthModalOpen,
         setIsAuthModalOpen,
+        isAuthLoading,
         user,
+        loginWithGoogle,
+        loginWithEmail,
         loginDemo,
         logout,
+        authRedirectIntent,
+        setAuthRedirectIntent,
+        requireAuthForAction,
+        shouldAutoOpenCheckout,
+        setShouldAutoOpenCheckout,
         orders,
         placeOrder,
         toasts,

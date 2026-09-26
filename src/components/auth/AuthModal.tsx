@@ -1,23 +1,31 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { CurowitLogo } from '../common/CurowitLogo';
-import { X, ArrowRight, Sparkles } from 'lucide-react';
+import { X, ArrowRight } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
-  const { isAuthModalOpen, setIsAuthModalOpen, loginDemo } = useStore();
+  const {
+    isAuthModalOpen,
+    setIsAuthModalOpen,
+    loginWithGoogle,
+    loginWithEmail,
+    isAuthLoading,
+  } = useStore();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
 
   if (!isAuthModalOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loginDemo(email || 'patron@curowit.com', name || 'Creative Patron');
+    if (!email.trim() || !password.trim()) return;
+    loginWithEmail(email, name);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs animate-in fade-in duration-200">
       <div className="bg-[#FFF8EA] rounded-3xl max-w-md w-full p-6 sm:p-8 border border-[#07545A]/20 shadow-2xl relative">
         <button
           onClick={() => setIsAuthModalOpen(false)}
@@ -28,30 +36,48 @@ export const AuthModal: React.FC = () => {
         </button>
 
         {/* Brand Lockup */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-5">
           <div className="inline-block mb-3">
             <CurowitLogo variant="horizontal" size="lg" />
           </div>
           <h2 className="text-xl font-bold text-[#07545A] font-display">
-            {isSignUp ? 'Create your Curowit Account' : 'Welcome to the Creative Circle'}
+            {isSignUp ? 'Create your Curowit Account' : 'Sign In to Curowit'}
           </h2>
           <p className="text-xs text-[#687778] mt-1">
-            {isSignUp
-              ? 'Join our community of mindful collectors and support independent makers.'
-              : 'Sign in to access your saved crafts, custom orders, and workshops.'}
+            Sign in with Google or email to buy handmade pieces, track orders, and save wishlists.
           </p>
         </div>
 
-        {/* Quick Demo Access Button */}
-        <div className="mb-4">
+        {/* Google Sign-In Button */}
+        <div className="space-y-2.5 mb-4">
           <button
-            onClick={() => loginDemo('aanya.creative@curowit.com', 'Aanya Verma')}
-            className="w-full py-2.5 px-4 bg-[#F2A900] text-[#07545A] text-xs font-bold rounded-xl hover:bg-[#E69A16] transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs active:scale-98"
+            type="button"
+            onClick={loginWithGoogle}
+            disabled={isAuthLoading}
+            className="w-full py-3 px-4 bg-white hover:bg-[#F7EBD7]/60 text-[#173B3D] text-xs sm:text-sm font-bold rounded-xl border-2 border-[#07545A]/20 hover:border-[#07545A] transition-all cursor-pointer flex items-center justify-center gap-2.5 shadow-2xs active:scale-98 disabled:opacity-60"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Instant Demo Sign In (Aanya Verma)</span>
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="#4285F4"
+                d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v2.98h3.86c2.26-2.09 3.56-5.17 3.56-8.8z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-2.98c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.27 14.31c-.24-.72-.38-1.49-.38-2.31s.14-1.59.38-2.31V6.6H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.4l3.98-3.09z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.6l3.98 3.09c.95-2.85 3.6-4.94 6.73-4.94z"
+              />
+            </svg>
+            <span>{isAuthLoading ? 'Signing in with Google...' : 'Continue with Google'}</span>
           </button>
-          <div className="relative my-4 text-center">
+
+          <div className="relative my-3.5 text-center">
             <span className="bg-[#FFF8EA] px-2 text-[10px] text-[#687778] uppercase tracking-wider relative z-10">
               or continue with email
             </span>
@@ -68,7 +94,7 @@ export const AuthModal: React.FC = () => {
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Maya Iyer"
+                placeholder="Enter your full name"
                 className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-[#F7EBD7] border border-[#07545A]/20 focus:outline-none focus:ring-1 focus:ring-[#07545A]"
               />
             </div>
@@ -91,7 +117,8 @@ export const AuthModal: React.FC = () => {
             <input
               type="password"
               required
-              defaultValue="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               className="w-full text-xs px-3.5 py-2.5 rounded-xl bg-[#F7EBD7] border border-[#07545A]/20 focus:outline-none focus:ring-1 focus:ring-[#07545A]"
             />
@@ -106,28 +133,14 @@ export const AuthModal: React.FC = () => {
           </button>
         </form>
 
-        <div className="text-center mt-5 pt-3 border-t border-[#07545A]/10 text-xs text-[#687778]">
-          {isSignUp ? (
-            <span>
-              Already have an account?{' '}
-              <button
-                onClick={() => setIsSignUp(false)}
-                className="text-[#07545A] font-bold hover:underline cursor-pointer"
-              >
-                Sign In
-              </button>
-            </span>
-          ) : (
-            <span>
-              New to Curowit?{' '}
-              <button
-                onClick={() => setIsSignUp(true)}
-                className="text-[#07545A] font-bold hover:underline cursor-pointer"
-              >
-                Create Account
-              </button>
-            </span>
-          )}
+        <div className="mt-4 pt-3 border-t border-[#07545A]/10 text-center text-xs text-[#687778]">
+          <button
+            type="button"
+            onClick={() => setIsSignUp((prev) => !prev)}
+            className="text-[#07545A] font-bold hover:underline cursor-pointer"
+          >
+            {isSignUp ? 'Already have an account? Sign In' : 'New to Curowit? Create an Account'}
+          </button>
         </div>
       </div>
     </div>

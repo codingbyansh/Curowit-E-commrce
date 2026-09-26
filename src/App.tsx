@@ -27,6 +27,7 @@ import { CreatorsListPage } from './components/creator/CreatorsListPage';
 import { WorkshopsPage } from './components/workshops/WorkshopsPage';
 import { StoriesPage } from './components/stories/StoriesPage';
 import { AccountPage } from './components/account/AccountPage';
+import { SignInPage } from './components/auth/SignInPage';
 import { AdminCMSPage } from './components/admin/AdminCMSPage';
 
 // Overlays & Utilities
@@ -177,6 +178,12 @@ const DynamicMetadataManager: React.FC = () => {
           'Track your handmade orders, manage your Curowit profile, and view your registered craft workshops.';
         break;
       }
+      case 'signin': {
+        title = 'Sign In & Checkout - Curowit';
+        description =
+          'Sign in to Curowit with Google or email to complete your handmade order, track dispatches, and support independent creators.';
+        break;
+      }
       case 'admin': {
         title = 'Master CMS - Curowit';
         description =
@@ -263,6 +270,7 @@ const MainContent: React.FC = () => {
         {activeView === 'workshops' && <WorkshopsPage />}
         {activeView === 'stories' && <StoriesPage />}
         {activeView === 'account' && <AccountPage />}
+        {activeView === 'signin' && <SignInPage />}
       </main>
 
       <Footer />

@@ -230,6 +230,33 @@ service cloud.firestore {
       data.updatedAt == request.time;
     }
 
+    // Validation Blueprint: Review (No PII fields stored in public review documents)
+    function isValidReview(data) {
+      return data.keys().hasAll([
+        'id', 'productId', 'visibility', 'storeAuthToken',
+        'userId', 'userName', 'rating',
+        'title', 'comment', 'verifiedPurchase', 'dateLabel', 'createdAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'productId', 'visibility', 'storeAuthToken',
+        'userId', 'userName', 'userAvatar', 'rating',
+        'title', 'comment', 'verifiedPurchase', 'dateLabel', 'createdAt'
+      ]) &&
+      isValidId(data.id) &&
+      isValidId(data.productId) &&
+      data.visibility is string && data.visibility.size() == 6 && data.visibility == 'public' &&
+      data.storeAuthToken is string && data.storeAuthToken.size() == 23 && data.storeAuthToken == 'curowit_verified_patron' &&
+      data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+      data.userName is string && data.userName.size() >= 1 && data.userName.size() <= 120 &&
+      (!('userAvatar' in data) || (data.userAvatar is string && data.userAvatar.size() <= 500000)) &&
+      data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 150 &&
+      data.comment is string && data.comment.size() >= 1 && data.comment.size() <= 1500 &&
+      data.verifiedPurchase is bool &&
+      data.dateLabel is string && data.dateLabel.size() >= 1 && data.dateLabel.size() <= 60 &&
+      data.createdAt == request.time;
+    }
+
     // Admin Registry
     match /admins/{adminId} {
       allow get: if isValidId(adminId) && isAdmin();
@@ -339,6 +366,22 @@ service cloud.firestore {
          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt', 'cmsAccessKey']))
       );
       allow delete: if isValidId(orderId) && (isAdmin() || existing().cmsAccessKey == 'ansh@siya');
+    }
+
+    // Product Reviews (Linked to Product ID)
+    match /reviews/{reviewId} {
+      allow get: if isValidId(reviewId) && existing().visibility == 'public';
+      allow list: if existing().visibility == 'public';
+      allow create: if isValidId(reviewId) && isValidReview(incoming()) && incoming().id == reviewId;
+      allow update: if isValidId(reviewId) && isValidReview(incoming()) && incoming().id == existing().id &&
+        incoming().productId == existing().productId &&
+        incoming().userId == existing().userId && (
+          isAdmin() ||
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'rating', 'title', 'comment', 'dateLabel', 'createdAt', 'storeAuthToken'
+          ])
+        );
+      allow delete: if isValidId(reviewId) && (isAdmin() || existing().storeAuthToken == 'curowit_verified_patron');
     }
   }
 }
