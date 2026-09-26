@@ -5,83 +5,76 @@ interface TickerItem {
   id: number;
   shortText: string;
   longText: string;
-  icon: string;
   bgGradient: string;
   sparkleColor: string;
   highlightTag?: string;
 }
 
+// All gradients stay within the site's own teal / brand palette (#173B3D, #07545A, #0A6B74, #159BB5)
+// with the brand gold (#F2A900) reserved for accents, so the bar always reads as part of the site.
 const ROTATING_MESSAGES: TickerItem[] = [
   {
     id: 0,
     shortText: 'Discover Something Creative',
     longText: 'Discover Something Creative — 1,200+ Handcrafted Pieces from India’s Top Artisan Studios',
-    icon: '✨',
-    bgGradient: 'from-[#07545A] via-[#0A6B74] to-[#159BB5]',
-    sparkleColor: '#FFC83D',
+    bgGradient: 'from-[#173B3D] via-[#07545A] to-[#0A6B74]',
+    sparkleColor: '#F2A900',
     highlightTag: 'Direct Studio Support',
   },
   {
     id: 1,
     shortText: 'Made by Independent Creators',
     longText: 'Made by Independent Creators — 100% Verified Makers · Thoughtful Slow-Crafted Quality',
-    icon: '🎨',
-    bgGradient: 'from-[#8C3A19] via-[#B85324] to-[#D97706]',
-    sparkleColor: '#FDE68A',
+    bgGradient: 'from-[#0A6B74] via-[#07545A] to-[#173B3D]',
+    sparkleColor: '#F2A900',
     highlightTag: 'Artisan Verified',
   },
   {
     id: 2,
     shortText: 'Handmade. Unique. Yours.',
     longText: 'Handmade. Unique. Yours. — Every Creation Has a Face, a Name, and a Personal Story',
-    icon: '💛',
-    bgGradient: 'from-[#144233] via-[#1E5C46] to-[#2D7A5C]',
-    sparkleColor: '#FEF08A',
+    bgGradient: 'from-[#07545A] via-[#0A6B74] to-[#159BB5]',
+    sparkleColor: '#F2A900',
     highlightTag: 'Eco Conscious',
   },
   {
     id: 3,
     shortText: 'Explore Handmade & Creative Finds',
     longText: 'Explore Handmade & Creative Finds — Heirloom Crochet, Botanical Candles, Resin Jewellery & Art',
-    icon: '🧵',
-    bgGradient: 'from-[#0E3547] via-[#095273] to-[#0284C7]',
-    sparkleColor: '#93C5FD',
+    bgGradient: 'from-[#159BB5] via-[#0A6B74] to-[#07545A]',
+    sparkleColor: '#F2A900',
     highlightTag: 'New Arrivals',
   },
   {
     id: 4,
     shortText: 'New Creative Finds Are Here',
     longText: 'New Creative Finds Are Here — Fresh Weekly Bench Drops Direct from Maker Workspaces',
-    icon: '✨',
-    bgGradient: 'from-[#431D4A] via-[#632770] to-[#86198F]',
-    sparkleColor: '#F5D0FE',
+    bgGradient: 'from-[#173B3D] via-[#0A6B74] to-[#159BB5]',
+    sparkleColor: '#F2A900',
     highlightTag: 'Weekly Drops',
   },
   {
     id: 5,
     shortText: 'Find Something Worth Gifting',
     longText: 'Find Something Worth Gifting — Free Handwritten Gift Notes & Plastic-Free Kraft Packaging',
-    icon: '🎁',
-    bgGradient: 'from-[#6E2E10] via-[#92400E] to-[#B45309]',
-    sparkleColor: '#FED7AA',
+    bgGradient: 'from-[#159BB5] via-[#07545A] to-[#173B3D]',
+    sparkleColor: '#F2A900',
     highlightTag: 'Gift Ready',
   },
   {
     id: 6,
     shortText: 'Creativity, Curated for You',
     longText: 'Creativity, Curated for You — Transparent Maker Ethics, Small-Batch Goods & Free Shipping > ₹499',
-    icon: '🌈',
-    bgGradient: 'from-[#064E3B] via-[#0F766E] to-[#0D9488]',
-    sparkleColor: '#A7F3D0',
+    bgGradient: 'from-[#07545A] via-[#173B3D] to-[#0A6B74]',
+    sparkleColor: '#F2A900',
     highlightTag: 'Curated Goods',
   },
   {
     id: 7,
     shortText: 'Shop. Discover. Create.',
     longText: 'Shop. Discover. Create. — Welcome to Curowit · Use "CUROWIT10" for 10% Off Your First Craft Order',
-    icon: '🛍️',
-    bgGradient: 'from-[#0E2841] via-[#075985] to-[#159BB5]',
-    sparkleColor: '#FDE047',
+    bgGradient: 'from-[#0A6B74] via-[#159BB5] to-[#07545A]',
+    sparkleColor: '#F2A900',
     highlightTag: 'Use CUROWIT10',
   },
 ];
@@ -149,23 +142,24 @@ export const TopAnnouncementBar: React.FC = () => {
         aria-hidden="true"
       />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-8 sm:h-9 md:h-10 flex items-center justify-between">
-        {/* Left Side: Subtle Brand Monogram (Laptop View) */}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-8 sm:h-9 md:h-10 flex items-center">
+        {/* Left Side: Brand Mark (Laptop View) */}
         <div className="hidden lg:flex items-center gap-2 text-[11px] font-medium tracking-wider text-white/90 shrink-0">
+          <img src="/curowit-mark.png" alt="" aria-hidden="true" className="h-4 w-4 object-contain shrink-0" />
           <span className="font-semibold text-white tracking-wide">CUROWIT</span>
           <span style={{ color: activeMessage.sparkleColor }}>✦</span>
           <span className="text-white/80">Home of creatives</span>
         </div>
 
-        {/* Center: Animated Vertical Slide + Fade Carousel */}
+        {/* Center: Animated Fade Carousel, always a single line */}
         <div
           onClick={handleClick}
-          className="flex-1 flex items-center justify-center cursor-pointer group px-2"
+          className="flex-1 flex items-center justify-center cursor-pointer group px-2 min-w-0"
           title="Click to explore collection"
         >
-          <div className="relative h-6 sm:h-7 overflow-hidden flex items-center justify-center w-full max-w-3xl">
+          <div className="relative h-6 sm:h-7 overflow-hidden flex items-center justify-center w-full max-w-3xl min-w-0">
             <div
-              className={`flex items-center justify-center gap-2 text-xs sm:text-[13px] font-medium tracking-wide text-white transition-all duration-400 ease-out transform ${
+              className={`flex items-center justify-center gap-2 text-xs sm:text-[13px] font-medium tracking-wide text-white transition-all duration-400 ease-out transform whitespace-nowrap max-w-full min-w-0 ${
                 animationState === 'entering'
                   ? 'opacity-0 translate-y-2'
                   : animationState === 'visible'
@@ -173,10 +167,13 @@ export const TopAnnouncementBar: React.FC = () => {
                   : 'opacity-0 -translate-y-2'
               }`}
             >
-              {/* Message Emoji Icon */}
-              <span className="text-sm select-none shrink-0" role="img" aria-hidden="true">
-                {activeMessage.icon}
-              </span>
+              {/* Brand Mark Icon */}
+              <img
+                src="/curowit-mark.png"
+                alt=""
+                aria-hidden="true"
+                className="h-4 w-4 sm:h-[18px] sm:w-[18px] object-contain select-none shrink-0"
+              />
 
               {/* Decorative Miniature Sparkle Left */}
               <span
@@ -188,12 +185,12 @@ export const TopAnnouncementBar: React.FC = () => {
               </span>
 
               {/* Mobile View: Concise Text */}
-              <span className="md:hidden text-center font-medium truncate">
+              <span className="md:hidden text-center font-medium truncate min-w-0">
                 {activeMessage.shortText}
               </span>
 
               {/* Laptop/Desktop View: Long Expressive Text */}
-              <span className="hidden md:inline text-center font-medium group-hover:text-amber-100 transition-colors">
+              <span className="hidden md:inline text-center font-medium truncate min-w-0 group-hover:text-amber-100 transition-colors">
                 {activeMessage.longText}
               </span>
 
@@ -226,26 +223,6 @@ export const TopAnnouncementBar: React.FC = () => {
               </span>
             </div>
           </div>
-        </div>
-
-        {/* Right Side: Micro Progress Dots Indicator */}
-        <div className="hidden lg:flex items-center gap-1.5 shrink-0" aria-hidden="true">
-          {ROTATING_MESSAGES.map((msg, idx) => (
-            <button
-              key={msg.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentIndex(idx);
-                setAnimationState('visible');
-              }}
-              aria-label={`Jump to message ${idx + 1}`}
-              className={`transition-all duration-300 rounded-full cursor-pointer ${
-                idx === currentIndex
-                  ? 'w-4 h-1.5 bg-white shadow-2xs'
-                  : 'w-1.5 h-1.5 bg-white/35 hover:bg-white/70'
-              }`}
-            />
-          ))}
         </div>
       </div>
     </div>

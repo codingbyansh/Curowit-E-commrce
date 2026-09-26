@@ -90,8 +90,8 @@ export const DEFAULT_ANNOUNCEMENTS: TickerItem[] = [
     shortText: 'Discover Something Creative',
     longText: 'Discover Something Creative — 1,200+ Handcrafted Pieces from India’s Top Artisan Studios',
     icon: '✨',
-    bgGradient: 'from-[#07545A] via-[#0A6B74] to-[#159BB5]',
-    sparkleColor: '#FFC83D',
+    bgGradient: 'from-[#173B3D] via-[#07545A] to-[#0A6B74]',
+    sparkleColor: '#F2A900',
     highlightTag: 'Direct Studio Support',
   },
   {
@@ -99,8 +99,8 @@ export const DEFAULT_ANNOUNCEMENTS: TickerItem[] = [
     shortText: 'Made by Independent Creators',
     longText: 'Made by Independent Creators — 100% Verified Makers · Thoughtful Slow-Crafted Quality',
     icon: '🎨',
-    bgGradient: 'from-[#8C3A19] via-[#B85324] to-[#D97706]',
-    sparkleColor: '#FDE68A',
+    bgGradient: 'from-[#0A6B74] via-[#07545A] to-[#173B3D]',
+    sparkleColor: '#F2A900',
     highlightTag: 'Artisan Verified',
   },
   {
@@ -108,8 +108,8 @@ export const DEFAULT_ANNOUNCEMENTS: TickerItem[] = [
     shortText: 'Handmade. Unique. Yours.',
     longText: 'Handmade. Unique. Yours. — Every Creation Has a Face, a Name, and a Personal Story',
     icon: '💛',
-    bgGradient: 'from-[#144233] via-[#1E5C46] to-[#2D7A5C]',
-    sparkleColor: '#FEF08A',
+    bgGradient: 'from-[#07545A] via-[#0A6B74] to-[#159BB5]',
+    sparkleColor: '#F2A900',
     highlightTag: 'Eco Conscious',
   },
   {
@@ -117,8 +117,8 @@ export const DEFAULT_ANNOUNCEMENTS: TickerItem[] = [
     shortText: 'Explore Handmade & Creative Finds',
     longText: 'Explore Handmade & Creative Finds — Heirloom Crochet, Botanical Candles, Resin Jewellery & Art',
     icon: '🧵',
-    bgGradient: 'from-[#0E3547] via-[#095273] to-[#0284C7]',
-    sparkleColor: '#93C5FD',
+    bgGradient: 'from-[#159BB5] via-[#0A6B74] to-[#07545A]',
+    sparkleColor: '#F2A900',
     highlightTag: 'New Arrivals',
   },
 ];
