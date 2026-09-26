@@ -33,6 +33,7 @@ export const ProductDetailPage: React.FC = () => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [personalizationText, setPersonalizationText] = useState('');
+  const [isHeartThrobbing, setIsHeartThrobbing] = useState(false);
 
   if (!selectedProduct) {
     return (
@@ -64,6 +65,19 @@ export const ProductDetailPage: React.FC = () => {
     addToCart(selectedProduct, quantity, personalizationText);
     setActiveView('cart');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleWishlistClick = () => {
+    const addingToCollection = !isFavorited;
+    toggleWishlist(selectedProduct.id);
+    if (addingToCollection) {
+      setIsHeartThrobbing(false);
+      requestAnimationFrame(() => {
+        setIsHeartThrobbing(true);
+      });
+    } else {
+      setIsHeartThrobbing(false);
+    }
   };
 
   const handleShare = () => {
@@ -120,15 +134,26 @@ export const ProductDetailPage: React.FC = () => {
 
               {/* Floating Wishlist Heart */}
               <button
-                onClick={() => toggleWishlist(selectedProduct.id)}
+                onClick={handleWishlistClick}
+                onAnimationEnd={() => setIsHeartThrobbing(false)}
                 className={`absolute top-4 right-4 z-10 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all cursor-pointer ${
                   isFavorited
                     ? 'bg-[#E97868] text-white shadow-sm'
                     : 'bg-[#FFF8EA]/90 text-[#173B3D]/70 hover:text-[#E97868] hover:bg-[#FFF8EA]'
-                }`}
+                } ${isHeartThrobbing ? 'animate-heart-throb' : ''}`}
                 aria-label="Save to Wishlist"
               >
-                <Heart className={`w-5 h-5 ${isFavorited ? 'fill-current' : ''}`} />
+                {isHeartThrobbing && (
+                  <span
+                    className="absolute inset-0 rounded-full border-2 border-[#E97868] pointer-events-none animate-heart-ripple"
+                    aria-hidden="true"
+                  />
+                )}
+                <Heart
+                  className={`w-5 h-5 transition-transform duration-200 ${
+                    isFavorited ? 'fill-current' : ''
+                  } ${isHeartThrobbing ? 'animate-heart-throb' : ''}`}
+                />
               </button>
             </div>
 
@@ -258,6 +283,30 @@ export const ProductDetailPage: React.FC = () => {
                 >
                   <ShoppingBag className="w-4 h-4" />
                   <span>Add to Creative Cart</span>
+                </button>
+
+                <button
+                  onClick={handleWishlistClick}
+                  onAnimationEnd={() => setIsHeartThrobbing(false)}
+                  className={`relative p-3 rounded-xl border transition-all flex items-center justify-center cursor-pointer ${
+                    isFavorited
+                      ? 'bg-[#E97868]/15 border-[#E97868]/40 text-[#E97868]'
+                      : 'bg-[#F7EBD7] border-[#07545A]/15 text-[#173B3D]/70 hover:text-[#E97868] hover:border-[#E97868]/30'
+                  } ${isHeartThrobbing ? 'animate-heart-throb' : ''}`}
+                  aria-label={isFavorited ? 'Saved in Wishlist' : 'Add to Wishlist'}
+                  title={isFavorited ? 'Saved in Wishlist' : 'Add to Wishlist'}
+                >
+                  {isHeartThrobbing && (
+                    <span
+                      className="absolute inset-0 rounded-xl border-2 border-[#E97868] pointer-events-none animate-heart-ripple"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <Heart
+                    className={`w-4 h-4 transition-transform duration-200 ${
+                      isFavorited ? 'fill-current' : ''
+                    } ${isHeartThrobbing ? 'animate-heart-throb' : ''}`}
+                  />
                 </button>
               </div>
 

@@ -75,8 +75,12 @@ interface ToastMessage {
   type?: 'success' | 'info' | 'error';
 }
 
-const normalizeImageUrl = (url?: string): string => {
-  if (!url) return '';
+const normalizeImageUrl = (url?: string, fallback = '/images/hero_handmade_1790260978568.jpg'): string => {
+  if (!url) return fallback;
+  // Detect base64 strings that were previously truncated by .slice(0, 750000) or .slice(0, 700000)
+  if (url.startsWith('data:') && (url.length === 750000 || url.length === 700000 || url.length === 500000)) {
+    return fallback;
+  }
   return url.replace(/^\/src\/assets\/images\//, '/images/');
 };
 
@@ -546,17 +550,22 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     updatedAt: serverTimestamp(),
   });
 
-  const buildHeroSlidePayload = (s: HeroBannerSlide, index: number) => ({
-    id: typeof s.id === 'number' ? s.id : index,
-    visibility: 'public',
-    cmsAccessKey: MASTER_PASSKEY,
-    image: normalizeImageUrl(s.image).slice(0, 750000),
-    alt: String(s.alt || 'Curowit Campaign Banner').slice(0, 300),
-    action: ['shop-handmade', 'shop-creators', 'explore-all'].includes(s.action)
-      ? s.action
-      : 'explore-all',
-    updatedAt: serverTimestamp(),
-  });
+  const buildHeroSlidePayload = (s: HeroBannerSlide, index: number) => {
+    const fallbackSlideImage =
+      DEFAULT_HERO_SLIDES[index]?.image || DEFAULT_HERO_SLIDES[0].image;
+    const cleanImage = normalizeImageUrl(s.image, fallbackSlideImage);
+    return {
+      id: typeof s.id === 'number' ? s.id : index,
+      visibility: 'public',
+      cmsAccessKey: MASTER_PASSKEY,
+      image: cleanImage.length <= 750000 ? cleanImage : fallbackSlideImage,
+      alt: String(s.alt || 'Curowit Campaign Banner').slice(0, 300),
+      action: ['shop-handmade', 'shop-creators', 'explore-all'].includes(s.action)
+        ? s.action
+        : 'explore-all',
+      updatedAt: serverTimestamp(),
+    };
+  };
 
   const buildAnnouncementPayload = (a: TickerItem, index: number) => {
     const payload: Record<string, any> = {
@@ -688,13 +697,36 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       query(collection(db, 'hero_slides'), where('visibility', '==', 'public')),
       (snapshot) => {
         if (!snapshot.empty) {
+          let needsRepair = false;
           const loaded = snapshot.docs
-            .map((d) => {
+            .map((d, idx) => {
               const data = d.data() as HeroBannerSlide;
-              return { ...data, image: normalizeImageUrl(data.image) };
+              const fallbackImg =
+                DEFAULT_HERO_SLIDES[idx]?.image || DEFAULT_HERO_SLIDES[0].image;
+              const wasTruncated =
+                typeof data.image === 'string' &&
+                data.image.startsWith('data:') &&
+                data.image.length >= 749000;
+              if (wasTruncated) {
+                needsRepair = true;
+              }
+              return {
+                ...data,
+                image: wasTruncated
+                  ? fallbackImg
+                  : normalizeImageUrl(data.image, fallbackImg),
+              };
             })
             .sort((a, b) => a.id - b.id);
           setHeroSlides(loaded);
+
+          // Automatically heal any previously truncated hero slide in Firestore
+          if (needsRepair) {
+            loaded.forEach((s, idx) => {
+              const payload = buildHeroSlidePayload(s, idx);
+              setDoc(doc(db, 'hero_slides', `slide-${payload.id}`), payload).catch(() => {});
+            });
+          }
         }
       },
       (error) => handleFirestoreError(error, OperationType.LIST, 'hero_slides')

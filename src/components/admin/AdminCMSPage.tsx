@@ -1,6 +1,67 @@
 import React, { useState } from 'react';
 import { useStore, HeroBannerSlide, TickerItem, Order } from '../../context/StoreContext';
 import { Product, Creator, Workshop, Story, CATEGORIES } from '../../data/mockData';
+
+/**
+ * Compresses and resizes an uploaded image file on an offscreen canvas so the
+ * full image is preserved top-to-bottom without ever being truncated or exceeding
+ * Firestore's 1 MiB document limit.
+ */
+const compressUploadedImage = (
+  file: File,
+  maxWidth = 1600,
+  maxHeight = 1000,
+  maxBase64Length = 650000
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.onload = (event) => {
+      const rawDataUrl = event.target?.result as string;
+      if (!rawDataUrl) {
+        reject(new Error('Empty image data'));
+        return;
+      }
+
+      const img = new Image();
+      img.onerror = () => reject(new Error('Invalid image file'));
+      img.onload = () => {
+        let width = img.naturalWidth || img.width;
+        let height = img.naturalHeight || img.height;
+
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(rawDataUrl);
+          return;
+        }
+
+        // Fill warm cream backdrop in case of transparent PNGs
+        ctx.fillStyle = '#FFF8EA';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        let quality = 0.88;
+        let output = canvas.toDataURL('image/jpeg', quality);
+        while (output.length > maxBase64Length && quality > 0.45) {
+          quality -= 0.1;
+          output = canvas.toDataURL('image/jpeg', quality);
+        }
+        resolve(output);
+      };
+      img.src = rawDataUrl;
+    };
+    reader.readAsDataURL(file);
+  });
+};
 import {
   ShieldCheck,
   Lock,
@@ -885,11 +946,11 @@ export const AdminCMSPage: React.FC = () => {
                       </div>
 
                       {/* Image Preview Frame */}
-                      <div className="relative aspect-[16/9] w-full rounded-xl overflow-hidden border border-[#07545A]/15 bg-stone-100 group">
+                      <div className="relative w-full min-h-[140px] rounded-xl overflow-hidden border border-[#07545A]/15 bg-[#FFF8EA] group flex items-center justify-center">
                         <img
                           src={slide.image}
                           alt={slide.alt}
-                          className="w-full h-full object-cover"
+                          className="w-full h-auto block object-contain"
                         />
                         {/* Hover Overlay with Upload Trigger */}
                         <label className="absolute inset-0 bg-black/55 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-xs font-bold gap-1 transition-opacity cursor-pointer">
@@ -899,20 +960,19 @@ export const AdminCMSPage: React.FC = () => {
                             type="file"
                             accept="image/*"
                             className="hidden"
-                            onChange={(e) => {
+                            onChange={async (e) => {
                               const file = e.target.files?.[0];
+                              e.target.value = '';
                               if (file) {
-                                const reader = new FileReader();
-                                reader.onload = (uploadEvt) => {
-                                  const base64 = uploadEvt.target?.result as string;
-                                  if (base64) {
-                                    const next = [...heroSlides];
-                                    next[idx] = { ...slide, image: base64 };
-                                    updateHeroSlides(next);
-                                    showToast('Image Uploaded', `Slide ${idx + 1} updated`);
-                                  }
-                                };
-                                reader.readAsDataURL(file);
+                                try {
+                                  const optimizedBase64 = await compressUploadedImage(file, 1600, 900);
+                                  const next = [...heroSlides];
+                                  next[idx] = { ...slide, image: optimizedBase64 };
+                                  updateHeroSlides(next);
+                                  showToast('Image Uploaded', `Slide ${idx + 1} updated`);
+                                } catch {
+                                  showToast('Upload Failed', 'Please select a valid image file', 'error');
+                                }
                               }
                             }}
                           />
@@ -928,20 +988,19 @@ export const AdminCMSPage: React.FC = () => {
                             type="file"
                             accept="image/*"
                             className="hidden"
-                            onChange={(e) => {
+                            onChange={async (e) => {
                               const file = e.target.files?.[0];
+                              e.target.value = '';
                               if (file) {
-                                const reader = new FileReader();
-                                reader.onload = (uploadEvt) => {
-                                  const base64 = uploadEvt.target?.result as string;
-                                  if (base64) {
-                                    const next = [...heroSlides];
-                                    next[idx] = { ...slide, image: base64 };
-                                    updateHeroSlides(next);
-                                    showToast('Image Uploaded', `Slide ${idx + 1} updated`);
-                                  }
-                                };
-                                reader.readAsDataURL(file);
+                                try {
+                                  const optimizedBase64 = await compressUploadedImage(file, 1600, 900);
+                                  const next = [...heroSlides];
+                                  next[idx] = { ...slide, image: optimizedBase64 };
+                                  updateHeroSlides(next);
+                                  showToast('Image Uploaded', `Slide ${idx + 1} updated`);
+                                } catch {
+                                  showToast('Upload Failed', 'Please select a valid image file', 'error');
+                                }
                               }
                             }}
                           />
@@ -1299,15 +1358,14 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const file = e.target.files?.[0];
+                    e.target.value = '';
                     if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (uploadEvt) => {
-                        const base64 = uploadEvt.target?.result as string;
-                        if (base64) setImage(base64);
-                      };
-                      reader.readAsDataURL(file);
+                      try {
+                        const optimizedBase64 = await compressUploadedImage(file, 1200, 1200);
+                        setImage(optimizedBase64);
+                      } catch {}
                     }
                   }}
                 />

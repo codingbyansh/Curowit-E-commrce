@@ -104,7 +104,7 @@ export const HeroCarousel: React.FC = () => {
     >
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         {/* Banner Frame with smooth rounded corners and subtle shadow */}
-        <div className="relative w-full aspect-[16/9] rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm border border-[#07545A]/10 bg-[#FFF8EA]">
+        <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm border border-[#07545A]/10 bg-[#FFF8EA]">
           {slides.map((slide, index) => {
             const isActive = index === currentSlide;
 
@@ -112,19 +112,21 @@ export const HeroCarousel: React.FC = () => {
               <div
                 key={slide.id}
                 onClick={() => handleSlideClick(slide.action)}
-                className={`absolute inset-0 cursor-pointer transition-opacity duration-700 ease-in-out ${
-                  isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+                className={`w-full cursor-pointer transition-opacity duration-700 ease-in-out ${
+                  isActive
+                    ? 'relative opacity-100 z-10'
+                    : 'absolute inset-0 opacity-0 z-0 pointer-events-none'
                 }`}
                 role="group"
                 aria-roledescription="slide"
                 aria-label={`Slide ${index + 1} of ${slides.length}`}
               >
-                {/* Exact full-resolution banner image without alterations or text overlays */}
+                {/* Exact full-resolution banner image without alterations or cropping */}
                 <img
                   src={slide.image}
                   alt={slide.alt}
                   referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover object-center select-none"
+                  className="w-full h-auto block object-contain select-none"
                   loading={index === 0 ? 'eager' : 'lazy'}
                 />
               </div>

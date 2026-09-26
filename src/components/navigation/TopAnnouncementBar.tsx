@@ -134,11 +134,11 @@ export const TopAnnouncementBar: React.FC = () => {
       className="relative z-30 w-full overflow-hidden select-none text-white shadow-2xs border-b border-white/10"
     >
       {/* Dynamic Rotating Background Color Gradient Layer */}
-      {ROTATING_MESSAGES.map((msg, idx) => (
+      {messages.map((msg, idx) => (
         <div
-          key={msg.id}
+          key={msg.id ?? idx}
           className={`absolute inset-0 bg-gradient-to-r ${msg.bgGradient} transition-opacity duration-700 ease-in-out ${
-            idx === currentIndex ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            idx === currentIndex % messages.length ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
         />
       ))}
@@ -149,23 +149,23 @@ export const TopAnnouncementBar: React.FC = () => {
         aria-hidden="true"
       />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-8 sm:h-9 md:h-10 flex items-center justify-between">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-8 sm:h-9 md:h-10 flex items-center justify-center">
         {/* Left Side: Subtle Brand Monogram (Laptop View) */}
-        <div className="hidden lg:flex items-center gap-2 text-[11px] font-medium tracking-wider text-white/90 shrink-0">
+        <div className="hidden lg:flex items-center gap-2 text-[11px] font-medium tracking-wider text-white/90 shrink-0 whitespace-nowrap mr-4">
           <span className="font-semibold text-white tracking-wide">CUROWIT</span>
           <span style={{ color: activeMessage.sparkleColor }}>✦</span>
           <span className="text-white/80">Home of creatives</span>
         </div>
 
-        {/* Center: Animated Vertical Slide + Fade Carousel */}
+        {/* Center: Single-Line Animated Vertical Slide + Fade Carousel */}
         <div
           onClick={handleClick}
-          className="flex-1 flex items-center justify-center cursor-pointer group px-2"
+          className="flex-1 flex items-center justify-center cursor-pointer group min-w-0 overflow-hidden"
           title="Click to explore collection"
         >
-          <div className="relative h-6 sm:h-7 overflow-hidden flex items-center justify-center w-full max-w-3xl">
+          <div className="relative h-6 sm:h-7 overflow-hidden flex items-center justify-center w-full">
             <div
-              className={`flex items-center justify-center gap-2 text-xs sm:text-[13px] font-medium tracking-wide text-white transition-all duration-400 ease-out transform ${
+              className={`flex items-center justify-center gap-2 text-xs sm:text-[13px] font-medium tracking-wide text-white whitespace-nowrap min-w-0 transition-all duration-400 ease-out transform ${
                 animationState === 'entering'
                   ? 'opacity-0 translate-y-2'
                   : animationState === 'visible'
@@ -187,13 +187,13 @@ export const TopAnnouncementBar: React.FC = () => {
                 ✦
               </span>
 
-              {/* Mobile View: Concise Text */}
-              <span className="md:hidden text-center font-medium truncate">
+              {/* Mobile View: Single-Line Concise Text */}
+              <span className="md:hidden text-center font-medium whitespace-nowrap truncate">
                 {activeMessage.shortText}
               </span>
 
-              {/* Laptop/Desktop View: Long Expressive Text */}
-              <span className="hidden md:inline text-center font-medium group-hover:text-amber-100 transition-colors">
+              {/* Laptop/Desktop View: Single-Line Expressive Text */}
+              <span className="hidden md:inline text-center font-medium whitespace-nowrap truncate group-hover:text-amber-100 transition-colors">
                 {activeMessage.longText}
               </span>
 
@@ -210,7 +210,7 @@ export const TopAnnouncementBar: React.FC = () => {
               {activeMessage.highlightTag && (
                 <span
                   style={{ backgroundColor: `${activeMessage.sparkleColor}25`, borderColor: `${activeMessage.sparkleColor}60` }}
-                  className="hidden xl:inline-flex items-center text-[10px] font-bold text-white px-2 py-0.5 rounded-full border shadow-2xs ml-1.5 shrink-0"
+                  className="hidden xl:inline-flex items-center text-[10px] font-bold text-white px-2 py-0.5 rounded-full border shadow-2xs ml-1.5 shrink-0 whitespace-nowrap"
                 >
                   {activeMessage.highlightTag}
                 </span>
@@ -226,26 +226,6 @@ export const TopAnnouncementBar: React.FC = () => {
               </span>
             </div>
           </div>
-        </div>
-
-        {/* Right Side: Micro Progress Dots Indicator */}
-        <div className="hidden lg:flex items-center gap-1.5 shrink-0" aria-hidden="true">
-          {ROTATING_MESSAGES.map((msg, idx) => (
-            <button
-              key={msg.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentIndex(idx);
-                setAnimationState('visible');
-              }}
-              aria-label={`Jump to message ${idx + 1}`}
-              className={`transition-all duration-300 rounded-full cursor-pointer ${
-                idx === currentIndex
-                  ? 'w-4 h-1.5 bg-white shadow-2xs'
-                  : 'w-1.5 h-1.5 bg-white/35 hover:bg-white/70'
-              }`}
-            />
-          ))}
         </div>
       </div>
     </div>

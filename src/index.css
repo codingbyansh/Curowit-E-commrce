@@ -102,3 +102,41 @@
   transform: rotateY(180deg);
 }
 
+/* Subtle Heart-Throb Wishlist Animation */
+@keyframes heartThrob {
+  0% {
+    transform: scale(1);
+  }
+  22% {
+    transform: scale(1.32);
+  }
+  44% {
+    transform: scale(0.92);
+  }
+  68% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes heartRipple {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.65);
+    opacity: 0;
+  }
+}
+
+.animate-heart-throb {
+  animation: heartThrob 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.animate-heart-ripple {
+  animation: heartRipple 620ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
