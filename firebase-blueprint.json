@@ -1,0 +1,620 @@
+{
+  "entities": {
+    "Admin": {
+      "title": "Admin",
+      "description": "Administrator registry document granting storefront management privileges.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Verified administrator email address.",
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when admin record was created."
+        }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Handmade artisan product listed publicly on the Curowit storefront.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128,
+          "description": "Unique product identifier."
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"],
+          "maxLength": 16,
+          "description": "Public visibility marker for storefront queries."
+        },
+        "cmsAccessKey": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "CMS passkey token verifying authorized storefront mutation."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Product display title."
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Product craft category."
+        },
+        "price": {
+          "type": "number",
+          "description": "Selling price in INR."
+        },
+        "originalPrice": {
+          "type": "number",
+          "description": "Original MRP in INR."
+        },
+        "discountBadge": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "Optional promotional discount badge label."
+        },
+        "rating": {
+          "type": "number",
+          "description": "Average customer rating."
+        },
+        "reviewCount": {
+          "type": "number",
+          "description": "Total number of verified reviews."
+        },
+        "creatorId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "ID of the artisan creator."
+        },
+        "creatorName": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Display name of the artisan creator."
+        },
+        "creatorAvatar": {
+          "type": "string",
+          "maxLength": 500000,
+          "description": "Avatar URL or data URI of the artisan."
+        },
+        "creatorSpecialty": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Craft specialty subtitle of the artisan."
+        },
+        "image": {
+          "type": "string",
+          "maxLength": 700000,
+          "description": "Primary product image URL or compressed data URI."
+        },
+        "gallery": {
+          "type": "array",
+          "description": "Bounded list of up to 10 product gallery image URLs."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "Detailed product description."
+        },
+        "materials": {
+          "type": "array",
+          "description": "Bounded list of up to 10 craft materials."
+        },
+        "dimensions": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Product physical dimensions."
+        },
+        "careInstructions": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Care and maintenance instructions."
+        },
+        "shippingInfo": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Shipping timeline and packaging details."
+        },
+        "returnsInfo": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Returns and replacement policy."
+        },
+        "inStock": {
+          "type": "boolean",
+          "description": "Whether the item is currently available."
+        },
+        "featured": {
+          "type": "boolean",
+          "description": "Whether the product is featured on the homepage."
+        },
+        "trending": {
+          "type": "boolean",
+          "description": "Whether the product appears in the trending marquee."
+        },
+        "newArrival": {
+          "type": "boolean",
+          "description": "Whether the product is marked as a new arrival."
+        },
+        "personalizationAvailable": {
+          "type": "boolean",
+          "description": "Whether custom personalization is offered."
+        },
+        "personalizationPlaceholder": {
+          "type": "string",
+          "maxLength": 250,
+          "description": "Prompt shown for personalization input."
+        },
+        "tags": {
+          "type": "array",
+          "description": "Bounded list of up to 10 search tags."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when product was last saved."
+        }
+      },
+      "required": [
+        "id",
+        "visibility",
+        "cmsAccessKey",
+        "name",
+        "category",
+        "price",
+        "rating",
+        "reviewCount",
+        "creatorId",
+        "creatorName",
+        "creatorAvatar",
+        "creatorSpecialty",
+        "image",
+        "gallery",
+        "description",
+        "materials",
+        "shippingInfo",
+        "returnsInfo",
+        "inStock",
+        "tags",
+        "updatedAt"
+      ]
+    },
+    "Creator": {
+      "title": "Creator",
+      "description": "Independent artisan creator profile listed publicly on Curowit.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"],
+          "maxLength": 16
+        },
+        "cmsAccessKey": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "handle": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "avatar": {
+          "type": "string",
+          "maxLength": 700000
+        },
+        "bio": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "specialty": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "location": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "rating": {
+          "type": "number"
+        },
+        "salesCount": {
+          "type": "number"
+        },
+        "joinedYear": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "story": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "badge": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "visibility",
+        "cmsAccessKey",
+        "name",
+        "handle",
+        "avatar",
+        "bio",
+        "specialty",
+        "location",
+        "rating",
+        "salesCount",
+        "joinedYear",
+        "story",
+        "updatedAt"
+      ]
+    },
+    "Workshop": {
+      "title": "Workshop",
+      "description": "Live online or studio craft workshop session.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"],
+          "maxLength": 16
+        },
+        "cmsAccessKey": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "creatorName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "date": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "time": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "duration": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "format": {
+          "type": "string",
+          "enum": ["Live Online", "Studio Offline"],
+          "maxLength": 40
+        },
+        "location": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "price": {
+          "type": "number"
+        },
+        "seatsLeft": {
+          "type": "number"
+        },
+        "image": {
+          "type": "string",
+          "maxLength": 700000
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "visibility",
+        "cmsAccessKey",
+        "title",
+        "creatorName",
+        "date",
+        "time",
+        "duration",
+        "format",
+        "price",
+        "seatsLeft",
+        "image",
+        "description",
+        "updatedAt"
+      ]
+    },
+    "Story": {
+      "title": "Story",
+      "description": "Editorial story and maker journal article.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"],
+          "maxLength": 16
+        },
+        "cmsAccessKey": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "subtitle": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "author": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "date": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "readTime": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "tag": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "image": {
+          "type": "string",
+          "maxLength": 700000
+        },
+        "excerpt": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "visibility",
+        "cmsAccessKey",
+        "title",
+        "subtitle",
+        "author",
+        "date",
+        "readTime",
+        "tag",
+        "image",
+        "excerpt",
+        "updatedAt"
+      ]
+    },
+    "HeroSlide": {
+      "title": "HeroSlide",
+      "description": "Homepage hero carousel slide banner.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"],
+          "maxLength": 16
+        },
+        "cmsAccessKey": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "image": {
+          "type": "string",
+          "maxLength": 750000
+        },
+        "alt": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "action": {
+          "type": "string",
+          "enum": ["shop-handmade", "shop-creators", "explore-all"],
+          "maxLength": 40
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "visibility", "cmsAccessKey", "image", "alt", "action", "updatedAt"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Top announcement ticker item.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"],
+          "maxLength": 16
+        },
+        "cmsAccessKey": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "shortText": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "longText": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "icon": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "bgGradient": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "sparkleColor": {
+          "type": "string",
+          "maxLength": 30
+        },
+        "highlightTag": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "visibility",
+        "cmsAccessKey",
+        "shortText",
+        "longText",
+        "icon",
+        "bgGradient",
+        "sparkleColor",
+        "updatedAt"
+      ]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order record managed in the Admin CMS.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "cmsAccessKey": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "date": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "total": {
+          "type": "number"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Confirmed", "Crafting", "Dispatched", "Delivered"],
+          "maxLength": 30
+        },
+        "customerName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "city": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "itemsSummary": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "cmsAccessKey",
+        "date",
+        "total",
+        "status",
+        "customerName",
+        "city",
+        "itemsSummary",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Trusted administrator lookup collection."
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Public storefront products collection."
+    },
+    "/creators/{creatorId}": {
+      "schema": { "$ref": "#/entities/Creator" },
+      "description": "Public storefront artisan creators collection."
+    },
+    "/workshops/{workshopId}": {
+      "schema": { "$ref": "#/entities/Workshop" },
+      "description": "Public storefront workshops collection."
+    },
+    "/stories/{storyId}": {
+      "schema": { "$ref": "#/entities/Story" },
+      "description": "Public storefront stories collection."
+    },
+    "/hero_slides/{slideId}": {
+      "schema": { "$ref": "#/entities/HeroSlide" },
+      "description": "Public homepage hero banner slides collection."
+    },
+    "/announcements/{announcementId}": {
+      "schema": { "$ref": "#/entities/Announcement" },
+      "description": "Public top announcement bar items collection."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Storefront order records managed via Admin CMS."
+    }
+  }
+}

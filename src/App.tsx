@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { Header } from './components/navigation/Header';
+import { BreadcrumbNav } from './components/navigation/BreadcrumbNav';
 import { MobileBottomNav } from './components/navigation/MobileBottomNav';
 import { Footer } from './components/layout/Footer';
 
@@ -62,6 +63,7 @@ const MainContent: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-[#F7EBD7] text-[#173B3D]">
       <Header />
+      <BreadcrumbNav />
 
       <main className="flex-1">
         {activeView === 'home' && (

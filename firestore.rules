@@ -1,0 +1,344 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'anshsingh.cse@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function hasCmsPasskey(data) {
+      return data.cmsAccessKey is string && data.cmsAccessKey.size() == 9 && data.cmsAccessKey == 'ansh@siya';
+    }
+
+    function isValidBoundedStringArray(arr) {
+      return arr is list && arr.size() <= 10 && (arr.size() == 0 || (arr[0] is string && arr[0].size() <= 700000));
+    }
+
+    // Validation Blueprint: Product
+    function isValidProduct(data) {
+      return data.keys().hasAll([
+        'id', 'visibility', 'cmsAccessKey', 'name', 'category', 'price',
+        'rating', 'reviewCount', 'creatorId', 'creatorName', 'creatorAvatar',
+        'creatorSpecialty', 'image', 'gallery', 'description', 'materials',
+        'shippingInfo', 'returnsInfo', 'inStock', 'tags', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'visibility', 'cmsAccessKey', 'name', 'category', 'price',
+        'originalPrice', 'discountBadge', 'rating', 'reviewCount',
+        'creatorId', 'creatorName', 'creatorAvatar', 'creatorSpecialty',
+        'image', 'gallery', 'description', 'materials', 'dimensions',
+        'careInstructions', 'shippingInfo', 'returnsInfo', 'inStock',
+        'featured', 'trending', 'newArrival', 'personalizationAvailable',
+        'personalizationPlaceholder', 'tags', 'updatedAt'
+      ]) &&
+      isValidId(data.id) &&
+      data.visibility is string && data.visibility.size() == 6 && data.visibility == 'public' &&
+      hasCmsPasskey(data) &&
+      data.name is string && data.name.size() >= 1 && data.name.size() <= 200 &&
+      data.category is string && data.category.size() >= 1 && data.category.size() <= 100 &&
+      data.price is number && data.price >= 0 &&
+      (!('originalPrice' in data) || (data.originalPrice is number && data.originalPrice >= 0)) &&
+      (!('discountBadge' in data) || (data.discountBadge is string && data.discountBadge.size() <= 60)) &&
+      data.rating is number && data.rating >= 0 && data.rating <= 5 &&
+      data.reviewCount is number && data.reviewCount >= 0 &&
+      data.creatorId is string && data.creatorId.size() >= 1 && data.creatorId.size() <= 128 &&
+      data.creatorName is string && data.creatorName.size() >= 1 && data.creatorName.size() <= 120 &&
+      data.creatorAvatar is string && data.creatorAvatar.size() >= 1 && data.creatorAvatar.size() <= 500000 &&
+      data.creatorSpecialty is string && data.creatorSpecialty.size() <= 200 &&
+      data.image is string && data.image.size() >= 1 && data.image.size() <= 700000 &&
+      isValidBoundedStringArray(data.gallery) &&
+      data.description is string && data.description.size() <= 2000 &&
+      isValidBoundedStringArray(data.materials) &&
+      (!('dimensions' in data) || (data.dimensions is string && data.dimensions.size() <= 200)) &&
+      (!('careInstructions' in data) || (data.careInstructions is string && data.careInstructions.size() <= 500)) &&
+      data.shippingInfo is string && data.shippingInfo.size() <= 500 &&
+      data.returnsInfo is string && data.returnsInfo.size() <= 500 &&
+      data.inStock is bool &&
+      (!('featured' in data) || data.featured is bool) &&
+      (!('trending' in data) || data.trending is bool) &&
+      (!('newArrival' in data) || data.newArrival is bool) &&
+      (!('personalizationAvailable' in data) || data.personalizationAvailable is bool) &&
+      (!('personalizationPlaceholder' in data) || (data.personalizationPlaceholder is string && data.personalizationPlaceholder.size() <= 250)) &&
+      isValidBoundedStringArray(data.tags) &&
+      data.updatedAt == request.time;
+    }
+
+    // Validation Blueprint: Creator
+    function isValidCreator(data) {
+      return data.keys().hasAll([
+        'id', 'visibility', 'cmsAccessKey', 'name', 'handle', 'avatar',
+        'bio', 'specialty', 'location', 'rating', 'salesCount', 'joinedYear',
+        'story', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'visibility', 'cmsAccessKey', 'name', 'handle', 'avatar',
+        'bio', 'specialty', 'location', 'rating', 'salesCount', 'joinedYear',
+        'story', 'badge', 'updatedAt'
+      ]) &&
+      isValidId(data.id) &&
+      data.visibility is string && data.visibility.size() == 6 && data.visibility == 'public' &&
+      hasCmsPasskey(data) &&
+      data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+      data.handle is string && data.handle.size() <= 80 &&
+      data.avatar is string && data.avatar.size() >= 1 && data.avatar.size() <= 700000 &&
+      data.bio is string && data.bio.size() <= 2000 &&
+      data.specialty is string && data.specialty.size() <= 200 &&
+      data.location is string && data.location.size() <= 120 &&
+      data.rating is number && data.rating >= 0 && data.rating <= 5 &&
+      data.salesCount is number && data.salesCount >= 0 &&
+      data.joinedYear is string && data.joinedYear.size() <= 16 &&
+      data.story is string && data.story.size() <= 2000 &&
+      (!('badge' in data) || (data.badge is string && data.badge.size() <= 80)) &&
+      data.updatedAt == request.time;
+    }
+
+    // Validation Blueprint: Workshop
+    function isValidWorkshop(data) {
+      return data.keys().hasAll([
+        'id', 'visibility', 'cmsAccessKey', 'title', 'creatorName',
+        'date', 'time', 'duration', 'format', 'price', 'seatsLeft',
+        'image', 'description', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'visibility', 'cmsAccessKey', 'title', 'creatorName',
+        'date', 'time', 'duration', 'format', 'location', 'price',
+        'seatsLeft', 'image', 'description', 'updatedAt'
+      ]) &&
+      isValidId(data.id) &&
+      data.visibility is string && data.visibility.size() == 6 && data.visibility == 'public' &&
+      hasCmsPasskey(data) &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+      data.creatorName is string && data.creatorName.size() <= 120 &&
+      data.date is string && data.date.size() <= 80 &&
+      data.time is string && data.time.size() <= 80 &&
+      data.duration is string && data.duration.size() <= 60 &&
+      data.format is string && data.format.size() <= 40 && data.format in ['Live Online', 'Studio Offline'] &&
+      (!('location' in data) || (data.location is string && data.location.size() <= 200)) &&
+      data.price is number && data.price >= 0 &&
+      data.seatsLeft is number && data.seatsLeft >= 0 &&
+      data.image is string && data.image.size() >= 1 && data.image.size() <= 700000 &&
+      data.description is string && data.description.size() <= 2000 &&
+      data.updatedAt == request.time;
+    }
+
+    // Validation Blueprint: Story
+    function isValidStory(data) {
+      return data.keys().hasAll([
+        'id', 'visibility', 'cmsAccessKey', 'title', 'subtitle',
+        'author', 'date', 'readTime', 'tag', 'image', 'excerpt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'visibility', 'cmsAccessKey', 'title', 'subtitle',
+        'author', 'date', 'readTime', 'tag', 'image', 'excerpt', 'updatedAt'
+      ]) &&
+      isValidId(data.id) &&
+      data.visibility is string && data.visibility.size() == 6 && data.visibility == 'public' &&
+      hasCmsPasskey(data) &&
+      data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+      data.subtitle is string && data.subtitle.size() <= 150 &&
+      data.author is string && data.author.size() <= 120 &&
+      data.date is string && data.date.size() <= 60 &&
+      data.readTime is string && data.readTime.size() <= 40 &&
+      data.tag is string && data.tag.size() <= 80 &&
+      data.image is string && data.image.size() >= 1 && data.image.size() <= 700000 &&
+      data.excerpt is string && data.excerpt.size() <= 2000 &&
+      data.updatedAt == request.time;
+    }
+
+    // Validation Blueprint: HeroSlide
+    function isValidHeroSlide(data) {
+      return data.keys().hasAll([
+        'id', 'visibility', 'cmsAccessKey', 'image', 'alt', 'action', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'visibility', 'cmsAccessKey', 'image', 'alt', 'action', 'updatedAt'
+      ]) &&
+      data.id is number && data.id >= 0 && data.id <= 100 &&
+      data.visibility is string && data.visibility.size() == 6 && data.visibility == 'public' &&
+      hasCmsPasskey(data) &&
+      data.image is string && data.image.size() >= 1 && data.image.size() <= 750000 &&
+      data.alt is string && data.alt.size() <= 300 &&
+      data.action is string && data.action.size() <= 40 && data.action in ['shop-handmade', 'shop-creators', 'explore-all'] &&
+      data.updatedAt == request.time;
+    }
+
+    // Validation Blueprint: Announcement
+    function isValidAnnouncement(data) {
+      return data.keys().hasAll([
+        'id', 'visibility', 'cmsAccessKey', 'shortText', 'longText',
+        'icon', 'bgGradient', 'sparkleColor', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'visibility', 'cmsAccessKey', 'shortText', 'longText',
+        'icon', 'bgGradient', 'sparkleColor', 'highlightTag', 'updatedAt'
+      ]) &&
+      data.id is number && data.id >= 0 && data.id <= 100 &&
+      data.visibility is string && data.visibility.size() == 6 && data.visibility == 'public' &&
+      hasCmsPasskey(data) &&
+      data.shortText is string && data.shortText.size() >= 1 && data.shortText.size() <= 150 &&
+      data.longText is string && data.longText.size() >= 1 && data.longText.size() <= 300 &&
+      data.icon is string && data.icon.size() <= 20 &&
+      data.bgGradient is string && data.bgGradient.size() <= 120 &&
+      data.sparkleColor is string && data.sparkleColor.size() <= 30 &&
+      (!('highlightTag' in data) || (data.highlightTag is string && data.highlightTag.size() <= 80)) &&
+      data.updatedAt == request.time;
+    }
+
+    // Validation Blueprint: Order
+    function isValidOrder(data) {
+      return data.keys().hasAll([
+        'id', 'cmsAccessKey', 'date', 'total', 'status',
+        'customerName', 'city', 'itemsSummary', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'cmsAccessKey', 'date', 'total', 'status',
+        'customerName', 'city', 'itemsSummary', 'updatedAt'
+      ]) &&
+      isValidId(data.id) &&
+      hasCmsPasskey(data) &&
+      data.date is string && data.date.size() <= 60 &&
+      data.total is number && data.total >= 0 &&
+      data.status is string && data.status.size() <= 30 && data.status in ['Confirmed', 'Crafting', 'Dispatched', 'Delivered'] &&
+      data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 120 &&
+      data.city is string && data.city.size() <= 120 &&
+      data.itemsSummary is string && data.itemsSummary.size() <= 1000 &&
+      data.updatedAt == request.time;
+    }
+
+    // Admin Registry
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && isAdmin();
+      allow list, create, update, delete: if false;
+    }
+
+    // Public Storefront Products
+    match /products/{productId} {
+      allow get: if isValidId(productId) && existing().visibility == 'public';
+      allow list: if existing().visibility == 'public';
+      allow create: if isValidId(productId) && isValidProduct(incoming()) && incoming().id == productId;
+      allow update: if isValidId(productId) && isValidProduct(incoming()) && incoming().id == existing().id && (
+        isAdmin() ||
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'category', 'price', 'originalPrice', 'discountBadge',
+          'rating', 'reviewCount', 'creatorId', 'creatorName', 'creatorAvatar',
+          'creatorSpecialty', 'image', 'gallery', 'description', 'materials',
+          'dimensions', 'careInstructions', 'shippingInfo', 'returnsInfo',
+          'inStock', 'featured', 'trending', 'newArrival',
+          'personalizationAvailable', 'personalizationPlaceholder', 'tags', 'updatedAt', 'cmsAccessKey'
+        ])
+      );
+      allow delete: if isValidId(productId) && (isAdmin() || existing().cmsAccessKey == 'ansh@siya');
+    }
+
+    // Public Storefront Creators
+    match /creators/{creatorId} {
+      allow get: if isValidId(creatorId) && existing().visibility == 'public';
+      allow list: if existing().visibility == 'public';
+      allow create: if isValidId(creatorId) && isValidCreator(incoming()) && incoming().id == creatorId;
+      allow update: if isValidId(creatorId) && isValidCreator(incoming()) && incoming().id == existing().id && (
+        isAdmin() ||
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'handle', 'avatar', 'bio', 'specialty', 'location',
+          'rating', 'salesCount', 'joinedYear', 'story', 'badge', 'updatedAt', 'cmsAccessKey'
+        ])
+      );
+      allow delete: if isValidId(creatorId) && (isAdmin() || existing().cmsAccessKey == 'ansh@siya');
+    }
+
+    // Public Storefront Workshops
+    match /workshops/{workshopId} {
+      allow get: if isValidId(workshopId) && existing().visibility == 'public';
+      allow list: if existing().visibility == 'public';
+      allow create: if isValidId(workshopId) && isValidWorkshop(incoming()) && incoming().id == workshopId;
+      allow update: if isValidId(workshopId) && isValidWorkshop(incoming()) && incoming().id == existing().id && (
+        isAdmin() ||
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'creatorName', 'date', 'time', 'duration', 'format',
+          'location', 'price', 'seatsLeft', 'image', 'description', 'updatedAt', 'cmsAccessKey'
+        ])
+      );
+      allow delete: if isValidId(workshopId) && (isAdmin() || existing().cmsAccessKey == 'ansh@siya');
+    }
+
+    // Public Storefront Stories
+    match /stories/{storyId} {
+      allow get: if isValidId(storyId) && existing().visibility == 'public';
+      allow list: if existing().visibility == 'public';
+      allow create: if isValidId(storyId) && isValidStory(incoming()) && incoming().id == storyId;
+      allow update: if isValidId(storyId) && isValidStory(incoming()) && incoming().id == existing().id && (
+        isAdmin() ||
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'subtitle', 'author', 'date', 'readTime',
+          'tag', 'image', 'excerpt', 'updatedAt', 'cmsAccessKey'
+        ])
+      );
+      allow delete: if isValidId(storyId) && (isAdmin() || existing().cmsAccessKey == 'ansh@siya');
+    }
+
+    // Public Homepage Hero Slides
+    match /hero_slides/{slideId} {
+      allow get: if isValidId(slideId) && existing().visibility == 'public';
+      allow list: if existing().visibility == 'public';
+      allow create: if isValidId(slideId) && isValidHeroSlide(incoming());
+      allow update: if isValidId(slideId) && isValidHeroSlide(incoming()) && incoming().id == existing().id && (
+        isAdmin() ||
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'image', 'alt', 'action', 'updatedAt', 'cmsAccessKey'
+        ])
+      );
+      allow delete: if isValidId(slideId) && (isAdmin() || existing().cmsAccessKey == 'ansh@siya');
+    }
+
+    // Public Top Announcements
+    match /announcements/{announcementId} {
+      allow get: if isValidId(announcementId) && existing().visibility == 'public';
+      allow list: if existing().visibility == 'public';
+      allow create: if isValidId(announcementId) && isValidAnnouncement(incoming());
+      allow update: if isValidId(announcementId) && isValidAnnouncement(incoming()) && incoming().id == existing().id && (
+        isAdmin() ||
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'shortText', 'longText', 'icon', 'bgGradient', 'sparkleColor', 'highlightTag', 'updatedAt', 'cmsAccessKey'
+        ])
+      );
+      allow delete: if isValidId(announcementId) && (isAdmin() || existing().cmsAccessKey == 'ansh@siya');
+    }
+
+    // Storefront Orders (Admin CMS Managed)
+    match /orders/{orderId} {
+      allow get: if isValidId(orderId) && existing().cmsAccessKey == 'ansh@siya';
+      allow list: if existing().cmsAccessKey == 'ansh@siya';
+      allow create: if isValidId(orderId) && isValidOrder(incoming()) && incoming().id == orderId;
+      allow update: if isValidId(orderId) && isValidOrder(incoming()) && incoming().id == existing().id && (
+        isAdmin() ||
+        (existing().status != 'Delivered' &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt', 'cmsAccessKey']))
+      );
+      allow delete: if isValidId(orderId) && (isAdmin() || existing().cmsAccessKey == 'ansh@siya');
+    }
+  }
+}

@@ -1,4 +1,16 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import {
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  where,
+  serverTimestamp,
+  getDocs,
+} from 'firebase/firestore';
+import { db, handleFirestoreError, OperationType } from '../firebase';
 import {
   Product,
   PRODUCTS,
@@ -438,6 +450,278 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Toasts
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const hasSeededCloudRef = useRef(false);
+
+  // Payload sanitizers matching firebase-blueprint.json & firestore.rules
+  const buildProductPayload = (p: Product) => {
+    const payload: Record<string, any> = {
+      id: String(p.id).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 128),
+      visibility: 'public',
+      cmsAccessKey: MASTER_PASSKEY,
+      name: String(p.name || 'Handmade Creation').slice(0, 200),
+      category: String(p.category || 'Handmade').slice(0, 100),
+      price: Math.max(0, Number(p.price) || 0),
+      rating: Math.min(5, Math.max(0, Number(p.rating) || 4.9)),
+      reviewCount: Math.max(0, Number(p.reviewCount) || 0),
+      creatorId: String(p.creatorId || 'siya').slice(0, 128),
+      creatorName: String(p.creatorName || "Siya's Creations").slice(0, 120),
+      creatorAvatar: normalizeImageUrl(p.creatorAvatar || '/images/hero_creators_1790260990626.jpg').slice(0, 500000),
+      creatorSpecialty: String(p.creatorSpecialty || 'Handmade Artisan').slice(0, 200),
+      image: normalizeImageUrl(p.image || '/images/hero_handmade_1790260978568.jpg').slice(0, 700000),
+      gallery: (p.gallery && p.gallery.length > 0 ? p.gallery : [p.image]).slice(0, 10).map((g) => normalizeImageUrl(g).slice(0, 700000)),
+      description: String(p.description || '').slice(0, 2000),
+      materials: (p.materials || ['Handmade Craft Material']).slice(0, 10).map((m) => String(m).slice(0, 200)),
+      shippingInfo: String(p.shippingInfo || 'Dispatched in 2-3 business days.').slice(0, 500),
+      returnsInfo: String(p.returnsInfo || '7-day easy replacement.').slice(0, 500),
+      inStock: Boolean(p.inStock ?? true),
+      tags: (p.tags || ['handmade']).slice(0, 10).map((t) => String(t).slice(0, 80)),
+      updatedAt: serverTimestamp(),
+    };
+    if (typeof p.originalPrice === 'number' && p.originalPrice >= 0) payload.originalPrice = p.originalPrice;
+    if (p.discountBadge) payload.discountBadge = String(p.discountBadge).slice(0, 60);
+    if (p.dimensions) payload.dimensions = String(p.dimensions).slice(0, 200);
+    if (p.careInstructions) payload.careInstructions = String(p.careInstructions).slice(0, 500);
+    if (typeof p.featured === 'boolean') payload.featured = p.featured;
+    if (typeof p.trending === 'boolean') payload.trending = p.trending;
+    if (typeof p.newArrival === 'boolean') payload.newArrival = p.newArrival;
+    if (typeof p.personalizationAvailable === 'boolean') payload.personalizationAvailable = p.personalizationAvailable;
+    if (p.personalizationPlaceholder) payload.personalizationPlaceholder = String(p.personalizationPlaceholder).slice(0, 250);
+    return payload;
+  };
+
+  const buildCreatorPayload = (c: Creator) => {
+    const payload: Record<string, any> = {
+      id: String(c.id).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 128),
+      visibility: 'public',
+      cmsAccessKey: MASTER_PASSKEY,
+      name: String(c.name || 'Artisan').slice(0, 120),
+      handle: String(c.handle || '@artisan').slice(0, 80),
+      avatar: normalizeImageUrl(c.avatar || '/images/hero_creators_1790260990626.jpg').slice(0, 700000),
+      bio: String(c.bio || c.story || '').slice(0, 2000),
+      specialty: String(c.specialty || 'Handmade Craft').slice(0, 200),
+      location: String(c.location || 'India').slice(0, 120),
+      rating: Math.min(5, Math.max(0, Number(c.rating) || 4.9)),
+      salesCount: Math.max(0, Number(c.salesCount) || 0),
+      joinedYear: String(c.joinedYear || '2025').slice(0, 16),
+      story: String(c.story || c.bio || '').slice(0, 2000),
+      updatedAt: serverTimestamp(),
+    };
+    if (c.badge) payload.badge = String(c.badge).slice(0, 80);
+    return payload;
+  };
+
+  const buildWorkshopPayload = (w: Workshop) => {
+    const payload: Record<string, any> = {
+      id: String(w.id).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 128),
+      visibility: 'public',
+      cmsAccessKey: MASTER_PASSKEY,
+      title: String(w.title || 'Craft Workshop').slice(0, 200),
+      creatorName: String(w.creatorName || 'Curowit Artisan').slice(0, 120),
+      date: String(w.date || 'Upcoming').slice(0, 80),
+      time: String(w.time || '4:00 PM IST').slice(0, 80),
+      duration: String(w.duration || '2 Hours').slice(0, 60),
+      format: w.format === 'Studio Offline' ? 'Studio Offline' : 'Live Online',
+      price: Math.max(0, Number(w.price) || 0),
+      seatsLeft: Math.max(0, Number(w.seatsLeft) || 0),
+      image: normalizeImageUrl(w.image || '/images/hero_handmade_1790260978568.jpg').slice(0, 700000),
+      description: String(w.description || '').slice(0, 2000),
+      updatedAt: serverTimestamp(),
+    };
+    if (w.location) payload.location = String(w.location).slice(0, 200);
+    return payload;
+  };
+
+  const buildStoryPayload = (s: Story) => ({
+    id: String(s.id).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 128),
+    visibility: 'public',
+    cmsAccessKey: MASTER_PASSKEY,
+    title: String(s.title || 'Studio Story').slice(0, 200),
+    subtitle: String(s.subtitle || 'Studio Journal').slice(0, 150),
+    author: String(s.author || 'Curowit Editorial').slice(0, 120),
+    date: String(s.date || 'Sep 2026').slice(0, 60),
+    readTime: String(s.readTime || '4 min read').slice(0, 40),
+    tag: String(s.tag || 'Craft Journey').slice(0, 80),
+    image: normalizeImageUrl(s.image || '/images/hero_creators_1790260990626.jpg').slice(0, 700000),
+    excerpt: String(s.excerpt || '').slice(0, 2000),
+    updatedAt: serverTimestamp(),
+  });
+
+  const buildHeroSlidePayload = (s: HeroBannerSlide, index: number) => ({
+    id: typeof s.id === 'number' ? s.id : index,
+    visibility: 'public',
+    cmsAccessKey: MASTER_PASSKEY,
+    image: normalizeImageUrl(s.image).slice(0, 750000),
+    alt: String(s.alt || 'Curowit Campaign Banner').slice(0, 300),
+    action: ['shop-handmade', 'shop-creators', 'explore-all'].includes(s.action)
+      ? s.action
+      : 'explore-all',
+    updatedAt: serverTimestamp(),
+  });
+
+  const buildAnnouncementPayload = (a: TickerItem, index: number) => {
+    const payload: Record<string, any> = {
+      id: typeof a.id === 'number' ? a.id : index,
+      visibility: 'public',
+      cmsAccessKey: MASTER_PASSKEY,
+      shortText: String(a.shortText || 'Discover Curowit').slice(0, 150),
+      longText: String(a.longText || a.shortText || 'Discover Curowit').slice(0, 300),
+      icon: String(a.icon || '✨').slice(0, 20),
+      bgGradient: String(a.bgGradient || 'from-[#07545A] via-[#0A6B74] to-[#159BB5]').slice(0, 120),
+      sparkleColor: String(a.sparkleColor || '#FFC83D').slice(0, 30),
+      updatedAt: serverTimestamp(),
+    };
+    if (a.highlightTag) payload.highlightTag = String(a.highlightTag).slice(0, 80);
+    return payload;
+  };
+
+  // Real-time Firestore listeners for public storefront synchronization across all devices
+  useEffect(() => {
+    const unsubProducts = onSnapshot(
+      query(collection(db, 'products'), where('visibility', '==', 'public')),
+      async (snapshot) => {
+        if (snapshot.empty && !hasSeededCloudRef.current) {
+          hasSeededCloudRef.current = true;
+          try {
+            await Promise.all(
+              PRODUCTS.map((p) => {
+                const payload = buildProductPayload(p);
+                return setDoc(doc(db, 'products', payload.id), payload);
+              })
+            );
+            await Promise.all(
+              CREATORS.map((c) => {
+                const payload = buildCreatorPayload(c);
+                return setDoc(doc(db, 'creators', payload.id), payload);
+              })
+            );
+            await Promise.all(
+              WORKSHOPS.map((w) => {
+                const payload = buildWorkshopPayload(w);
+                return setDoc(doc(db, 'workshops', payload.id), payload);
+              })
+            );
+            await Promise.all(
+              STORIES.map((s) => {
+                const payload = buildStoryPayload(s);
+                return setDoc(doc(db, 'stories', payload.id), payload);
+              })
+            );
+            await Promise.all(
+              DEFAULT_HERO_SLIDES.map((s, idx) => {
+                const payload = buildHeroSlidePayload(s, idx);
+                return setDoc(doc(db, 'hero_slides', `slide-${payload.id}`), payload);
+              })
+            );
+            await Promise.all(
+              DEFAULT_ANNOUNCEMENTS.map((a, idx) => {
+                const payload = buildAnnouncementPayload(a, idx);
+                return setDoc(doc(db, 'announcements', `ann-${payload.id}`), payload);
+              })
+            );
+          } catch (error) {
+            console.error('Initial cloud seed error:', error);
+          }
+          return;
+        }
+        if (!snapshot.empty) {
+          const loaded = snapshot.docs.map((d) => {
+            const data = d.data() as Product;
+            return {
+              ...data,
+              image: normalizeImageUrl(data.image),
+              creatorAvatar: normalizeImageUrl(data.creatorAvatar),
+              gallery: (data.gallery || []).map(normalizeImageUrl),
+            };
+          });
+          setProducts(loaded);
+        }
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, 'products')
+    );
+
+    const unsubCreators = onSnapshot(
+      query(collection(db, 'creators'), where('visibility', '==', 'public')),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          setCreators(
+            snapshot.docs.map((d) => {
+              const data = d.data() as Creator;
+              return { ...data, avatar: normalizeImageUrl(data.avatar) };
+            })
+          );
+        }
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, 'creators')
+    );
+
+    const unsubWorkshops = onSnapshot(
+      query(collection(db, 'workshops'), where('visibility', '==', 'public')),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          setWorkshops(
+            snapshot.docs.map((d) => {
+              const data = d.data() as Workshop;
+              return { ...data, image: normalizeImageUrl(data.image) };
+            })
+          );
+        }
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, 'workshops')
+    );
+
+    const unsubStories = onSnapshot(
+      query(collection(db, 'stories'), where('visibility', '==', 'public')),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          setStories(
+            snapshot.docs.map((d) => {
+              const data = d.data() as Story;
+              return { ...data, image: normalizeImageUrl(data.image) };
+            })
+          );
+        }
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, 'stories')
+    );
+
+    const unsubHeroSlides = onSnapshot(
+      query(collection(db, 'hero_slides'), where('visibility', '==', 'public')),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const loaded = snapshot.docs
+            .map((d) => {
+              const data = d.data() as HeroBannerSlide;
+              return { ...data, image: normalizeImageUrl(data.image) };
+            })
+            .sort((a, b) => a.id - b.id);
+          setHeroSlides(loaded);
+        }
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, 'hero_slides')
+    );
+
+    const unsubAnnouncements = onSnapshot(
+      query(collection(db, 'announcements'), where('visibility', '==', 'public')),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const loaded = snapshot.docs
+            .map((d) => d.data() as TickerItem)
+            .sort((a, b) => a.id - b.id);
+          setAnnouncements(loaded);
+        }
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, 'announcements')
+    );
+
+    return () => {
+      unsubProducts();
+      unsubCreators();
+      unsubWorkshops();
+      unsubStories();
+      unsubHeroSlides();
+      unsubAnnouncements();
+    };
+  }, []);
 
   // Synchronize localStorage
   useEffect(() => {
@@ -657,92 +941,148 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast('Admin Panel Locked', 'Security session terminated');
   };
 
-  // Product CRUD
+  // Product CRUD (Synced globally via Firestore)
   const addProduct = (productData: Omit<Product, 'id'> & { id?: string }) => {
+    const cleanId = (productData.id || `prod-${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 128);
     const newProduct: Product = {
       ...productData,
-      id: productData.id || `prod-${Date.now()}`,
+      id: cleanId,
     };
     setProducts((prev) => [newProduct, ...prev]);
-    showToast('Product Created', `Added "${newProduct.name}" to storefront catalog`);
+    const payload = buildProductPayload(newProduct);
+    setDoc(doc(db, 'products', cleanId), payload).catch((error) =>
+      handleFirestoreError(error, OperationType.CREATE, `products/${cleanId}`)
+    );
+    showToast('Product Created', `Published "${newProduct.name}" globally across all devices`);
   };
 
   const updateProduct = (id: string, updated: Partial<Product>) => {
-    setProducts((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...updated } : item))
+    const existingItem = products.find((p) => p.id === id);
+    const merged: Product = existingItem
+      ? { ...existingItem, ...updated, id }
+      : ({ ...updated, id } as Product);
+    setProducts((prev) => prev.map((item) => (item.id === id ? merged : item)));
+    const payload = buildProductPayload(merged);
+    setDoc(doc(db, 'products', id), payload).catch((error) =>
+      handleFirestoreError(error, OperationType.UPDATE, `products/${id}`)
     );
-    showToast('Product Updated', 'Changes reflected live across storefront');
+    showToast('Product Updated', 'Changes synced live across the public storefront');
   };
 
   const deleteProduct = (id: string) => {
     setProducts((prev) => prev.filter((item) => item.id !== id));
-    showToast('Product Removed', 'Removed from store catalog');
+    deleteDoc(doc(db, 'products', id)).catch((error) =>
+      handleFirestoreError(error, OperationType.DELETE, `products/${id}`)
+    );
+    showToast('Product Removed', 'Removed globally from storefront catalog');
   };
 
-  // Creator CRUD
+  // Creator CRUD (Synced globally via Firestore)
   const addCreator = (creatorData: Omit<Creator, 'id'> & { id?: string }) => {
+    const cleanId = (creatorData.id || `creator-${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 128);
     const newCreator: Creator = {
       ...creatorData,
-      id: creatorData.id || `creator-${Date.now()}`,
+      id: cleanId,
     };
     setCreators((prev) => [...prev, newCreator]);
-    showToast('Artisan Added', `Added "${newCreator.name}" to creator roster`);
+    const payload = buildCreatorPayload(newCreator);
+    setDoc(doc(db, 'creators', cleanId), payload).catch((error) =>
+      handleFirestoreError(error, OperationType.CREATE, `creators/${cleanId}`)
+    );
+    showToast('Artisan Added', `Published "${newCreator.name}" globally`);
   };
 
   const updateCreator = (id: string, updated: Partial<Creator>) => {
-    setCreators((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...updated } : item))
+    const existingItem = creators.find((c) => c.id === id);
+    const merged: Creator = existingItem
+      ? { ...existingItem, ...updated, id }
+      : ({ ...updated, id } as Creator);
+    setCreators((prev) => prev.map((item) => (item.id === id ? merged : item)));
+    const payload = buildCreatorPayload(merged);
+    setDoc(doc(db, 'creators', id), payload).catch((error) =>
+      handleFirestoreError(error, OperationType.UPDATE, `creators/${id}`)
     );
-    showToast('Artisan Updated', 'Profile and craft data refreshed');
+    showToast('Artisan Updated', 'Profile synced live across all devices');
   };
 
   const deleteCreator = (id: string) => {
     setCreators((prev) => prev.filter((item) => item.id !== id));
-    showToast('Artisan Removed', 'Creator removed from roster');
+    deleteDoc(doc(db, 'creators', id)).catch((error) =>
+      handleFirestoreError(error, OperationType.DELETE, `creators/${id}`)
+    );
+    showToast('Artisan Removed', 'Creator removed globally');
   };
 
-  // Workshop CRUD
+  // Workshop CRUD (Synced globally via Firestore)
   const addWorkshop = (workshopData: Omit<Workshop, 'id'> & { id?: string }) => {
+    const cleanId = (workshopData.id || `ws-${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 128);
     const newWorkshop: Workshop = {
       ...workshopData,
-      id: workshopData.id || `ws-${Date.now()}`,
+      id: cleanId,
     };
     setWorkshops((prev) => [...prev, newWorkshop]);
-    showToast('Workshop Created', `Added "${newWorkshop.title}"`);
+    const payload = buildWorkshopPayload(newWorkshop);
+    setDoc(doc(db, 'workshops', cleanId), payload).catch((error) =>
+      handleFirestoreError(error, OperationType.CREATE, `workshops/${cleanId}`)
+    );
+    showToast('Workshop Created', `Published "${newWorkshop.title}" globally`);
   };
 
   const updateWorkshop = (id: string, updated: Partial<Workshop>) => {
-    setWorkshops((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...updated } : item))
+    const existingItem = workshops.find((w) => w.id === id);
+    const merged: Workshop = existingItem
+      ? { ...existingItem, ...updated, id }
+      : ({ ...updated, id } as Workshop);
+    setWorkshops((prev) => prev.map((item) => (item.id === id ? merged : item)));
+    const payload = buildWorkshopPayload(merged);
+    setDoc(doc(db, 'workshops', id), payload).catch((error) =>
+      handleFirestoreError(error, OperationType.UPDATE, `workshops/${id}`)
     );
-    showToast('Workshop Updated', 'Details updated live');
+    showToast('Workshop Updated', 'Details synced live across all devices');
   };
 
   const deleteWorkshop = (id: string) => {
     setWorkshops((prev) => prev.filter((item) => item.id !== id));
-    showToast('Workshop Removed', 'Workshop deleted');
+    deleteDoc(doc(db, 'workshops', id)).catch((error) =>
+      handleFirestoreError(error, OperationType.DELETE, `workshops/${id}`)
+    );
+    showToast('Workshop Removed', 'Workshop deleted globally');
   };
 
-  // Story CRUD
+  // Story CRUD (Synced globally via Firestore)
   const addStory = (storyData: Omit<Story, 'id'> & { id?: string }) => {
+    const cleanId = (storyData.id || `story-${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 128);
     const newStory: Story = {
       ...storyData,
-      id: storyData.id || `story-${Date.now()}`,
+      id: cleanId,
     };
     setStories((prev) => [newStory, ...prev]);
-    showToast('Story Published', `Published "${newStory.title}"`);
+    const payload = buildStoryPayload(newStory);
+    setDoc(doc(db, 'stories', cleanId), payload).catch((error) =>
+      handleFirestoreError(error, OperationType.CREATE, `stories/${cleanId}`)
+    );
+    showToast('Story Published', `Published "${newStory.title}" globally`);
   };
 
   const updateStory = (id: string, updated: Partial<Story>) => {
-    setStories((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...updated } : item))
+    const existingItem = stories.find((s) => s.id === id);
+    const merged: Story = existingItem
+      ? { ...existingItem, ...updated, id }
+      : ({ ...updated, id } as Story);
+    setStories((prev) => prev.map((item) => (item.id === id ? merged : item)));
+    const payload = buildStoryPayload(merged);
+    setDoc(doc(db, 'stories', id), payload).catch((error) =>
+      handleFirestoreError(error, OperationType.UPDATE, `stories/${id}`)
     );
-    showToast('Story Updated', 'Story article updated live');
+    showToast('Story Updated', 'Story article synced live across all devices');
   };
 
   const deleteStory = (id: string) => {
     setStories((prev) => prev.filter((item) => item.id !== id));
-    showToast('Story Removed', 'Story deleted');
+    deleteDoc(doc(db, 'stories', id)).catch((error) =>
+      handleFirestoreError(error, OperationType.DELETE, `stories/${id}`)
+    );
+    showToast('Story Removed', 'Story deleted globally');
   };
 
   // Order Management
@@ -758,19 +1098,57 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast('Order Deleted', `Order ${id} removed from system`);
   };
 
-  // Hero & Announcement mutators
-  const updateHeroSlides = (slides: HeroBannerSlide[]) => {
+  // Hero & Announcement mutators (Synced globally via Firestore)
+  const updateHeroSlides = async (slides: HeroBannerSlide[]) => {
     setHeroSlides(slides);
-    showToast('Hero Banners Saved', 'Homepage hero updated');
+    try {
+      const existingSnap = await getDocs(
+        query(collection(db, 'hero_slides'), where('visibility', '==', 'public'))
+      );
+      const nextIds = new Set(slides.map((s, idx) => `slide-${typeof s.id === 'number' ? s.id : idx}`));
+      await Promise.all(
+        existingSnap.docs
+          .filter((d) => !nextIds.has(d.id))
+          .map((d) => deleteDoc(doc(db, 'hero_slides', d.id)))
+      );
+      await Promise.all(
+        slides.map((s, idx) => {
+          const payload = buildHeroSlidePayload(s, idx);
+          return setDoc(doc(db, 'hero_slides', `slide-${payload.id}`), payload);
+        })
+      );
+      showToast('Hero Banners Saved', 'Homepage hero synced globally across all devices');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'hero_slides');
+    }
   };
 
-  const updateAnnouncements = (items: TickerItem[]) => {
+  const updateAnnouncements = async (items: TickerItem[]) => {
     setAnnouncements(items);
-    showToast('Announcements Saved', 'Top ticker bar updated');
+    try {
+      const existingSnap = await getDocs(
+        query(collection(db, 'announcements'), where('visibility', '==', 'public'))
+      );
+      const nextIds = new Set(items.map((a, idx) => `ann-${typeof a.id === 'number' ? a.id : idx}`));
+      await Promise.all(
+        existingSnap.docs
+          .filter((d) => !nextIds.has(d.id))
+          .map((d) => deleteDoc(doc(db, 'announcements', d.id)))
+      );
+      await Promise.all(
+        items.map((a, idx) => {
+          const payload = buildAnnouncementPayload(a, idx);
+          return setDoc(doc(db, 'announcements', `ann-${payload.id}`), payload);
+        })
+      );
+      showToast('Announcements Saved', 'Top ticker bar synced globally across all devices');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'announcements');
+    }
   };
 
-  // Reset to initial seed
-  const resetAllDataToDefaults = () => {
+  // Reset to initial seed globally in Firestore
+  const resetAllDataToDefaults = async () => {
     setProducts(PRODUCTS);
     setCreators(CREATORS);
     setWorkshops(WORKSHOPS);
@@ -783,7 +1161,47 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.removeItem('curowit_stories_v4');
     localStorage.removeItem('curowit_hero_slides_v4');
     localStorage.removeItem('curowit_announcements_v2');
-    showToast('Reset Complete', 'Restored all original website content and mock data');
+    try {
+      await Promise.all(
+        PRODUCTS.map((p) => {
+          const payload = buildProductPayload(p);
+          return setDoc(doc(db, 'products', payload.id), payload);
+        })
+      );
+      await Promise.all(
+        CREATORS.map((c) => {
+          const payload = buildCreatorPayload(c);
+          return setDoc(doc(db, 'creators', payload.id), payload);
+        })
+      );
+      await Promise.all(
+        WORKSHOPS.map((w) => {
+          const payload = buildWorkshopPayload(w);
+          return setDoc(doc(db, 'workshops', payload.id), payload);
+        })
+      );
+      await Promise.all(
+        STORIES.map((s) => {
+          const payload = buildStoryPayload(s);
+          return setDoc(doc(db, 'stories', payload.id), payload);
+        })
+      );
+      await Promise.all(
+        DEFAULT_HERO_SLIDES.map((s, idx) => {
+          const payload = buildHeroSlidePayload(s, idx);
+          return setDoc(doc(db, 'hero_slides', `slide-${payload.id}`), payload);
+        })
+      );
+      await Promise.all(
+        DEFAULT_ANNOUNCEMENTS.map((a, idx) => {
+          const payload = buildAnnouncementPayload(a, idx);
+          return setDoc(doc(db, 'announcements', `ann-${payload.id}`), payload);
+        })
+      );
+      showToast('Reset Complete', 'Restored all default storefront content across all devices');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'resetAllDataToDefaults');
+    }
   };
 
   return (
