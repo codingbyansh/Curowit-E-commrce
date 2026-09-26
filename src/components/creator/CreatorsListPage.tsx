@@ -1,8 +1,12 @@
 import React, { useState, useRef } from 'react';
+import { useStore } from '../../context/StoreContext';
 import { CREATORS, Creator } from '../../data/mockData';
 import { Sparkles, MapPin, Star, Rotate3d, Layers } from 'lucide-react';
 
 export const CreatorsListPage: React.FC = () => {
+  const { creators } = useStore();
+  const makerList = creators && creators.length > 0 ? creators : CREATORS;
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
@@ -13,9 +17,9 @@ export const CreatorsListPage: React.FC = () => {
   const startPosRef = useRef({ x: 0, y: 0 });
   const isDragActionRef = useRef(false);
 
-  const activeCreator = CREATORS[currentIndex % CREATORS.length];
-  const nextCreator = CREATORS[(currentIndex + 1) % CREATORS.length];
-  const thirdCreator = CREATORS[(currentIndex + 2) % CREATORS.length];
+  const activeCreator = makerList[currentIndex % makerList.length];
+  const nextCreator = makerList[(currentIndex + 1) % makerList.length];
+  const thirdCreator = makerList[(currentIndex + 2) % makerList.length];
 
   const handleNextCard = (direction: 'left' | 'right') => {
     if (swipeDirection) return;
@@ -23,7 +27,7 @@ export const CreatorsListPage: React.FC = () => {
     setIsFlipped(false);
 
     setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % CREATORS.length);
+      setCurrentIndex((prev) => (prev + 1) % makerList.length);
       setSwipeDirection(null);
       setDragOffset({ x: 0, y: 0 });
     }, 280);
@@ -291,11 +295,11 @@ export const CreatorsListPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-1.5">
-            {CREATORS.map((_, idx) => (
+            {makerList.map((_, idx) => (
               <span
                 key={idx}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  idx === currentIndex % CREATORS.length
+                  idx === currentIndex % makerList.length
                     ? 'w-6 bg-[#07545A]'
                     : 'w-1.5 bg-[#07545A]/25'
                 }`}

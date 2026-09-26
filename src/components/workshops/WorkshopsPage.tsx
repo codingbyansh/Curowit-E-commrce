@@ -4,7 +4,8 @@ import { useStore } from '../../context/StoreContext';
 import { Calendar, Clock, Video, MapPin, Sparkles, ArrowRight } from 'lucide-react';
 
 export const WorkshopsPage: React.FC = () => {
-  const { showToast } = useStore();
+  const { showToast, workshops } = useStore();
+  const allWorkshops = workshops && workshops.length > 0 ? workshops : WORKSHOPS;
 
   const handleBookSpot = (ws: Workshop) => {
     showToast(`Booked: ${ws.title}`, `Confirmation & craft prep kit details sent to your email`);
@@ -31,7 +32,7 @@ export const WorkshopsPage: React.FC = () => {
             Static Workshop Listing Grid (No Moving Marquee)
             ======================================================== */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-          {WORKSHOPS.map((ws) => (
+          {allWorkshops.map((ws) => (
             <div
               key={ws.id}
               className="bg-[#FFF8EA] rounded-2xl sm:rounded-3xl border border-[#07545A]/12 overflow-hidden flex flex-col justify-between shadow-xs hover:shadow-lg transition-all duration-300 group hover:-translate-y-1"

@@ -4,7 +4,8 @@ import { useStore } from '../../context/StoreContext';
 import { BookOpen, Clock, ArrowRight, Sparkles, Feather } from 'lucide-react';
 
 export const CreativeStories: React.FC = () => {
-  const { showToast, setActiveView } = useStore();
+  const { showToast, setActiveView, stories } = useStore();
+  const allStories = stories && stories.length > 0 ? stories : STORIES;
 
   const handleReadStory = (story: Story) => {
     showToast(`Opening "${story.title}"`, 'Full editorial article loaded in Journal');
@@ -84,7 +85,7 @@ export const CreativeStories: React.FC = () => {
             Creative Editorial Story Cards
             ======================================================== */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-7">
-          {STORIES.map((story) => (
+          {allStories.map((story) => (
             <article
               key={story.id}
               onClick={() => handleReadStory(story)}

@@ -4,7 +4,8 @@ import { useStore } from '../../context/StoreContext';
 import { Sparkles, MapPin, Star } from 'lucide-react';
 
 export const CreatorSpotlight: React.FC = () => {
-  const { navigateToCreator } = useStore();
+  const { navigateToCreator, creators } = useStore();
+  const makerList = creators && creators.length > 0 ? creators : CREATORS;
 
   // Create a gentle undulating height wave for the moving cards
   const waveHeights = ['h-[260px]', 'h-[285px]', 'h-[250px]', 'h-[295px]', 'h-[265px]', 'h-[280px]'];
@@ -49,7 +50,7 @@ export const CreatorSpotlight: React.FC = () => {
         {/* Moving Track: glides right to left, pauses on hover */}
         <div className="animate-slow-marquee flex items-end gap-4 sm:gap-6 pl-4">
           {/* First set of creators */}
-          {CREATORS.map((creator, idx) => {
+          {makerList.map((creator, idx) => {
             const cardHeight = waveHeights[idx % waveHeights.length];
 
             return (
@@ -109,7 +110,7 @@ export const CreatorSpotlight: React.FC = () => {
           })}
 
           {/* Seamless Duplicate Set for Infinite Right-to-Left Gliding */}
-          {CREATORS.map((creator, idx) => {
+          {makerList.map((creator, idx) => {
             const cardHeight = waveHeights[idx % waveHeights.length];
 
             return (

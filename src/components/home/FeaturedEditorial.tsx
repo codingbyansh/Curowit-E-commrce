@@ -4,13 +4,14 @@ import { ArrowRight, Sparkles, Heart, ShoppingBag, Star, ShieldCheck } from 'luc
 import { PRODUCTS } from '../../data/mockData';
 
 export const FeaturedEditorial: React.FC = () => {
-  const { navigateToProduct, addToCart, toggleWishlist, isInWishlist } = useStore();
+  const { navigateToProduct, addToCart, toggleWishlist, isInWishlist, products } = useStore();
+  const allProducts = products && products.length >= 4 ? products : PRODUCTS;
 
-  const heroProduct = PRODUCTS[0]; // Heirloom Crochet Bunny
+  const heroProduct = allProducts[0]; // Primary showcase product
   const companionProducts = [
-    PRODUCTS[1], // Botanical Candle
-    PRODUCTS[2], // Daisy Resin Earrings
-    PRODUCTS[3], // Painted Stoneware Mug
+    allProducts[1] || allProducts[0],
+    allProducts[2] || allProducts[0],
+    allProducts[3] || allProducts[0],
   ];
 
   return (

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { Header } from './components/navigation/Header';
 import { MobileBottomNav } from './components/navigation/MobileBottomNav';
@@ -25,15 +25,39 @@ import { CreatorsListPage } from './components/creator/CreatorsListPage';
 import { WorkshopsPage } from './components/workshops/WorkshopsPage';
 import { StoriesPage } from './components/stories/StoriesPage';
 import { AccountPage } from './components/account/AccountPage';
+import { AdminCMSPage } from './components/admin/AdminCMSPage';
 
 // Overlays & Utilities
 import { SearchDrawer } from './components/common/SearchDrawer';
 import { AuthModal } from './components/auth/AuthModal';
 import { ToastContainer } from './components/common/ToastContainer';
 import { RaiseTicketButton } from './components/common/RaiseTicketButton';
+import { AdminPasskeyModal } from './components/admin/AdminPasskeyModal';
 
 const MainContent: React.FC = () => {
-  const { activeView } = useStore();
+  const { activeView, openAdminModal } = useStore();
+
+  // Global shortcut to open owner CMS portal (Ctrl + Shift + A)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        openAdminModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [openAdminModal]);
+
+  if (activeView === 'admin') {
+    return (
+      <div className="min-h-screen bg-[#F4ECE1]">
+        <AdminCMSPage />
+        <AdminPasskeyModal />
+        <ToastContainer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F7EBD7] text-[#173B3D]">
@@ -73,6 +97,7 @@ const MainContent: React.FC = () => {
       <AuthModal />
       <ToastContainer />
       <RaiseTicketButton />
+      <AdminPasskeyModal />
     </div>
   );
 };

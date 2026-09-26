@@ -4,7 +4,8 @@ import { useStore } from '../../context/StoreContext';
 import { Calendar, Clock, MapPin, Sparkles, ArrowRight, Video } from 'lucide-react';
 
 export const WorkshopsSection: React.FC = () => {
-  const { showToast } = useStore();
+  const { showToast, workshops } = useStore();
+  const allWorkshops = workshops && workshops.length > 0 ? workshops : WORKSHOPS;
 
   const handleRegister = (ws: Workshop) => {
     showToast(`Saved spot for ${ws.title}`, 'Workshop details and preparation guide sent to your email');
@@ -70,7 +71,7 @@ export const WorkshopsSection: React.FC = () => {
           {/* Gliding Row Track (Moving Left to Right) */}
           <div className="animate-slow-marquee-reverse flex items-stretch gap-4 sm:gap-6 pl-4">
             {/* First Set */}
-            {WORKSHOPS.map((ws) => (
+            {allWorkshops.map((ws) => (
               <div
                 key={`ws-1-${ws.id}`}
                 className="w-[280px] sm:w-[320px] md:w-[340px] shrink-0 bg-[#FFF8EA] rounded-2xl sm:rounded-3xl border border-[#07545A]/12 overflow-hidden flex flex-col justify-between shadow-xs hover:shadow-lg transition-all duration-300 group hover:-translate-y-1"
@@ -154,7 +155,7 @@ export const WorkshopsSection: React.FC = () => {
             ))}
 
             {/* Seamless Duplicated Set for Infinite Loop */}
-            {WORKSHOPS.map((ws) => (
+            {allWorkshops.map((ws) => (
               <div
                 key={`ws-2-${ws.id}`}
                 className="w-[280px] sm:w-[320px] md:w-[340px] shrink-0 bg-[#FFF8EA] rounded-2xl sm:rounded-3xl border border-[#07545A]/12 overflow-hidden flex flex-col justify-between shadow-xs hover:shadow-lg transition-all duration-300 group hover:-translate-y-1"

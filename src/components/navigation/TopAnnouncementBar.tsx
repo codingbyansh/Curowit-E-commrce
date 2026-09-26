@@ -87,7 +87,8 @@ const ROTATING_MESSAGES: TickerItem[] = [
 ];
 
 export const TopAnnouncementBar: React.FC = () => {
-  const { setActiveView } = useStore();
+  const { setActiveView, announcements } = useStore();
+  const messages = announcements && announcements.length > 0 ? announcements : ROTATING_MESSAGES;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [animationState, setAnimationState] = useState<'entering' | 'visible' | 'exiting'>('visible');
@@ -103,7 +104,7 @@ export const TopAnnouncementBar: React.FC = () => {
       setAnimationState('exiting');
 
       setTimeout(() => {
-        setCurrentIndex((prev) => (prev + 1) % ROTATING_MESSAGES.length);
+        setCurrentIndex((prev) => (prev + 1) % messages.length);
         setAnimationState('entering');
 
         requestAnimationFrame(() => {
@@ -115,9 +116,9 @@ export const TopAnnouncementBar: React.FC = () => {
     }, displayDuration);
 
     return () => clearTimeout(timer);
-  }, [currentIndex, isPaused]);
+  }, [currentIndex, isPaused, messages.length]);
 
-  const activeMessage = ROTATING_MESSAGES[currentIndex];
+  const activeMessage = messages[currentIndex % messages.length];
 
   const handleClick = () => {
     setActiveView('shop');

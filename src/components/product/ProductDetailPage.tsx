@@ -26,7 +26,9 @@ export const ProductDetailPage: React.FC = () => {
     navigateToCreator,
     setActiveView,
     showToast,
+    products,
   } = useStore();
+  const allProducts = products || PRODUCTS;
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -50,7 +52,7 @@ export const ProductDetailPage: React.FC = () => {
   const gallery = selectedProduct.gallery?.length ? selectedProduct.gallery : [selectedProduct.image];
 
   // Related products from same category or creator
-  const relatedProducts = PRODUCTS.filter(
+  const relatedProducts = allProducts.filter(
     (p) => p.id !== selectedProduct.id && (p.category === selectedProduct.category || p.creatorId === selectedProduct.creatorId)
   ).slice(0, 4);
 

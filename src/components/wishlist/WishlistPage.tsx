@@ -5,9 +5,9 @@ import { ProductCard } from '../product/ProductCard';
 import { Heart, ArrowRight } from 'lucide-react';
 
 export const WishlistPage: React.FC = () => {
-  const { wishlist, setActiveView } = useStore();
+  const { wishlist, setActiveView, products } = useStore();
 
-  const savedProducts = PRODUCTS.filter((p) => wishlist.includes(p.id));
+  const savedProducts = (products || PRODUCTS).filter((p) => wishlist.includes(p.id));
 
   return (
     <div className="bg-[#F7EBD7] min-h-screen py-8 sm:py-12 pb-24 md:pb-12">

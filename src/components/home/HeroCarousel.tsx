@@ -31,19 +31,20 @@ const HERO_BANNER_SLIDES: HeroBannerSlide[] = [
 ];
 
 export const HeroCarousel: React.FC = () => {
-  const { setActiveView, setSelectedCategory } = useStore();
+  const { setActiveView, setSelectedCategory, heroSlides } = useStore();
+  const slides = heroSlides && heroSlides.length > 0 ? heroSlides : HERO_BANNER_SLIDES;
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
   const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % HERO_BANNER_SLIDES.length);
-  }, []);
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
+  }, [slides.length]);
 
   const prevSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + HERO_BANNER_SLIDES.length) % HERO_BANNER_SLIDES.length);
-  }, []);
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  }, [slides.length]);
 
   // Autoplay 5 seconds
   useEffect(() => {
@@ -104,7 +105,7 @@ export const HeroCarousel: React.FC = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         {/* Banner Frame with smooth rounded corners and subtle shadow */}
         <div className="relative w-full aspect-[16/9] rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm border border-[#07545A]/10 bg-[#FFF8EA]">
-          {HERO_BANNER_SLIDES.map((slide, index) => {
+          {slides.map((slide, index) => {
             const isActive = index === currentSlide;
 
             return (
@@ -116,7 +117,7 @@ export const HeroCarousel: React.FC = () => {
                 }`}
                 role="group"
                 aria-roledescription="slide"
-                aria-label={`Slide ${index + 1} of ${HERO_BANNER_SLIDES.length}`}
+                aria-label={`Slide ${index + 1} of ${slides.length}`}
               >
                 {/* Exact full-resolution banner image without alterations or text overlays */}
                 <img
@@ -156,7 +157,7 @@ export const HeroCarousel: React.FC = () => {
 
           {/* Pagination Indicators Inside Banner Bottom */}
           <div className="absolute bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 bg-[#FFF8EA]/80 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-[#07545A]/10 shadow-xs">
-            {HERO_BANNER_SLIDES.map((_, i) => (
+            {slides.map((_, i) => (
               <button
                 key={i}
                 onClick={(e) => {

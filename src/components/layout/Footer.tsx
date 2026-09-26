@@ -9,10 +9,11 @@ import {
   Instagram,
   Youtube,
   Twitter,
+  Lock,
 } from 'lucide-react';
 
 export const Footer: React.FC = () => {
-  const { setActiveView, setSelectedCategory, showToast } = useStore();
+  const { setActiveView, setSelectedCategory, showToast, openAdminModal } = useStore();
 
   const handleNavClick = (view: any) => {
     setActiveView(view);
@@ -253,10 +254,21 @@ export const Footer: React.FC = () => {
 
         {/* Bottom Copyright Strip with Full Visibility Clearance */}
         <div className="pt-6 mt-4 border-t border-[#FFF8EA]/15 flex flex-col sm:flex-row items-center justify-between text-xs text-[#FFF8EA] gap-3">
-          <div className="text-center sm:text-left">
-            <span className="font-bold text-sm text-[#FFF8EA] tracking-wide block">
-              © {new Date().getFullYear()} CUROWIT · Home of Creatives. All rights reserved.
-            </span>
+          <div className="text-center sm:text-left flex flex-col">
+            <div className="flex items-center justify-center sm:justify-start gap-2">
+              <span className="font-bold text-sm text-[#FFF8EA] tracking-wide">
+                © {new Date().getFullYear()} CUROWIT · Home of Creatives. All rights reserved.
+              </span>
+              {/* Hidden Admin Passkey Trigger on Footer */}
+              <button
+                onClick={openAdminModal}
+                className="opacity-25 hover:opacity-100 p-1 text-[#FFF8EA] hover:text-[#F2A900] transition-opacity cursor-pointer inline-flex items-center"
+                title="Owner CMS Access"
+                aria-label="Staff Passkey Portal"
+              >
+                <Lock className="w-3.5 h-3.5" />
+              </button>
+            </div>
             <span className="text-[11px] text-[#F7EBD7]/70 mt-0.5 block">
               Empowering independent handmade artisans across India.
             </span>

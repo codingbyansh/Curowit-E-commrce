@@ -5,7 +5,9 @@ import { ProductCard } from '../product/ProductCard';
 import { Filter, SlidersHorizontal, X, Check, Star } from 'lucide-react';
 
 export const ShopPage: React.FC = () => {
-  const { selectedCategory, setSelectedCategory } = useStore();
+  const { selectedCategory, setSelectedCategory, products, creators } = useStore();
+  const activeProducts = products || PRODUCTS;
+  const activeCreators = creators || CREATORS;
 
   const [sortOption, setSortOption] = useState<string>('recommended');
   const [selectedCreatorFilter, setSelectedCreatorFilter] = useState<string>('all');
@@ -17,7 +19,7 @@ export const ShopPage: React.FC = () => {
 
   // Filter & sort logic
   const filteredProducts = useMemo(() => {
-    return PRODUCTS.filter((p) => {
+    return activeProducts.filter((p) => {
       // Category
       if (selectedCategory !== 'all') {
         const cat = CATEGORIES.find((c) => c.id === selectedCategory);
@@ -196,7 +198,7 @@ export const ShopPage: React.FC = () => {
                 className="w-full bg-[#F7EBD7] text-xs text-[#173B3D] rounded-xl p-2.5 border border-[#07545A]/15 focus:outline-none"
               >
                 <option value="all">All Creators</option>
-                {CREATORS.map((c) => (
+                {activeCreators.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
                   </option>
@@ -325,7 +327,7 @@ export const ShopPage: React.FC = () => {
                   className="w-full bg-[#F7EBD7] text-xs text-[#173B3D] rounded-xl p-2.5 border border-[#07545A]/15"
                 >
                   <option value="all">All Creators</option>
-                  {CREATORS.map((c) => (
+                  {activeCreators.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>

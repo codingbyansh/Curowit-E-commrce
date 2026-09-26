@@ -4,7 +4,8 @@ import { Search, X, Sparkles, ArrowRight } from 'lucide-react';
 import { PRODUCTS, CATEGORIES, Product } from '../../data/mockData';
 
 export const SearchDrawer: React.FC = () => {
-  const { isSearchOpen, setIsSearchOpen, navigateToProduct, setSelectedCategory, setActiveView } = useStore();
+  const { isSearchOpen, setIsSearchOpen, navigateToProduct, setSelectedCategory, setActiveView, products } = useStore();
+  const allProducts = products || PRODUCTS;
   const [searchTerm, setSearchTerm] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -35,7 +36,7 @@ export const SearchDrawer: React.FC = () => {
   if (!isSearchOpen) return null;
 
   const searchResults: Product[] = searchTerm.trim()
-    ? PRODUCTS.filter(
+    ? allProducts.filter(
         (p) =>
           p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||

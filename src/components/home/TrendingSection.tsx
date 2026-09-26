@@ -5,10 +5,11 @@ import { useStore } from '../../context/StoreContext';
 import { Flame, ArrowRight } from 'lucide-react';
 
 export const TrendingSection: React.FC = () => {
-  const { setActiveView } = useStore();
+  const { setActiveView, products } = useStore();
+  const allProducts = products || PRODUCTS;
 
   // Curate 8-10 standout trending and top-rated creations
-  const trendingProducts = PRODUCTS.filter(
+  const trendingProducts = allProducts.filter(
     (p) => p.trending || p.rating >= 4.85 || p.featured
   ).slice(0, 8);
 

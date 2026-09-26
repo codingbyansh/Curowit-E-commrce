@@ -4,12 +4,13 @@ import { useStore } from '../../context/StoreContext';
 import { Clock, Feather, ArrowRight, Sparkles } from 'lucide-react';
 
 export const StoriesPage: React.FC = () => {
-  const { showToast } = useStore();
+  const { showToast, stories } = useStore();
+  const allStories = stories && stories.length > 0 ? stories : STORIES;
   const [selectedTag, setSelectedTag] = useState<string>('all');
 
   const tags = ['all', 'Craft Journey', 'Studio Secrets', 'Creative Philosophy'];
 
-  const filteredStories = STORIES.filter((s) => {
+  const filteredStories = allStories.filter((s) => {
     if (selectedTag === 'all') return true;
     return s.tag === selectedTag;
   });

@@ -5,10 +5,10 @@ import { ProductCard } from '../product/ProductCard';
 import { MapPin, Star, Sparkles, ArrowLeft, ShieldCheck, Heart } from 'lucide-react';
 
 export const CreatorPage: React.FC = () => {
-  const { selectedCreator, setActiveView, showToast } = useStore();
+  const { selectedCreator, setActiveView, showToast, creators, products } = useStore();
 
-  const creator = selectedCreator || CREATORS[0];
-  const creatorProducts = PRODUCTS.filter((p) => p.creatorId === creator.id);
+  const creator = selectedCreator || (creators && creators[0]) || CREATORS[0];
+  const creatorProducts = (products || PRODUCTS).filter((p) => p.creatorId === creator.id);
 
   const handleFollow = () => {
     showToast(`Following ${creator.name}!`, 'You will be notified when new creations are listed.');
