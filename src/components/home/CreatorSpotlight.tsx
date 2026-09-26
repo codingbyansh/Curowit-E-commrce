@@ -1,110 +1,172 @@
 import React from 'react';
-import { CREATORS, Creator } from '../../data/mockData';
+import { CREATORS } from '../../data/mockData';
 import { useStore } from '../../context/StoreContext';
-import { Star, MapPin, ArrowRight, Sparkles } from 'lucide-react';
+import { Sparkles, MapPin, Star } from 'lucide-react';
 
 export const CreatorSpotlight: React.FC = () => {
-  const { navigateToCreator, setActiveView } = useStore();
+  const { navigateToCreator } = useStore();
+
+  // Create a gentle undulating height wave for the moving cards
+  const waveHeights = ['h-[260px]', 'h-[285px]', 'h-[250px]', 'h-[295px]', 'h-[265px]', 'h-[280px]'];
 
   return (
-    <section className="py-12 sm:py-16 bg-[#F7EBD7]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-10 gap-3">
-          <div>
-            <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#3F704B] mb-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#F2A900]" />
-              <span>Artisans & Makers</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#07545A] font-display">
-              Meet the Creators
-            </h2>
-            <p className="text-sm text-[#173B3D]/70 mt-1 max-w-xl">
-              Behind every beautiful piece is a creative mind. Discover their stories, hands, and inspiration.
-            </p>
+    <section className="relative py-12 sm:py-20 bg-[#F7EBD7] overflow-hidden select-none border-t border-[#07545A]/10" aria-label="Meet the Creators">
+      {/* Background Soft Ambient Light */}
+      <div className="absolute inset-0 pointer-events-none opacity-40 bg-[radial-gradient(circle_at_50%_40%,#FFF8EA_0%,transparent_75%)]" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Section Header (Centered without any Explore Creators button) */}
+        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#3F704B] bg-[#FFF8EA] px-3.5 py-1 rounded-full border border-[#07545A]/10 shadow-2xs mb-2.5">
+            <Sparkles className="w-3.5 h-3.5 text-[#F2A900]" />
+            <span>Artisans & Makers</span>
           </div>
 
-          <button
-            onClick={() => {
-              setActiveView('creators');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#07545A] hover:text-[#E69A16] transition-colors cursor-pointer group"
-          >
-            <span>Explore All Creators</span>
-            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-          </button>
-        </div>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#07545A] font-display">
+            Meet the Creators
+          </h2>
 
-        {/* Creators Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {CREATORS.map((creator) => (
-            <div
-              key={creator.id}
-              onClick={() => navigateToCreator(creator.id)}
-              className="group bg-[#FFF8EA] rounded-2xl border border-[#07545A]/10 p-5 flex flex-col justify-between shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer hover:-translate-y-1"
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') navigateToCreator(creator.id);
-              }}
-            >
-              <div>
-                {/* Creator Avatar & Badge */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="relative">
-                    <img
-                      src={creator.avatar}
-                      alt={creator.name}
-                      referrerPolicy="no-referrer"
-                      className="w-14 h-14 rounded-full object-cover border-2 border-[#07545A]/15 group-hover:border-[#07545A] transition-colors"
-                    />
-                    <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-[#3F704B] border-2 border-[#FFF8EA]" />
-                  </div>
-                  {creator.badge && (
-                    <span className="text-[11px] font-bold text-[#07545A] bg-[#07545A]/10 px-2 py-0.5 rounded-md">
+          <p className="text-xs sm:text-sm text-[#173B3D]/75 mt-2 leading-relaxed max-w-lg mx-auto">
+            Every piece on Curowit is made by passionate independent artisans across India. Discover their workshops, hands, and quiet dedication.
+          </p>
+        </div>
+      </div>
+
+      {/* ========================================================
+          Moving Right to Left Creator Cards (Slow Continuous Marquee)
+          ======================================================== */}
+      <div className="relative w-full overflow-hidden group-marquee py-3">
+        {/* Left & Right Soft Fade Masks */}
+        <div
+          className="pointer-events-none absolute left-0 top-0 bottom-0 w-10 sm:w-20 md:w-32 bg-gradient-to-r from-[#F7EBD7] via-[#F7EBD7]/80 to-transparent z-20"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 sm:w-20 md:w-32 bg-gradient-to-l from-[#F7EBD7] via-[#F7EBD7]/80 to-transparent z-20"
+          aria-hidden="true"
+        />
+
+        {/* Moving Track: glides right to left, pauses on hover */}
+        <div className="animate-slow-marquee flex items-end gap-4 sm:gap-6 pl-4">
+          {/* First set of creators */}
+          {CREATORS.map((creator, idx) => {
+            const cardHeight = waveHeights[idx % waveHeights.length];
+
+            return (
+              <div
+                key={`creator-1-${creator.id}`}
+                onClick={() => navigateToCreator(creator.id)}
+                className={`w-[170px] sm:w-[200px] md:w-[220px] ${cardHeight} shrink-0 rounded-2xl sm:rounded-3xl overflow-hidden bg-[#FFF8EA] border border-[#07545A]/15 shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-104 relative flex flex-col justify-end`}
+                title={`Visit ${creator.name}'s Studio`}
+              >
+                {/* Creator Image Background */}
+                <div className="absolute inset-0 bg-[#EADCC8]">
+                  <img
+                    src={creator.avatar}
+                    alt={creator.name}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover object-center group-hover:scale-108 transition-transform duration-700 ease-out"
+                    loading="lazy"
+                  />
+                  {/* Subtle Dark Vignette Gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#173B3D]/95 via-[#173B3D]/35 to-transparent opacity-85 group-hover:opacity-95 transition-opacity" />
+                </div>
+
+                {/* Top Badge */}
+                {creator.badge && (
+                  <div className="absolute top-2.5 left-2.5 z-10">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-[#FFF8EA] bg-[#07545A]/85 backdrop-blur-xs px-2.5 py-0.5 rounded-full border border-white/20 shadow-2xs">
                       {creator.badge}
                     </span>
-                  )}
+                  </div>
+                )}
+
+                {/* Rating Badge (Top Right) */}
+                <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 bg-black/40 backdrop-blur-xs px-2 py-0.5 rounded-full text-[10px] text-white font-medium">
+                  <Star className="w-2.5 h-2.5 fill-[#F2A900] text-[#F2A900]" />
+                  <span>{creator.rating}</span>
                 </div>
 
-                {/* Creator Info */}
-                <h3 className="font-bold text-base text-[#173B3D] group-hover:text-[#07545A] transition-colors">
-                  {creator.name}
-                </h3>
-                <span className="text-xs text-[#07545A] font-medium block mt-0.5">
-                  {creator.specialty}
-                </span>
+                {/* Creator Information Overlay at Bottom */}
+                <div className="relative z-10 p-3 sm:p-4 text-white">
+                  <h3 className="font-bold text-sm sm:text-base leading-tight font-display drop-shadow-xs group-hover:text-[#F7EBD7] transition-colors">
+                    {creator.name}
+                  </h3>
 
-                <p className="text-xs text-[#173B3D]/70 mt-2 line-clamp-2">
-                  {creator.bio}
-                </p>
+                  <p className="text-[11px] text-white/85 line-clamp-1 mt-0.5 font-medium">
+                    {creator.specialty.split('•')[0]}
+                  </p>
+
+                  <div className="flex items-center gap-1 text-[10px] text-white/70 mt-1.5 pt-1.5 border-t border-white/15">
+                    <MapPin className="w-3 h-3 text-[#E97868] shrink-0" />
+                    <span className="truncate">{creator.location.split(',')[0]}</span>
+                    <span className="text-white/40">·</span>
+                    <span className="text-white/80">{creator.salesCount}+ pieces</span>
+                  </div>
+                </div>
               </div>
+            );
+          })}
 
-              <div className="mt-5 pt-3 border-t border-[#07545A]/10">
-                <div className="flex items-center justify-between text-xs text-[#687778] mb-3">
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-[#07545A]" />
-                    {creator.location.split(',')[0]}
-                  </span>
-                  <span className="flex items-center gap-1 font-semibold text-[#173B3D]">
-                    <Star className="w-3 h-3 fill-[#F2A900] text-[#F2A900]" />
-                    {creator.rating}
-                  </span>
+          {/* Seamless Duplicate Set for Infinite Right-to-Left Gliding */}
+          {CREATORS.map((creator, idx) => {
+            const cardHeight = waveHeights[idx % waveHeights.length];
+
+            return (
+              <div
+                key={`creator-2-${creator.id}`}
+                onClick={() => navigateToCreator(creator.id)}
+                className={`w-[170px] sm:w-[200px] md:w-[220px] ${cardHeight} shrink-0 rounded-2xl sm:rounded-3xl overflow-hidden bg-[#FFF8EA] border border-[#07545A]/15 shadow-xs hover:shadow-xl transition-all duration-300 cursor-pointer group hover:scale-104 relative flex flex-col justify-end`}
+                title={`Visit ${creator.name}'s Studio`}
+              >
+                {/* Creator Image Background */}
+                <div className="absolute inset-0 bg-[#EADCC8]">
+                  <img
+                    src={creator.avatar}
+                    alt={creator.name}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover object-center group-hover:scale-108 transition-transform duration-700 ease-out"
+                    loading="lazy"
+                  />
+                  {/* Subtle Dark Vignette Gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#173B3D]/95 via-[#173B3D]/35 to-transparent opacity-85 group-hover:opacity-95 transition-opacity" />
                 </div>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigateToCreator(creator.id);
-                  }}
-                  className="w-full py-2 bg-[#F7EBD7] text-[#07545A] font-semibold text-xs rounded-xl hover:bg-[#07545A] hover:text-[#FFF8EA] transition-colors flex items-center justify-center gap-1 cursor-pointer"
-                >
-                  <span>View Creator Studio</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                {/* Top Badge */}
+                {creator.badge && (
+                  <div className="absolute top-2.5 left-2.5 z-10">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-[#FFF8EA] bg-[#07545A]/85 backdrop-blur-xs px-2.5 py-0.5 rounded-full border border-white/20 shadow-2xs">
+                      {creator.badge}
+                    </span>
+                  </div>
+                )}
+
+                {/* Rating Badge (Top Right) */}
+                <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 bg-black/40 backdrop-blur-xs px-2 py-0.5 rounded-full text-[10px] text-white font-medium">
+                  <Star className="w-2.5 h-2.5 fill-[#F2A900] text-[#F2A900]" />
+                  <span>{creator.rating}</span>
+                </div>
+
+                {/* Creator Information Overlay at Bottom */}
+                <div className="relative z-10 p-3 sm:p-4 text-white">
+                  <h3 className="font-bold text-sm sm:text-base leading-tight font-display drop-shadow-xs group-hover:text-[#F7EBD7] transition-colors">
+                    {creator.name}
+                  </h3>
+
+                  <p className="text-[11px] text-white/85 line-clamp-1 mt-0.5 font-medium">
+                    {creator.specialty.split('•')[0]}
+                  </p>
+
+                  <div className="flex items-center gap-1 text-[10px] text-white/70 mt-1.5 pt-1.5 border-t border-white/15">
+                    <MapPin className="w-3 h-3 text-[#E97868] shrink-0" />
+                    <span className="truncate">{creator.location.split(',')[0]}</span>
+                    <span className="text-white/40">·</span>
+                    <span className="text-white/80">{creator.salesCount}+ pieces</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

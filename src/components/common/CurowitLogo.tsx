@@ -29,7 +29,7 @@ export const CurowitLogo: React.FC<CurowitLogoProps> = ({
       emblemPx: 40,
       emblemClass: 'w-10 h-10',
       fontSize: 'text-[19px] sm:text-[22px]',
-      taglineSize: 'text-[10px] sm:text-[11px]',
+      taglineSize: 'text-[9.5px] sm:text-[10px]',
       gap: 'gap-2.5',
     },
     lg: {
@@ -110,11 +110,11 @@ export const CurowitLogo: React.FC<CurowitLogoProps> = ({
       </div>
 
       <span
-        className={`tracking-wider font-semibold mt-0.5 select-none ${config.taglineSize}`}
+        className={`tracking-normal font-bold mt-0.5 select-none ${config.taglineSize}`}
         style={{
           color: taglineColor,
           fontFamily: "'Fraunces', Georgia, serif",
-          fontWeight: 600,
+          fontWeight: 700,
           fontStyle: 'normal',
         }}
       >

@@ -10,7 +10,6 @@ import { CategorySection } from './components/home/CategorySection';
 import { TrendingSection } from './components/home/TrendingSection';
 import { FeaturedEditorial } from './components/home/FeaturedEditorial';
 import { CreatorSpotlight } from './components/home/CreatorSpotlight';
-import { FreshlyCreated } from './components/home/FreshlyCreated';
 import { WorkshopsSection } from './components/home/WorkshopsSection';
 import { WhyCurowit } from './components/home/WhyCurowit';
 import { CreativeStories } from './components/home/CreativeStories';
@@ -48,7 +47,6 @@ const MainContent: React.FC = () => {
             <TrendingSection />
             <FeaturedEditorial />
             <CreatorSpotlight />
-            <FreshlyCreated />
             <WorkshopsSection />
             <WhyCurowit />
             <CreativeStories />

@@ -74,18 +74,16 @@ export const RaiseTicketButton: React.FC = () => {
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="bg-[#FFF8EA] rounded-3xl max-w-lg w-full p-6 sm:p-8 border border-[#07545A]/20 shadow-2xl relative max-h-[92vh] overflow-y-auto">
-            {/* Close Button */}
-            <button
-              onClick={() => setIsOpen(false)}
-              className="absolute top-5 right-5 p-1 rounded-full text-[#687778] hover:text-[#173B3D] cursor-pointer"
-              aria-label="Close modal"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
             {ticketSubmitted ? (
               /* Success confirmation state */
-              <div className="text-center py-6">
+              <div className="relative text-center py-6">
+                <button
+                  onClick={handleReset}
+                  className="absolute -top-2 -right-2 sm:top-0 sm:right-0 w-8 h-8 rounded-full bg-[#07545A]/10 hover:bg-[#07545A]/20 text-[#07545A] flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label="Close modal"
+                >
+                  <X className="w-4 h-4" />
+                </button>
                 <div className="w-14 h-14 rounded-full bg-[#3F704B]/15 text-[#3F704B] flex items-center justify-center mx-auto mb-4">
                   <CheckCircle2 className="w-7 h-7" />
                 </div>
@@ -108,24 +106,35 @@ export const RaiseTicketButton: React.FC = () => {
             ) : (
               /* Ticket Form */
               <div>
-                {/* Header Lockup */}
-                <div className="flex items-center gap-3 mb-4 pb-4 border-b border-[#07545A]/10">
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-[#07545A]/20 shrink-0">
-                    <img
-                      src="/curowit-logo.jpg"
-                      alt="Curowit"
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover"
-                    />
+                {/* Header Lockup with Dedicated Non-Overlapping Cross Button */}
+                <div className="flex items-start justify-between gap-3 mb-4 pb-4 border-b border-[#07545A]/10">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full overflow-hidden border border-[#07545A]/20 shrink-0">
+                      <img
+                        src="/curowit-logo.jpg"
+                        alt="Curowit"
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="text-lg font-bold text-[#07545A] font-display leading-tight">
+                        Curowit Care & Helpdesk
+                      </h2>
+                      <p className="text-xs text-[#687778] line-clamp-1">
+                        Raise a support ticket for orders, makers, or general help
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-[#07545A] font-display leading-tight">
-                      Curowit Care & Helpdesk
-                    </h2>
-                    <p className="text-xs text-[#687778]">
-                      Raise a support ticket for orders, makers, or general help
-                    </p>
-                  </div>
+
+                  {/* Clean Non-Overlapping Close Cross Button */}
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="w-8 h-8 rounded-full bg-[#07545A]/10 hover:bg-[#07545A]/20 text-[#07545A] flex items-center justify-center transition-colors cursor-pointer shrink-0 mt-0.5"
+                    aria-label="Close modal"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">

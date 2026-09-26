@@ -1,70 +1,84 @@
 import React from 'react';
-import { HeartHandshake, Sparkles, Palette, Users } from 'lucide-react';
+import { HeartHandshake, Sparkles, Palette, Users, PackageCheck, ShieldCheck } from 'lucide-react';
 
 export const WhyCurowit: React.FC = () => {
   const benefits = [
     {
-      title: 'HANDMADE',
-      desc: 'Thoughtfully created by independent makers with natural materials and human devotion.',
+      title: 'Handmade with Love',
+      desc: 'Small-batch creations',
       icon: HeartHandshake,
       accent: 'text-[#07545A]',
-      bg: 'bg-[#07545A]/10',
+      bg: 'bg-[#07545A]/10 border-[#07545A]/15',
     },
     {
-      title: 'UNIQUE',
-      desc: 'Discover authentic, small-batch pieces and custom keepsakes you won’t find in retail malls.',
+      title: 'Rare & Unique',
+      desc: 'Never mass-produced',
       icon: Sparkles,
-      accent: 'text-[#E69A16]',
-      bg: 'bg-[#F2A900]/15',
+      accent: 'text-[#C46843]',
+      bg: 'bg-[#C46843]/10 border-[#C46843]/15',
     },
     {
-      title: 'CREATIVE',
-      desc: 'Products, craft kits, and interactive workshops inspired by freeform imagination.',
+      title: 'Creative Spirit',
+      desc: 'Mindful slow craft',
       icon: Palette,
       accent: 'text-[#3F704B]',
-      bg: 'bg-[#3F704B]/10',
+      bg: 'bg-[#3F704B]/10 border-[#3F704B]/15',
     },
     {
-      title: 'CREATOR-FIRST',
-      desc: 'A platform engineered from day one to empower independent artisans and makers to thrive.',
+      title: 'Direct to Maker',
+      desc: '100% fair artisan income',
       icon: Users,
-      accent: 'text-[#E97868]',
-      bg: 'bg-[#E97868]/15',
+      accent: 'text-[#E69A16]',
+      bg: 'bg-[#F2A900]/15 border-[#F2A900]/20',
+    },
+    {
+      title: 'Plastic-Free Transit',
+      desc: 'Eco-conscious packaging',
+      icon: PackageCheck,
+      accent: 'text-[#07545A]',
+      bg: 'bg-[#07545A]/10 border-[#07545A]/15',
+    },
+    {
+      title: 'Verified Artisans',
+      desc: 'Direct studio quality',
+      icon: ShieldCheck,
+      accent: 'text-[#3F704B]',
+      bg: 'bg-[#3F704B]/10 border-[#3F704B]/15',
     },
   ];
 
   return (
-    <section className="py-12 sm:py-16 bg-[#FFF8EA] border-t border-[#07545A]/10">
+    <section className="py-6 sm:py-8 bg-[#FFF8EA] border-t border-[#07545A]/10 select-none" aria-label="Why Shop on Curowit">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-xl mx-auto mb-10">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[#3F704B] block mb-1">
-            Our Core Promise
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#07545A] font-display">
+        {/* Simple Minimal Header - No Swipe Word or Arrow Controls */}
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-xs font-bold text-[#F2A900]">✦</span>
+          <h2 className="text-lg sm:text-xl font-bold text-[#07545A] font-display">
             Why Shop on Curowit?
           </h2>
-          <p className="text-sm text-[#173B3D]/70 mt-1.5">
-            Every choice on our platform champions slow, meaningful craftsmanship over factory mass-production.
-          </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {/* Simple Static Responsive Grid - No Swipe, Clean & Direct */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3.5">
           {benefits.map((b, i) => {
             const Icon = b.icon;
             return (
               <div
                 key={i}
-                className="bg-[#F7EBD7] p-5 sm:p-6 rounded-2xl border border-[#07545A]/10 flex flex-col items-start"
+                className="bg-[#F7EBD7] rounded-xl sm:rounded-2xl p-3 sm:p-3.5 border border-[#07545A]/10 flex flex-col justify-between shadow-2xs transition-all duration-200 hover:border-[#07545A]/25"
               >
-                <div className={`w-10 h-10 rounded-xl ${b.bg} ${b.accent} flex items-center justify-center mb-4`}>
-                  <Icon className="w-5 h-5 stroke-[2]" />
+                <div className={`w-8 h-8 rounded-lg ${b.bg} ${b.accent} border flex items-center justify-center mb-2.5`}>
+                  <Icon className="w-4 h-4 stroke-[2.2]" />
                 </div>
-                <h3 className="font-bold text-sm tracking-wider text-[#07545A] mb-1.5">
-                  {b.title}
-                </h3>
-                <p className="text-xs text-[#173B3D]/75 leading-relaxed">
-                  {b.desc}
-                </p>
+
+                <div>
+                  <h3 className="font-bold text-xs text-[#07545A] leading-tight">
+                    {b.title}
+                  </h3>
+                  <p className="text-[10px] text-[#173B3D]/70 font-medium mt-0.5 line-clamp-1">
+                    {b.desc}
+                  </p>
+                </div>
               </div>
             );
           })}

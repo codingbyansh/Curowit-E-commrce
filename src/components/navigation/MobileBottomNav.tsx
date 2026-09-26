@@ -93,7 +93,7 @@ export const MobileBottomNav: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span className={`text-[10px] mt-0.5 tracking-tight font-medium ${isActive ? 'font-bold text-[#07545A]' : ''}`}>
+              <span className={`text-[10px] mt-0.5 tracking-tight font-bold ${isActive ? 'text-[#07545A]' : 'text-[#173B3D]'}`}>
                 {item.label}
               </span>
             </button>

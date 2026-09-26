@@ -35,3 +35,70 @@
   background: #07545A66;
 }
 
+/* Infinite slow glide marquee for trending products */
+@keyframes slowMarquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-slow-marquee {
+  display: flex;
+  width: max-content;
+  animation: slowMarquee 42s linear infinite;
+  will-change: transform;
+}
+
+.animate-slow-marquee:hover,
+.group-marquee:hover .animate-slow-marquee {
+  animation-play-state: paused;
+}
+
+/* Infinite slow glide marquee (Left to Right) */
+@keyframes slowMarqueeReverse {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slow-marquee-reverse {
+  display: flex;
+  width: max-content;
+  animation: slowMarqueeReverse 42s linear infinite;
+  will-change: transform;
+}
+
+.animate-slow-marquee-reverse:hover,
+.group-marquee:hover .animate-slow-marquee-reverse {
+  animation-play-state: paused;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 3D Card Flip utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+

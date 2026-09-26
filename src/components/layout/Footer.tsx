@@ -1,92 +1,106 @@
 import React from 'react';
-import { CurowitLogo } from '../common/CurowitLogo';
 import { useStore } from '../../context/StoreContext';
-import { Instagram, Youtube, Twitter, Heart, ShieldCheck, Truck, RefreshCw } from 'lucide-react';
+import { CurowitLogo } from '../common/CurowitLogo';
+import {
+  ShieldCheck,
+  Truck,
+  RefreshCw,
+  Heart,
+  Instagram,
+  Youtube,
+  Twitter,
+} from 'lucide-react';
 
 export const Footer: React.FC = () => {
   const { setActiveView, setSelectedCategory, showToast } = useStore();
 
-  const handleCategoryClick = (catId: string) => {
-    setSelectedCategory(catId);
-    setActiveView('shop');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleNavClick = (view: string) => {
+  const handleNavClick = (view: any) => {
     setActiveView(view);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleCategoryClick = (categorySlug: string) => {
+    setSelectedCategory(categorySlug);
+    setActiveView('shop');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleStaticClick = (title: string) => {
-    showToast(`${title}`, 'Information page opened');
+    showToast(title, 'Information updated for the latest creator guidelines.');
   };
 
   return (
-    <footer className="bg-[#07545A] text-[#FFF8EA] pt-14 pb-20 md:pb-12 border-t border-[#063F45]">
-      {/* Trust Badges Strip */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 mb-12 border-b border-[#FFF8EA]/15">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center sm:text-left">
-          <div className="flex items-center justify-center sm:justify-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#FFF8EA]/10 flex items-center justify-center text-[#F2A900] shrink-0">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-[#FFF8EA]">Authentic Craft Guarantee</h4>
-              <p className="text-xs text-[#F7EBD7]/70">100% verified independent Indian creators</p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center sm:justify-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#FFF8EA]/10 flex items-center justify-center text-[#F2A900] shrink-0">
-              <Truck className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-[#FFF8EA]">Careful Safe Transit</h4>
-              <p className="text-xs text-[#F7EBD7]/70">Plastic-free protective kraft packaging</p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center sm:justify-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#FFF8EA]/10 flex items-center justify-center text-[#F2A900] shrink-0">
-              <RefreshCw className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-[#FFF8EA]">7-Day Easy Support</h4>
-              <p className="text-xs text-[#F7EBD7]/70">Hassle-free replacement if damaged</p>
-            </div>
-          </div>
-        </div>
+    <footer className="relative bg-[#07545A] text-[#FFF8EA] pb-32 sm:pb-28 md:pb-16 overflow-hidden select-none">
+      {/* ========================================================
+          Aesthetic Curvy Background Top Wave Transition
+          ======================================================== */}
+      <div className="w-full bg-[#FFF8EA] leading-none">
+        <svg
+          viewBox="0 0 1440 48"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-5 sm:h-8 block text-[#07545A] fill-current"
+          preserveAspectRatio="none"
+        >
+          <path d="M0,0 C380,48 760,12 1120,38 C1280,50 1380,30 1440,0 L1440,48 L0,48 Z" />
+        </svg>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 lg:gap-12 pb-12">
-          {/* Brand Info & Mission (Cols 1 & 2 on tablet) */}
-          <div className="col-span-2">
+      {/* Ambient Radial Glows */}
+      <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-[#0A6D75]/20 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-[#042B30]/40 blur-3xl pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Compact Single-Line Trust Badges Strip */}
+        <div className="py-3 sm:py-4 mb-6 border-b border-[#FFF8EA]/12 flex flex-wrap items-center justify-between gap-3 text-xs text-[#F7EBD7]">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-[#F2A900] shrink-0" />
+            <span className="font-semibold text-[#FFF8EA]">Authentic Craft Guarantee</span>
+            <span className="text-[#FFF8EA]/40 hidden md:inline">· 100% verified makers</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Truck className="w-4 h-4 text-[#F2A900] shrink-0" />
+            <span className="font-semibold text-[#FFF8EA]">Safe Plastic-Free Transit</span>
+            <span className="text-[#FFF8EA]/40 hidden md:inline">· Eco kraft packaging</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <RefreshCw className="w-4 h-4 text-[#F2A900] shrink-0" />
+            <span className="font-semibold text-[#FFF8EA]">7-Day Easy Support</span>
+            <span className="text-[#FFF8EA]/40 hidden md:inline">· Hassle-free replacement</span>
+          </div>
+        </div>
+
+        {/* Short, Sleek 4-Column Directory */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 pb-6 border-b border-[#FFF8EA]/12">
+          {/* Brand Info & Mission */}
+          <div className="col-span-2 md:col-span-1">
             <div
               onClick={() => handleNavClick('home')}
-              className="cursor-pointer inline-block mb-4"
+              className="cursor-pointer inline-block mb-2"
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleNavClick('home')}
             >
-              <CurowitLogo variant="horizontal" theme="light" size="lg" />
+              <CurowitLogo variant="horizontal" theme="light" size="sm" />
             </div>
 
-            <p className="text-xs sm:text-sm text-[#F7EBD7]/80 leading-relaxed max-w-sm mb-6">
-              Curowit is the home of creatives. A dedicated marketplace celebrating handmade artistry, heirloom craft pieces, and the passionate independent makers who bring them to life.
+            <p className="text-xs text-[#F7EBD7]/75 leading-relaxed max-w-xs mb-3">
+              Home of independent creators. Celebrating handmade artistry and heirloom craft pieces across India.
             </p>
 
-            <div className="flex items-center gap-3 text-[#F7EBD7]/80">
+            <div className="flex items-center gap-2 text-[#F7EBD7]/80">
               <a
                 href="#instagram"
                 onClick={(e) => {
                   e.preventDefault();
                   showToast('Instagram: @curowit', 'Official community channel');
                 }}
-                className="w-8 h-8 rounded-full bg-[#FFF8EA]/10 hover:bg-[#F2A900] hover:text-[#07545A] flex items-center justify-center transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-full bg-[#FFF8EA]/10 hover:bg-[#F2A900] hover:text-[#07545A] flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="Instagram"
               >
-                <Instagram className="w-4 h-4" />
+                <Instagram className="w-3.5 h-3.5" />
               </a>
               <a
                 href="#youtube"
@@ -94,10 +108,10 @@ export const Footer: React.FC = () => {
                   e.preventDefault();
                   showToast('YouTube: Curowit Studios', 'Maker documentaries and tutorials');
                 }}
-                className="w-8 h-8 rounded-full bg-[#FFF8EA]/10 hover:bg-[#F2A900] hover:text-[#07545A] flex items-center justify-center transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-full bg-[#FFF8EA]/10 hover:bg-[#F2A900] hover:text-[#07545A] flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="YouTube"
               >
-                <Youtube className="w-4 h-4" />
+                <Youtube className="w-3.5 h-3.5" />
               </a>
               <a
                 href="#twitter"
@@ -105,20 +119,20 @@ export const Footer: React.FC = () => {
                   e.preventDefault();
                   showToast('Twitter: @curowit', 'Maker announcements');
                 }}
-                className="w-8 h-8 rounded-full bg-[#FFF8EA]/10 hover:bg-[#F2A900] hover:text-[#07545A] flex items-center justify-center transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-full bg-[#FFF8EA]/10 hover:bg-[#F2A900] hover:text-[#07545A] flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="Twitter"
               >
-                <Twitter className="w-4 h-4" />
+                <Twitter className="w-3.5 h-3.5" />
               </a>
             </div>
           </div>
 
           {/* Column 1: SHOP */}
           <div>
-            <h4 className="text-xs font-bold tracking-wider uppercase text-[#F2A900] mb-4">
-              Shop
+            <h4 className="text-[11px] font-bold tracking-wider uppercase text-[#F2A900] mb-2.5">
+              Shop Craft
             </h4>
-            <ul className="space-y-2.5 text-xs text-[#F7EBD7]/80">
+            <ul className="space-y-1.5 text-xs text-[#F7EBD7]/80">
               <li>
                 <button
                   onClick={() => handleCategoryClick('jewellery')}
@@ -140,7 +154,7 @@ export const Footer: React.FC = () => {
                   onClick={() => handleCategoryClick('home-decor')}
                   className="hover:text-white transition-colors cursor-pointer"
                 >
-                  Home Decor
+                  Home Decor & Pottery
                 </button>
               </li>
               <li>
@@ -151,45 +165,21 @@ export const Footer: React.FC = () => {
                   Art & Paintings
                 </button>
               </li>
-              <li>
-                <button
-                  onClick={() => handleCategoryClick('accessories')}
-                  className="hover:text-white transition-colors cursor-pointer"
-                >
-                  Accessories
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => handleCategoryClick('candles')}
-                  className="hover:text-white transition-colors cursor-pointer"
-                >
-                  Candles
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => handleCategoryClick('cards-gifts')}
-                  className="hover:text-white transition-colors cursor-pointer"
-                >
-                  Cards & Gifts
-                </button>
-              </li>
             </ul>
           </div>
 
           {/* Column 2: DISCOVER */}
           <div>
-            <h4 className="text-xs font-bold tracking-wider uppercase text-[#F2A900] mb-4">
+            <h4 className="text-[11px] font-bold tracking-wider uppercase text-[#F2A900] mb-2.5">
               Discover
             </h4>
-            <ul className="space-y-2.5 text-xs text-[#F7EBD7]/80">
+            <ul className="space-y-1.5 text-xs text-[#F7EBD7]/80">
               <li>
                 <button
                   onClick={() => handleNavClick('creators')}
                   className="hover:text-white transition-colors cursor-pointer"
                 >
-                  Independent Creators
+                  Artisans & Makers
                 </button>
               </li>
               <li>
@@ -213,18 +203,18 @@ export const Footer: React.FC = () => {
                   onClick={() => handleNavClick('shop')}
                   className="hover:text-white transition-colors cursor-pointer"
                 >
-                  New Arrivals
+                  All Collections
                 </button>
               </li>
             </ul>
           </div>
 
-          {/* Column 3: CUROWIT & POLICIES */}
+          {/* Column 3: ABOUT & POLICIES */}
           <div>
-            <h4 className="text-xs font-bold tracking-wider uppercase text-[#F2A900] mb-4">
+            <h4 className="text-[11px] font-bold tracking-wider uppercase text-[#F2A900] mb-2.5">
               Curowit
             </h4>
-            <ul className="space-y-2.5 text-xs text-[#F7EBD7]/80">
+            <ul className="space-y-1.5 text-xs text-[#F7EBD7]/80">
               <li>
                 <button
                   onClick={() => handleStaticClick('About Curowit')}
@@ -251,14 +241,6 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <button
-                  onClick={() => handleStaticClick('Return Policy')}
-                  className="hover:text-white transition-colors cursor-pointer"
-                >
-                  Returns & Guarantee
-                </button>
-              </li>
-              <li>
-                <button
                   onClick={() => handleStaticClick('Privacy Policy')}
                   className="hover:text-white transition-colors cursor-pointer"
                 >
@@ -269,18 +251,21 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom Copyright & Craft Quote */}
-        <div className="pt-8 border-t border-[#FFF8EA]/15 flex flex-col sm:flex-row items-center justify-between text-xs text-[#F7EBD7]/60 gap-3">
-          <div className="flex items-center gap-2">
-            <span>© {new Date().getFullYear()} CUROWIT Technologies.</span>
-            <span>·</span>
-            <span>Home of Creatives.</span>
+        {/* Bottom Copyright Strip with Full Visibility Clearance */}
+        <div className="pt-6 mt-4 border-t border-[#FFF8EA]/15 flex flex-col sm:flex-row items-center justify-between text-xs text-[#FFF8EA] gap-3">
+          <div className="text-center sm:text-left">
+            <span className="font-bold text-sm text-[#FFF8EA] tracking-wide block">
+              © {new Date().getFullYear()} CUROWIT · Home of Creatives. All rights reserved.
+            </span>
+            <span className="text-[11px] text-[#F7EBD7]/70 mt-0.5 block">
+              Empowering independent handmade artisans across India.
+            </span>
           </div>
 
-          <div className="flex items-center gap-1.5 text-[11px] text-[#F7EBD7]/70">
+          <div className="flex items-center gap-1.5 text-xs text-[#F7EBD7] bg-[#053A3F] px-4 py-1.5 rounded-full border border-[#FFF8EA]/15 shadow-2xs">
             <span>Crafted with</span>
             <Heart className="w-3.5 h-3.5 fill-[#E97868] text-[#E97868]" />
-            <span>for independent creators everywhere</span>
+            <span>for mindful homes everywhere</span>
           </div>
         </div>
       </div>

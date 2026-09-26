@@ -60,6 +60,7 @@ interface StoreContextType {
 
   // Wishlist
   wishlist: string[];
+  wishlistCount: number;
   toggleWishlist: (productId: string) => void;
   isInWishlist: (productId: string) => boolean;
 
@@ -350,6 +351,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         shippingFee,
         cartTotal,
         wishlist,
+        wishlistCount: wishlist.length,
         toggleWishlist,
         isInWishlist,
         searchQuery,
