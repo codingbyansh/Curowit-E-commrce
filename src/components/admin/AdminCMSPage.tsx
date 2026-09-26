@@ -1236,7 +1236,7 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
   const [category, setCategory] = useState(product?.category || 'jewellery');
   const [price, setPrice] = useState(product?.price || 499);
   const [originalPrice, setOriginalPrice] = useState(product?.originalPrice || 699);
-  const [image, setImage] = useState(product?.image || '/src/assets/images/hero_handmade_1790260978568.jpg');
+  const [image, setImage] = useState(product?.image || '/images/hero_handmade_1790260978568.jpg');
   const [creatorName, setCreatorName] = useState(product?.creatorName || 'Siya Sharma');
   const [creatorSpecialty, setCreatorSpecialty] = useState(product?.creatorSpecialty || 'Handmade Artisan');
   const [description, setDescription] = useState(product?.description || '');
@@ -1263,7 +1263,7 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
       rating: product?.rating || 4.9,
       reviewCount: product?.reviewCount || 12,
       creatorId: product?.creatorId || 'creator-1',
-      creatorAvatar: product?.creatorAvatar || '/src/assets/images/hero_creators_1790260990626.jpg',
+      creatorAvatar: product?.creatorAvatar || '/images/hero_creators_1790260990626.jpg',
       gallery: product?.gallery || [image],
       materials: product?.materials || ['100% Organic Eco Cotton', 'Natural Dyes'],
       shippingInfo: product?.shippingInfo || 'Dispatched in 2-3 business days via plastic-free eco transit.',
@@ -1489,7 +1489,7 @@ const CreatorEditModal: React.FC<CreatorEditModalProps> = ({
 }) => {
   const [name, setName] = useState(creator?.name || '');
   const [handle, setHandle] = useState(creator?.handle || '@');
-  const [avatar, setAvatar] = useState(creator?.avatar || '/src/assets/images/hero_creators_1790260990626.jpg');
+  const [avatar, setAvatar] = useState(creator?.avatar || '/images/hero_creators_1790260990626.jpg');
   const [specialty, setSpecialty] = useState(creator?.specialty || 'Studio Ceramics & Pottery');
   const [location, setLocation] = useState(creator?.location || 'Bengaluru, India');
   const [rating, setRating] = useState(creator?.rating || 4.9);
@@ -1680,7 +1680,7 @@ const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
   const [format, setFormat] = useState<'Live Online' | 'Studio Offline'>(workshop?.format || 'Live Online');
   const [price, setPrice] = useState(workshop?.price || 899);
   const [seatsLeft, setSeatsLeft] = useState(workshop?.seatsLeft || 8);
-  const [image, setImage] = useState(workshop?.image || '/src/assets/images/hero_handmade_1790260978568.jpg');
+  const [image, setImage] = useState(workshop?.image || '/images/hero_handmade_1790260978568.jpg');
   const [description, setDescription] = useState(workshop?.description || '');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1873,7 +1873,7 @@ const StoryEditModal: React.FC<StoryEditModalProps> = ({
   const [author, setAuthor] = useState(story?.author || 'Curowit Editorial');
   const [tag, setTag] = useState(story?.tag || 'Craft Journey');
   const [readTime, setReadTime] = useState(story?.readTime || '4 min read');
-  const [image, setImage] = useState(story?.image || '/src/assets/images/hero_creators_1790260990626.jpg');
+  const [image, setImage] = useState(story?.image || '/images/hero_creators_1790260990626.jpg');
   const [excerpt, setExcerpt] = useState(story?.excerpt || '');
 
   const handleSubmit = (e: React.FormEvent) => {

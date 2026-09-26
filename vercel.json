@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/((?!images/|src/|assets/|favicon\\.png|curowit-logo\\.jpg|curowit-logo\\.png|hero-1\\.jpg|hero-2\\.jpg|hero-3\\.jpg).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

@@ -63,22 +63,27 @@ interface ToastMessage {
   type?: 'success' | 'info' | 'error';
 }
 
+const normalizeImageUrl = (url?: string): string => {
+  if (!url) return '';
+  return url.replace(/^\/src\/assets\/images\//, '/images/');
+};
+
 export const DEFAULT_HERO_SLIDES: HeroBannerSlide[] = [
   {
     id: 0,
-    image: '/src/assets/images/hero_banner_handmade_slide1_1790433156236.jpg',
+    image: '/images/hero_banner_handmade_slide1_1790433156236.jpg',
     alt: 'Curowit: Made by Hand. Made with Heart. Discover unique handmade products created by independent artists and makers.',
     action: 'shop-handmade',
   },
   {
     id: 1,
-    image: '/src/assets/images/hero_banner_creators_slide2_1790433170531.jpg',
+    image: '/images/hero_banner_creators_slide2_1790433170531.jpg',
     alt: 'Curowit: Meet the Creators Behind the Magic. Discover unique work from independent creators and support creativity directly.',
     action: 'shop-creators',
   },
   {
     id: 2,
-    image: '/src/assets/images/hero_banner_everything_slide3_1790433182303.jpg',
+    image: '/images/hero_banner_everything_slide3_1790433182303.jpg',
     alt: 'Curowit: Everything Creative. All in One Place. Shop Curowit products and discover curated creative tools, supplies, DIY kits.',
     action: 'explore-all',
   },
@@ -244,8 +249,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Persistent Products
   const [products, setProducts] = useState<Product[]>(() => {
     try {
-      const saved = localStorage.getItem('curowit_products_v2');
-      if (saved) return JSON.parse(saved);
+      const saved = localStorage.getItem('curowit_products_v4');
+      if (saved) {
+        const parsed: Product[] = JSON.parse(saved);
+        return parsed.map((p) => ({
+          ...p,
+          image: normalizeImageUrl(p.image),
+          creatorAvatar: normalizeImageUrl(p.creatorAvatar),
+          gallery: (p.gallery || []).map(normalizeImageUrl),
+        }));
+      }
     } catch {}
     return PRODUCTS;
   });
@@ -253,8 +266,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Persistent Creators
   const [creators, setCreators] = useState<Creator[]>(() => {
     try {
-      const saved = localStorage.getItem('curowit_creators_v2');
-      if (saved) return JSON.parse(saved);
+      const saved = localStorage.getItem('curowit_creators_v4');
+      if (saved) {
+        const parsed: Creator[] = JSON.parse(saved);
+        return parsed.map((c) => ({ ...c, avatar: normalizeImageUrl(c.avatar) }));
+      }
     } catch {}
     return CREATORS;
   });
@@ -262,8 +278,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Persistent Workshops
   const [workshops, setWorkshops] = useState<Workshop[]>(() => {
     try {
-      const saved = localStorage.getItem('curowit_workshops_v2');
-      if (saved) return JSON.parse(saved);
+      const saved = localStorage.getItem('curowit_workshops_v4');
+      if (saved) {
+        const parsed: Workshop[] = JSON.parse(saved);
+        return parsed.map((w) => ({ ...w, image: normalizeImageUrl(w.image) }));
+      }
     } catch {}
     return WORKSHOPS;
   });
@@ -271,8 +290,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Persistent Stories
   const [stories, setStories] = useState<Story[]>(() => {
     try {
-      const saved = localStorage.getItem('curowit_stories_v2');
-      if (saved) return JSON.parse(saved);
+      const saved = localStorage.getItem('curowit_stories_v4');
+      if (saved) {
+        const parsed: Story[] = JSON.parse(saved);
+        return parsed.map((s) => ({ ...s, image: normalizeImageUrl(s.image) }));
+      }
     } catch {}
     return STORIES;
   });
@@ -280,8 +302,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Persistent Hero Slides
   const [heroSlides, setHeroSlides] = useState<HeroBannerSlide[]>(() => {
     try {
-      const saved = localStorage.getItem('curowit_hero_slides_v3');
-      if (saved) return JSON.parse(saved);
+      const saved = localStorage.getItem('curowit_hero_slides_v4');
+      if (saved) {
+        const parsed: HeroBannerSlide[] = JSON.parse(saved);
+        return parsed.map((s) => ({ ...s, image: normalizeImageUrl(s.image) }));
+      }
     } catch {}
     return DEFAULT_HERO_SLIDES;
   });
@@ -299,7 +324,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
       const saved = localStorage.getItem('curowit_cart');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed: CartItem[] = JSON.parse(saved);
+        return parsed.map((item) => ({
+          ...item,
+          product: {
+            ...item.product,
+            image: normalizeImageUrl(item.product.image),
+            creatorAvatar: normalizeImageUrl(item.product.creatorAvatar),
+            gallery: (item.product.gallery || []).map(normalizeImageUrl),
+          },
+        }));
+      }
     } catch {}
     return [
       {
@@ -337,7 +373,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [orders, setOrders] = useState<Order[]>(() => {
     try {
       const saved = localStorage.getItem('curowit_orders');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed: Order[] = JSON.parse(saved);
+        return parsed.map((order) => ({
+          ...order,
+          items: (order.items || []).map((item) => ({
+            ...item,
+            product: {
+              ...item.product,
+              image: normalizeImageUrl(item.product.image),
+              creatorAvatar: normalizeImageUrl(item.product.creatorAvatar),
+              gallery: (item.product.gallery || []).map(normalizeImageUrl),
+            },
+          })),
+        }));
+      }
     } catch {}
     return [
       {
@@ -392,31 +442,31 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Synchronize localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('curowit_products_v2', JSON.stringify(products));
+      localStorage.setItem('curowit_products_v4', JSON.stringify(products));
     } catch {}
   }, [products]);
 
   useEffect(() => {
     try {
-      localStorage.setItem('curowit_creators_v2', JSON.stringify(creators));
+      localStorage.setItem('curowit_creators_v4', JSON.stringify(creators));
     } catch {}
   }, [creators]);
 
   useEffect(() => {
     try {
-      localStorage.setItem('curowit_workshops_v2', JSON.stringify(workshops));
+      localStorage.setItem('curowit_workshops_v4', JSON.stringify(workshops));
     } catch {}
   }, [workshops]);
 
   useEffect(() => {
     try {
-      localStorage.setItem('curowit_stories_v2', JSON.stringify(stories));
+      localStorage.setItem('curowit_stories_v4', JSON.stringify(stories));
     } catch {}
   }, [stories]);
 
   useEffect(() => {
     try {
-      localStorage.setItem('curowit_hero_slides_v3', JSON.stringify(heroSlides));
+      localStorage.setItem('curowit_hero_slides_v4', JSON.stringify(heroSlides));
     } catch {}
   }, [heroSlides]);
 
@@ -727,11 +777,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setStories(STORIES);
     setHeroSlides(DEFAULT_HERO_SLIDES);
     setAnnouncements(DEFAULT_ANNOUNCEMENTS);
-    localStorage.removeItem('curowit_products_v2');
-    localStorage.removeItem('curowit_creators_v2');
-    localStorage.removeItem('curowit_workshops_v2');
-    localStorage.removeItem('curowit_stories_v2');
-    localStorage.removeItem('curowit_hero_slides_v3');
+    localStorage.removeItem('curowit_products_v4');
+    localStorage.removeItem('curowit_creators_v4');
+    localStorage.removeItem('curowit_workshops_v4');
+    localStorage.removeItem('curowit_stories_v4');
+    localStorage.removeItem('curowit_hero_slides_v4');
     localStorage.removeItem('curowit_announcements_v2');
     showToast('Reset Complete', 'Restored all original website content and mock data');
   };

@@ -12,19 +12,19 @@ interface HeroBannerSlide {
 const HERO_BANNER_SLIDES: HeroBannerSlide[] = [
   {
     id: 0,
-    image: '/src/assets/images/hero_banner_handmade_slide1_1790433156236.jpg',
+    image: '/images/hero_banner_handmade_slide1_1790433156236.jpg',
     alt: 'Curowit: Made by Hand. Made with Heart. Discover unique handmade products created by independent artists and makers.',
     action: 'shop-handmade',
   },
   {
     id: 1,
-    image: '/src/assets/images/hero_banner_creators_slide2_1790433170531.jpg',
+    image: '/images/hero_banner_creators_slide2_1790433170531.jpg',
     alt: 'Curowit: Meet the Creators Behind the Magic. Discover unique work from independent creators and support creativity directly.',
     action: 'shop-creators',
   },
   {
     id: 2,
-    image: '/src/assets/images/hero_banner_everything_slide3_1790433182303.jpg',
+    image: '/images/hero_banner_everything_slide3_1790433182303.jpg',
     alt: 'Curowit: Everything Creative. All in One Place. Shop Curowit products and discover curated creative tools, supplies, DIY kits.',
     action: 'explore-all',
   },
