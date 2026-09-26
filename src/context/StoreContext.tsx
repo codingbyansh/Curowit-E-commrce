@@ -66,19 +66,19 @@ interface ToastMessage {
 export const DEFAULT_HERO_SLIDES: HeroBannerSlide[] = [
   {
     id: 0,
-    image: '/hero-1.jpg',
+    image: '/src/assets/images/hero_banner_handmade_slide1_1790433156236.jpg',
     alt: 'Curowit: Made by Hand. Made with Heart. Discover unique handmade products created by independent artists and makers.',
     action: 'shop-handmade',
   },
   {
     id: 1,
-    image: '/hero-2.jpg',
+    image: '/src/assets/images/hero_banner_creators_slide2_1790433170531.jpg',
     alt: 'Curowit: Meet the Creators Behind the Magic. Discover unique work from independent creators and support creativity directly.',
     action: 'shop-creators',
   },
   {
     id: 2,
-    image: '/hero-3.jpg',
+    image: '/src/assets/images/hero_banner_everything_slide3_1790433182303.jpg',
     alt: 'Curowit: Everything Creative. All in One Place. Shop Curowit products and discover curated creative tools, supplies, DIY kits.',
     action: 'explore-all',
   },
@@ -280,7 +280,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Persistent Hero Slides
   const [heroSlides, setHeroSlides] = useState<HeroBannerSlide[]>(() => {
     try {
-      const saved = localStorage.getItem('curowit_hero_slides_v2');
+      const saved = localStorage.getItem('curowit_hero_slides_v3');
       if (saved) return JSON.parse(saved);
     } catch {}
     return DEFAULT_HERO_SLIDES;
@@ -416,7 +416,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     try {
-      localStorage.setItem('curowit_hero_slides_v2', JSON.stringify(heroSlides));
+      localStorage.setItem('curowit_hero_slides_v3', JSON.stringify(heroSlides));
     } catch {}
   }, [heroSlides]);
 
@@ -731,7 +731,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.removeItem('curowit_creators_v2');
     localStorage.removeItem('curowit_workshops_v2');
     localStorage.removeItem('curowit_stories_v2');
-    localStorage.removeItem('curowit_hero_slides_v2');
+    localStorage.removeItem('curowit_hero_slides_v3');
     localStorage.removeItem('curowit_announcements_v2');
     showToast('Reset Complete', 'Restored all original website content and mock data');
   };

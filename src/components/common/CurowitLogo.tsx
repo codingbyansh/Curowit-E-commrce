@@ -48,14 +48,10 @@ export const CurowitLogo: React.FC<CurowitLogoProps> = ({
     },
   }[size];
 
-  // The official Curowit circular emblem image
+  // The official Curowit circular emblem image (transparent background)
   const officialLogoImage = (
     <div
-      className={`relative inline-flex items-center justify-center rounded-full overflow-hidden shrink-0 transition-transform duration-300 group-hover:scale-105 ${config.emblemClass} ${
-        isLight
-          ? 'border border-[#FFF8EA]/30 shadow-xs ring-1 ring-[#F2A900]/30'
-          : 'border border-[#07545A]/15 shadow-2xs'
-      }`}
+      className={`relative inline-flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105 ${config.emblemClass}`}
       style={{
         width: `${config.emblemPx}px`,
         height: `${config.emblemPx}px`,
@@ -64,10 +60,10 @@ export const CurowitLogo: React.FC<CurowitLogoProps> = ({
       }}
     >
       <img
-        src="/curowit-logo.jpg"
+        src="/favicon.png"
         alt="Curowit Logo"
         referrerPolicy="no-referrer"
-        className="w-full h-full object-cover object-center select-none"
+        className="w-full h-full object-contain object-center select-none drop-shadow-2xs"
       />
     </div>
   );

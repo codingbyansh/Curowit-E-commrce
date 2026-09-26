@@ -1,7 +1,7 @@
 import React from 'react';
 import { CATEGORIES, Category } from '../../data/mockData';
 import { useStore } from '../../context/StoreContext';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 interface CategoryFrameProps {
   type: 'flower' | 'embroidery' | 'pottery' | 'artisan';
@@ -229,7 +229,7 @@ export const CategorySection: React.FC = () => {
     <section className="py-12 sm:py-16 bg-[#F7EBD7] border-b border-[#07545A]/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 sm:mb-12 gap-3 text-center sm:text-left">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-10 gap-3 text-center sm:text-left">
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#3F704B] mb-1.5">
               <Sparkles className="w-3.5 h-3.5 text-[#F2A900]" />
@@ -242,22 +242,13 @@ export const CategorySection: React.FC = () => {
               Explore handmade creations framed by craft discipline, crafted with patient hands and natural materials.
             </p>
           </div>
-
-          <button
-            onClick={() => {
-              setSelectedCategory('all');
-              setActiveView('shop');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className="inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold text-[#07545A] hover:text-[#E69A16] transition-colors cursor-pointer group"
-          >
-            <span>View All Collections</span>
-            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-          </button>
         </div>
 
-        {/* Circular Handicraft & Floral Categories Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10">
+        {/* Single-Row Categories: Finger-swipeable on phone/tablet (no arrows), full 8-column single row on desktop */}
+        <div
+          className="flex flex-nowrap lg:grid lg:grid-cols-8 items-start gap-4 sm:gap-5 lg:gap-3 overflow-x-auto lg:overflow-visible no-scrollbar snap-x snap-mandatory touch-pan-x -mx-4 px-4 sm:mx-0 sm:px-0 pb-2"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
           {CATEGORIES.map((cat) => {
             const frameType = getCategoryFrameType(cat.id);
 
@@ -265,7 +256,7 @@ export const CategorySection: React.FC = () => {
               <div
                 key={cat.id}
                 onClick={() => handleCategorySelect(cat)}
-                className="group flex flex-col items-center cursor-pointer select-none"
+                className="group flex flex-col items-center cursor-pointer select-none shrink-0 snap-start w-[104px] sm:w-[124px] lg:w-auto"
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
@@ -273,7 +264,7 @@ export const CategorySection: React.FC = () => {
                 }}
               >
                 {/* Circular Framed Artwork Medallion */}
-                <div className="relative w-32 h-32 sm:w-38 sm:h-38 lg:w-44 lg:h-44 flex items-center justify-center">
+                <div className="relative w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 xl:w-35 xl:h-35 flex items-center justify-center">
                   {/* Inner Circular Image Aperture */}
                   <div className="w-[74%] h-[74%] rounded-full overflow-hidden bg-[#FFF8EA] shadow-md border-2 border-[#FFF8EA] z-10 transition-transform duration-500 group-hover:scale-105">
                     <img
@@ -282,6 +273,7 @@ export const CategorySection: React.FC = () => {
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-112"
                       loading="lazy"
+                      draggable={false}
                     />
                     <div className="absolute inset-0 bg-[#07545A]/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
@@ -291,8 +283,8 @@ export const CategorySection: React.FC = () => {
                 </div>
 
                 {/* Category Title */}
-                <div className="mt-3 text-center flex flex-col items-center">
-                  <h3 className="font-bold text-sm sm:text-base text-[#173B3D] group-hover:text-[#07545A] transition-colors font-display leading-snug">
+                <div className="mt-2.5 text-center flex flex-col items-center px-1">
+                  <h3 className="font-bold text-xs sm:text-sm text-[#173B3D] group-hover:text-[#07545A] transition-colors font-display leading-snug whitespace-nowrap">
                     {cat.name}
                   </h3>
                 </div>

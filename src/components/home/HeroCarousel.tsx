@@ -12,19 +12,19 @@ interface HeroBannerSlide {
 const HERO_BANNER_SLIDES: HeroBannerSlide[] = [
   {
     id: 0,
-    image: '/hero-1.jpg',
+    image: '/src/assets/images/hero_banner_handmade_slide1_1790433156236.jpg',
     alt: 'Curowit: Made by Hand. Made with Heart. Discover unique handmade products created by independent artists and makers.',
     action: 'shop-handmade',
   },
   {
     id: 1,
-    image: '/hero-2.jpg',
+    image: '/src/assets/images/hero_banner_creators_slide2_1790433170531.jpg',
     alt: 'Curowit: Meet the Creators Behind the Magic. Discover unique work from independent creators and support creativity directly.',
     action: 'shop-creators',
   },
   {
     id: 2,
-    image: '/hero-3.jpg',
+    image: '/src/assets/images/hero_banner_everything_slide3_1790433182303.jpg',
     alt: 'Curowit: Everything Creative. All in One Place. Shop Curowit products and discover curated creative tools, supplies, DIY kits.',
     action: 'explore-all',
   },
@@ -131,28 +131,28 @@ export const HeroCarousel: React.FC = () => {
             );
           })}
 
-          {/* Navigation Controls: Previous Slide */}
+          {/* Navigation Controls: Previous Slide (hidden on phone, swipe by finger) */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               prevSlide();
             }}
             aria-label="Previous Banner"
-            className="absolute left-2.5 sm:left-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-11 sm:h-11 rounded-full bg-[#FFF8EA]/85 backdrop-blur-md border border-[#07545A]/15 text-[#07545A] flex items-center justify-center hover:bg-[#FFF8EA] shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95"
+            className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-[#FFF8EA]/85 backdrop-blur-md border border-[#07545A]/15 text-[#07545A] items-center justify-center hover:bg-[#FFF8EA] shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95"
           >
-            <ChevronLeft className="w-4 h-4 sm:w-6 sm:h-6" />
+            <ChevronLeft className="w-6 h-6" />
           </button>
 
-          {/* Navigation Controls: Next Slide */}
+          {/* Navigation Controls: Next Slide (hidden on phone, swipe by finger) */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               nextSlide();
             }}
             aria-label="Next Banner"
-            className="absolute right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-11 sm:h-11 rounded-full bg-[#FFF8EA]/85 backdrop-blur-md border border-[#07545A]/15 text-[#07545A] flex items-center justify-center hover:bg-[#FFF8EA] shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95"
+            className="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-[#FFF8EA]/85 backdrop-blur-md border border-[#07545A]/15 text-[#07545A] items-center justify-center hover:bg-[#FFF8EA] shadow-md transition-all cursor-pointer hover:scale-105 active:scale-95"
           >
-            <ChevronRight className="w-4 h-4 sm:w-6 sm:h-6" />
+            <ChevronRight className="w-6 h-6" />
           </button>
 
           {/* Pagination Indicators Inside Banner Bottom */}
