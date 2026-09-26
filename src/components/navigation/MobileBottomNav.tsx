@@ -1,13 +1,12 @@
 import React from 'react';
 import { useStore } from '../../context/StoreContext';
-import { Home, Compass, Heart, ShoppingBag, User } from 'lucide-react';
+import { Home, Compass, Sparkles, ShoppingBag, User } from 'lucide-react';
 
 export const MobileBottomNav: React.FC = () => {
   const {
     activeView,
     setActiveView,
     cartCount,
-    wishlist,
     user,
     setIsAuthModalOpen,
   } = useStore();
@@ -32,12 +31,11 @@ export const MobileBottomNav: React.FC = () => {
       },
     },
     {
-      id: 'wishlist',
-      label: 'Wishlist',
-      icon: Heart,
-      badge: wishlist.length > 0 ? wishlist.length : undefined,
+      id: 'workshops',
+      label: 'Workshops',
+      icon: Sparkles,
       action: () => {
-        setActiveView('wishlist');
+        setActiveView('workshops');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       },
     },
