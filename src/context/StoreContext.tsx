@@ -29,9 +29,21 @@ export interface CartItem {
   personalizationText?: string;
 }
 
+export interface SavedAddress {
+  id: string;
+  label: string;
+  fullName: string;
+  phone: string;
+  street: string;
+  city: string;
+  postalCode: string;
+}
+
 export interface Order {
   id: string;
   date: string;
+  userEmail?: string;
+  userId?: string;
   items: CartItem[];
   total: number;
   status: 'Confirmed' | 'Crafting' | 'Dispatched' | 'Delivered';
@@ -212,6 +224,10 @@ interface StoreContextType {
   shouldAutoOpenCheckout: boolean;
   setShouldAutoOpenCheckout: (open: boolean) => void;
   orders: Order[];
+  userOrders: Order[];
+  addresses: SavedAddress[];
+  saveAddress: (addr: Omit<SavedAddress, 'id'> & { id?: string }) => void;
+  deleteAddress: (id: string) => void;
   placeOrder: (shippingDetails: Order['shippingAddress'], paymentMethod: string) => Order;
 
   // Notification Toast
@@ -412,72 +428,86 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   });
 
-  // Orders
+  // Orders (starts empty — no pre-populated demo orders)
   const [orders, setOrders] = useState<Order[]>(() => {
     try {
-      const saved = localStorage.getItem('curowit_orders');
+      const saved = localStorage.getItem('curowit_orders_v3');
       if (saved) {
         const parsed: Order[] = JSON.parse(saved);
-        return parsed.map((order) => ({
-          ...order,
-          items: (order.items || []).map((item) => ({
-            ...item,
-            product: {
-              ...item.product,
-              image: normalizeImageUrl(item.product.image),
-              creatorAvatar: normalizeImageUrl(item.product.creatorAvatar),
-              gallery: (item.product.gallery || []).map(normalizeImageUrl),
-            },
-          })),
-        }));
+        return parsed
+          .filter((order) => order.id !== 'CW-8924' && order.id !== 'CW-9142')
+          .map((order) => ({
+            ...order,
+            items: (order.items || []).map((item) => ({
+              ...item,
+              product: {
+                ...item.product,
+                image: normalizeImageUrl(item.product.image),
+                creatorAvatar: normalizeImageUrl(item.product.creatorAvatar),
+                gallery: (item.product.gallery || []).map(normalizeImageUrl),
+              },
+            })),
+          }));
       }
     } catch {}
-    return [
-      {
-        id: 'CW-8924',
-        date: '20 Sep 2026',
-        items: [
-          {
-            product: PRODUCTS[1],
-            quantity: 1,
-          },
-        ],
-        total: 699,
-        status: 'Delivered',
-        shippingAddress: {
-          fullName: 'Aanya Verma',
-          phone: '+91 98765 43210',
-          street: '42 Lotus Bloom Lane, Indiranagar',
-          city: 'Bengaluru, Karnataka',
-          postalCode: '560038',
-        },
-      },
-      {
-        id: 'CW-9142',
-        date: '25 Sep 2026',
-        items: [
-          {
-            product: PRODUCTS[0],
-            quantity: 1,
-            personalizationText: 'Maya ♡',
-          },
-          {
-            product: PRODUCTS[2],
-            quantity: 1,
-          },
-        ],
-        total: 1848,
-        status: 'Crafting',
-        shippingAddress: {
-          fullName: 'Rahul Sharma',
-          phone: '+91 91234 56789',
-          street: '15 Heritage Square, Bandra West',
-          city: 'Mumbai, Maharashtra',
-          postalCode: '400050',
-        },
-      },
-    ];
+    return [];
   });
+
+  // Saved addresses per user (starts empty — no pre-populated demo address)
+  const [addresses, setAddresses] = useState<SavedAddress[]>([]);
+
+  useEffect(() => {
+    if (!user.isLoggedIn || (!user.email && !user.uid)) {
+      setAddresses([]);
+      return;
+    }
+    const key = `curowit_addresses_v1_${(user.email || user.uid || '').toLowerCase()}`;
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        setAddresses(JSON.parse(saved));
+      } else {
+        setAddresses([]);
+      }
+    } catch {
+      setAddresses([]);
+    }
+  }, [user.isLoggedIn, user.email, user.uid]);
+
+  const saveAddress = (addrData: Omit<SavedAddress, 'id'> & { id?: string }) => {
+    if (!user.isLoggedIn) return;
+    const key = `curowit_addresses_v1_${(user.email || user.uid || '').toLowerCase()}`;
+    const newAddr: SavedAddress = {
+      id: addrData.id || `addr-${Date.now()}`,
+      label: addrData.label || 'Delivery Address',
+      fullName: addrData.fullName.trim(),
+      phone: addrData.phone.trim(),
+      street: addrData.street.trim(),
+      city: addrData.city.trim(),
+      postalCode: addrData.postalCode.trim(),
+    };
+    setAddresses((prev) => {
+      const filtered = prev.filter((a) => a.id !== newAddr.id);
+      const next = [newAddr, ...filtered];
+      try {
+        localStorage.setItem(key, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const deleteAddress = (id: string) => {
+    if (!user.isLoggedIn) return;
+    const key = `curowit_addresses_v1_${(user.email || user.uid || '').toLowerCase()}`;
+    setAddresses((prev) => {
+      const next = prev.filter((a) => a.id !== id);
+      try {
+        localStorage.setItem(key, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    showToast('Address Removed');
+  };
 
   // Toasts
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -845,7 +875,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           uid: firebaseUser.uid,
           name: firebaseUser.displayName || prev.name || firebaseUser.email?.split('@')[0] || 'Creative Patron',
           email: firebaseUser.email || prev.email || '',
-          phone: firebaseUser.phoneNumber || prev.phone || '+91 98765 43210',
+          phone: firebaseUser.phoneNumber || prev.phone || '',
           avatar: firebaseUser.photoURL || prev.avatar,
           provider: 'google',
           isLoggedIn: true,
@@ -857,7 +887,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     try {
-      localStorage.setItem('curowit_orders', JSON.stringify(orders));
+      localStorage.setItem('curowit_orders_v3', JSON.stringify(orders));
     } catch {}
   }, [orders]);
 
@@ -994,7 +1024,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         uid: fbUser.uid,
         name: displayName,
         email: fbUser.email || '',
-        phone: fbUser.phoneNumber || '+91 98765 43210',
+        phone: fbUser.phoneNumber || '',
         avatar: fbUser.photoURL || undefined,
         provider: 'google',
         isLoggedIn: true,
@@ -1031,7 +1061,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       uid: deterministicUid,
       name: derivedName,
       email: cleanEmail,
-      phone: phone?.trim() || '+91 98765 43210',
+      phone: phone?.trim() || '',
       provider: 'email',
       isLoggedIn: true,
     };
@@ -1041,7 +1071,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const loginDemo = (email = '', name = '') => {
     if (!email.trim()) return;
-    loginWithEmail(email, name, '+91 98765 43210');
+    loginWithEmail(email, name, '');
   };
 
   const logout = async () => {
@@ -1062,6 +1092,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast('Signed out of Curowit');
   };
 
+  // Filter orders belonging specifically to the currently signed-in user
+  const userOrders = user.isLoggedIn
+    ? orders.filter((o) => {
+        if (user.email && o.userEmail) {
+          return o.userEmail.toLowerCase() === user.email.toLowerCase();
+        }
+        if (user.uid && o.userId) {
+          return o.userId === user.uid;
+        }
+        return false;
+      })
+    : [];
+
   const placeOrder = (shippingDetails: Order['shippingAddress'], _paymentMethod: string): Order => {
     const orderId = `CW-${Math.floor(1000 + Math.random() * 9000)}`;
     const orderDate = new Date().toLocaleDateString('en-GB', {
@@ -1072,12 +1115,26 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const newOrder: Order = {
       id: orderId,
       date: orderDate,
+      userEmail: user.email || undefined,
+      userId: user.uid || undefined,
       items: [...cart],
       total: cartTotal,
       status: 'Confirmed',
       shippingAddress: shippingDetails,
     };
     setOrders((prev) => [newOrder, ...prev]);
+
+    // Save the delivery address to the user's address book if not already present
+    if (user.isLoggedIn && shippingDetails.street && shippingDetails.city) {
+      saveAddress({
+        label: 'Delivery Address',
+        fullName: shippingDetails.fullName || user.name,
+        phone: shippingDetails.phone || user.phone,
+        street: shippingDetails.street,
+        city: shippingDetails.city,
+        postalCode: shippingDetails.postalCode,
+      });
+    }
 
     // Sync new customer order to Firestore so Admin CMS sees it across all devices
     const itemsSummary = cart
@@ -1446,6 +1503,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         shouldAutoOpenCheckout,
         setShouldAutoOpenCheckout,
         orders,
+        userOrders,
+        addresses,
+        saveAddress,
+        deleteAddress,
         placeOrder,
         toasts,
         showToast,

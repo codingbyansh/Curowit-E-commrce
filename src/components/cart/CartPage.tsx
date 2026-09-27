@@ -14,6 +14,7 @@ export const CartPage: React.FC = () => {
     setActiveView,
     placeOrder,
     user,
+    addresses,
     requireAuthForAction,
     shouldAutoOpenCheckout,
     setShouldAutoOpenCheckout,
@@ -25,20 +26,27 @@ export const CartPage: React.FC = () => {
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
 
-  // Checkout form state (pre-populated from signed-in user profile)
+  // Checkout form state (starts blank unless user has a saved profile/address)
   const [fullName, setFullName] = useState(user.name || '');
-  const [phone, setPhone] = useState(user.phone || '+91 98765 43210');
-  const [street, setStreet] = useState('42 Lotus Bloom Lane, Indiranagar');
-  const [city, setCity] = useState('Bengaluru, Karnataka');
-  const [postalCode, setPostalCode] = useState('560038');
+  const [phone, setPhone] = useState(user.phone || '');
+  const [street, setStreet] = useState('');
+  const [city, setCity] = useState('');
+  const [postalCode, setPostalCode] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'upi' | 'cod' | 'card'>('upi');
 
   useEffect(() => {
     if (user.isLoggedIn) {
       if (user.name) setFullName(user.name);
       if (user.phone) setPhone(user.phone);
+      if (addresses.length > 0) {
+        const primary = addresses[0];
+        if (!street && primary.street) setStreet(primary.street);
+        if (!city && primary.city) setCity(primary.city);
+        if (!postalCode && primary.postalCode) setPostalCode(primary.postalCode);
+        if (!phone && primary.phone) setPhone(primary.phone);
+      }
     }
-  }, [user]);
+  }, [user, addresses]);
 
   useEffect(() => {
     if (shouldAutoOpenCheckout && user.isLoggedIn && cart.length > 0) {

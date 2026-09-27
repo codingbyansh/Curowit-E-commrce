@@ -1,10 +1,37 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { Package, Heart, MapPin, Star, Bell, Settings, LifeBuoy, LogOut, CheckCircle2 } from 'lucide-react';
+import {
+  Package,
+  MapPin,
+  Bell,
+  LifeBuoy,
+  LogOut,
+  CheckCircle2,
+  Plus,
+  Trash2,
+} from 'lucide-react';
 
 export const AccountPage: React.FC = () => {
-  const { user, orders, logout, setActiveView, showToast } = useStore();
+  const {
+    user,
+    userOrders,
+    addresses,
+    saveAddress,
+    deleteAddress,
+    logout,
+    setActiveView,
+    showToast,
+  } = useStore();
   const [activeTab, setActiveTab] = useState<'orders' | 'addresses' | 'notifications' | 'support'>('orders');
+
+  // New Address Form State
+  const [isAddingAddress, setIsAddingAddress] = useState(false);
+  const [addrLabel, setAddrLabel] = useState('Home');
+  const [addrName, setAddrName] = useState(user.name || '');
+  const [addrPhone, setAddrPhone] = useState(user.phone || '');
+  const [addrStreet, setAddrStreet] = useState('');
+  const [addrCity, setAddrCity] = useState('');
+  const [addrPostalCode, setAddrPostalCode] = useState('');
 
   if (!user.isLoggedIn) {
     return (
@@ -14,7 +41,7 @@ export const AccountPage: React.FC = () => {
             Sign in to view your account
           </h2>
           <p className="text-xs text-[#687778] mb-6">
-            Access your handmade order history, saved addresses, and craft workshop bookings.
+            Access your handmade order history, saved addresses, and support tickets.
           </p>
           <button
             onClick={() => setActiveView('signin')}
@@ -29,6 +56,24 @@ export const AccountPage: React.FC = () => {
 
   const handleSupport = (topic: string) => {
     showToast(`Support ticket opened for ${topic}`, 'Our team usually replies in under 2 hours.');
+  };
+
+  const handleSaveAddress = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addrStreet.trim() || !addrCity.trim() || !addrPostalCode.trim()) return;
+    saveAddress({
+      label: addrLabel || 'Home',
+      fullName: addrName || user.name,
+      phone: addrPhone,
+      street: addrStreet,
+      city: addrCity,
+      postalCode: addrPostalCode,
+    });
+    setAddrStreet('');
+    setAddrCity('');
+    setAddrPostalCode('');
+    setIsAddingAddress(false);
+    showToast('Address Saved', 'Your delivery address has been saved to your account.');
   };
 
   return (
@@ -51,15 +96,18 @@ export const AccountPage: React.FC = () => {
             )}
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-[#173B3D] font-display">
-                {user.name || 'Creative Patron'}
+                {user.name || 'Curowit Member'}
               </h1>
               <p className="text-xs text-[#687778]">{user.email}</p>
+              {user.phone && (
+                <p className="text-xs text-[#687778] mt-0.5">{user.phone}</p>
+              )}
               <div className="inline-flex items-center gap-1.5 mt-1 text-[11px] font-semibold text-[#3F704B]">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>
                   {user.provider === 'google'
-                    ? 'Google Verified Curowit Member'
-                    : 'Verified Curowit Member'}
+                    ? 'Google Verified Account'
+                    : 'Verified Store Account'}
                 </span>
               </div>
             </div>
@@ -77,9 +125,9 @@ export const AccountPage: React.FC = () => {
         {/* Tab Navigation */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-6 border-b border-[#07545A]/10">
           {[
-            { id: 'orders', label: 'My Orders', icon: Package, count: orders.length },
-            { id: 'addresses', label: 'Addresses', icon: MapPin },
-            { id: 'notifications', label: 'Notifications', icon: Bell },
+            { id: 'orders', label: 'My Orders', icon: Package, count: userOrders.length },
+            { id: 'addresses', label: 'Addresses', icon: MapPin, count: addresses.length },
+            { id: 'notifications', label: 'Notifications', icon: Bell, count: userOrders.length },
             { id: 'support', label: 'Care & Support', icon: LifeBuoy },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -96,10 +144,12 @@ export const AccountPage: React.FC = () => {
               >
                 <Icon className="w-4 h-4" />
                 <span>{tab.label}</span>
-                {tab.count !== undefined && (
-                  <span className={`w-4 h-4 rounded-full text-[10px] flex items-center justify-center ${
-                    isActive ? 'bg-[#F2A900] text-[#07545A]' : 'bg-[#07545A]/10 text-[#07545A]'
-                  }`}>
+                {tab.count !== undefined && tab.count > 0 && (
+                  <span
+                    className={`w-4 h-4 rounded-full text-[10px] flex items-center justify-center ${
+                      isActive ? 'bg-[#F2A900] text-[#07545A]' : 'bg-[#07545A]/10 text-[#07545A]'
+                    }`}
+                  >
                     {tab.count}
                   </span>
                 )}
@@ -108,11 +158,11 @@ export const AccountPage: React.FC = () => {
           })}
         </div>
 
-        {/* Orders Content */}
+        {/* Orders Content (Strictly User's Real Orders) */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
-            {orders.length > 0 ? (
-              orders.map((order) => (
+            {userOrders.length > 0 ? (
+              userOrders.map((order) => (
                 <div
                   key={order.id}
                   className="bg-[#FFF8EA] rounded-2xl border border-[#07545A]/10 p-5 shadow-2xs space-y-4"
@@ -160,10 +210,12 @@ export const AccountPage: React.FC = () => {
                         Total: ₹{order.total}
                       </span>
                       <button
-                        onClick={() => showToast(`Tracking Order #${order.id}`, 'Package dispatched via BlueDart Express')}
+                        onClick={() =>
+                          showToast(`Order #${order.id} Status: ${order.status}`, 'We will update you as your package progresses.')
+                        }
                         className="px-3 py-1.5 rounded-lg bg-[#F7EBD7] text-[#07545A] font-semibold hover:bg-[#07545A]/10 cursor-pointer"
                       >
-                        Track Package
+                        Track Order
                       </button>
                     </div>
                   </div>
@@ -171,52 +223,211 @@ export const AccountPage: React.FC = () => {
               ))
             ) : (
               <div className="text-center py-16 bg-[#FFF8EA] rounded-2xl border border-[#07545A]/10">
-                <p className="text-xs text-[#687778] mb-3">You haven't placed any craft orders yet.</p>
+                <Package className="w-10 h-10 text-[#07545A]/30 mx-auto mb-3" />
+                <h3 className="text-sm font-bold text-[#173B3D] mb-1">No Orders Yet</h3>
+                <p className="text-xs text-[#687778] mb-4">
+                  You haven't placed any orders with this account yet.
+                </p>
                 <button
                   onClick={() => setActiveView('shop')}
-                  className="px-4 py-2 bg-[#07545A] text-[#FFF8EA] text-xs font-semibold rounded-xl"
+                  className="px-5 py-2.5 bg-[#07545A] text-[#FFF8EA] text-xs font-semibold rounded-xl hover:bg-[#063F45] transition-colors cursor-pointer"
                 >
-                  Start Browsing
+                  Start Shopping
                 </button>
               </div>
             )}
           </div>
         )}
 
-        {/* Addresses Content */}
+        {/* Addresses Content (User's Real Saved Addresses) */}
         {activeTab === 'addresses' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-[#FFF8EA] rounded-2xl border-2 border-[#07545A] p-5 shadow-2xs relative">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-[#07545A] bg-[#07545A]/10 px-2 py-0.5 rounded">
-                  Default Delivery Address
-                </span>
-              </div>
-              <h3 className="font-bold text-sm text-[#173B3D] mb-1">{user.name}</h3>
-              <p className="text-xs text-[#173B3D]/70 leading-relaxed mb-2">
-                42 Lotus Bloom Lane, Indiranagar<br />
-                Bengaluru, Karnataka - 560038<br />
-                Phone: +91 98765 43210
-              </p>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-[#07545A]">Saved Delivery Addresses</h3>
+              {!isAddingAddress && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddrName(user.name || '');
+                    setAddrPhone(user.phone || '');
+                    setIsAddingAddress(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#07545A] text-[#FFF8EA] text-xs font-semibold hover:bg-[#063F45] transition-colors cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Address</span>
+                </button>
+              )}
             </div>
+
+            {isAddingAddress && (
+              <form
+                onSubmit={handleSaveAddress}
+                className="bg-[#FFF8EA] rounded-2xl border border-[#07545A]/20 p-5 space-y-3.5"
+              >
+                <h4 className="text-sm font-bold text-[#07545A]">Add Delivery Address</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-[#173B3D] block mb-1">Label</label>
+                    <input
+                      type="text"
+                      value={addrLabel}
+                      onChange={(e) => setAddrLabel(e.target.value)}
+                      placeholder="Home / Work"
+                      className="w-full text-xs px-3 py-2 rounded-xl bg-[#F7EBD7] border border-[#07545A]/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-[#173B3D] block mb-1">Recipient Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={addrName}
+                      onChange={(e) => setAddrName(e.target.value)}
+                      placeholder="Full Name"
+                      className="w-full text-xs px-3 py-2 rounded-xl bg-[#F7EBD7] border border-[#07545A]/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-[#173B3D] block mb-1">Phone Number</label>
+                    <input
+                      type="tel"
+                      required
+                      value={addrPhone}
+                      onChange={(e) => setAddrPhone(e.target.value)}
+                      placeholder="10-digit mobile number"
+                      className="w-full text-xs px-3 py-2 rounded-xl bg-[#F7EBD7] border border-[#07545A]/20"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-[#173B3D] block mb-1">Street / House / Area</label>
+                  <input
+                    type="text"
+                    required
+                    value={addrStreet}
+                    onChange={(e) => setAddrStreet(e.target.value)}
+                    placeholder="House no., building, street name"
+                    className="w-full text-xs px-3 py-2 rounded-xl bg-[#F7EBD7] border border-[#07545A]/20"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-[#173B3D] block mb-1">City & State</label>
+                    <input
+                      type="text"
+                      required
+                      value={addrCity}
+                      onChange={(e) => setAddrCity(e.target.value)}
+                      placeholder="City, State"
+                      className="w-full text-xs px-3 py-2 rounded-xl bg-[#F7EBD7] border border-[#07545A]/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-[#173B3D] block mb-1">PIN Code</label>
+                    <input
+                      type="text"
+                      required
+                      value={addrPostalCode}
+                      onChange={(e) => setAddrPostalCode(e.target.value)}
+                      placeholder="6-digit PIN"
+                      className="w-full text-xs px-3 py-2 rounded-xl bg-[#F7EBD7] border border-[#07545A]/20"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingAddress(false)}
+                    className="px-4 py-2 rounded-xl bg-[#F7EBD7] text-[#173B3D] text-xs font-semibold cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-xl bg-[#07545A] text-[#FFF8EA] text-xs font-bold cursor-pointer"
+                  >
+                    Save Address
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {addresses.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {addresses.map((addr) => (
+                  <div
+                    key={addr.id}
+                    className="bg-[#FFF8EA] rounded-2xl border border-[#07545A]/20 p-5 shadow-2xs relative"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-[#07545A] bg-[#07545A]/10 px-2.5 py-0.5 rounded">
+                        {addr.label}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => deleteAddress(addr.id)}
+                        className="p-1.5 rounded-lg text-[#687778] hover:text-[#E97868] hover:bg-[#E97868]/10 transition-colors cursor-pointer"
+                        title="Delete address"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <h4 className="font-bold text-sm text-[#173B3D] mb-1">{addr.fullName}</h4>
+                    <p className="text-xs text-[#173B3D]/70 leading-relaxed">
+                      {addr.street}
+                      <br />
+                      {addr.city} - {addr.postalCode}
+                      {addr.phone && (
+                        <>
+                          <br />
+                          Phone: {addr.phone}
+                        </>
+                      )}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              !isAddingAddress && (
+                <div className="text-center py-14 bg-[#FFF8EA] rounded-2xl border border-[#07545A]/10">
+                  <MapPin className="w-9 h-9 text-[#07545A]/30 mx-auto mb-2.5" />
+                  <h4 className="text-sm font-bold text-[#173B3D] mb-1">No Saved Addresses</h4>
+                  <p className="text-xs text-[#687778]">
+                    Add a delivery address now or during checkout to save it for future orders.
+                  </p>
+                </div>
+              )
+            )}
           </div>
         )}
 
-        {/* Notifications */}
+        {/* Notifications (Based on Real Account Activity) */}
         {activeTab === 'notifications' && (
           <div className="bg-[#FFF8EA] rounded-2xl border border-[#07545A]/10 p-5 space-y-3">
-            <div className="p-3 rounded-xl bg-[#F7EBD7] text-xs">
-              <span className="font-bold text-[#07545A] block mb-0.5">Welcome to Curowit!</span>
-              <p className="text-[#173B3D]/70">
-                Use code "CUROWIT10" on your first order for 10% off directly funded by our craft promotion fund.
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-[#F7EBD7] text-xs">
-              <span className="font-bold text-[#07545A] block mb-0.5">Siya's Creations added a new item</span>
-              <p className="text-[#173B3D]/70">
-                Check out the Eternal Crochet Sunflower now in stock.
-              </p>
-            </div>
+            {userOrders.length > 0 ? (
+              userOrders.map((order) => (
+                <div key={order.id} className="p-3.5 rounded-xl bg-[#F7EBD7] text-xs">
+                  <span className="font-bold text-[#07545A] block mb-0.5">
+                    Order #{order.id} — {order.status}
+                  </span>
+                  <p className="text-[#173B3D]/75">
+                    Your order placed on {order.date} (₹{order.total}) is currently marked as{' '}
+                    <strong>{order.status}</strong>.
+                  </p>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-10">
+                <Bell className="w-8 h-8 text-[#07545A]/30 mx-auto mb-2" />
+                <p className="text-xs text-[#687778]">
+                  No new notifications yet. Order updates and delivery alerts will appear here.
+                </p>
+              </div>
+            )}
           </div>
         )}
 

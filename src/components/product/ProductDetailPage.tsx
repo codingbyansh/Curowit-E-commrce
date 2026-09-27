@@ -199,34 +199,8 @@ export const ProductDetailPage: React.FC = () => {
     }
   };
 
-  // Curated baseline reviews paired with live Firestore reviews for this product
-  const defaultProductReviews: ProductReview[] = [
-    {
-      id: `seed-${selectedProduct.id}-1`,
-      productId: selectedProduct.id,
-      userId: 'patron-meera',
-      userName: 'Meera Nair',
-      rating: 5,
-      title: `Exquisite craftsmanship from ${selectedProduct.creatorName}`,
-      comment: `You can genuinely feel the patience and care in every detail of this ${selectedProduct.name.toLowerCase()}. Arrived in plastic-free kraft wrapping with a handwritten note!`,
-      verifiedPurchase: true,
-      dateLabel: '18 Sep 2026',
-    },
-    {
-      id: `seed-${selectedProduct.id}-2`,
-      productId: selectedProduct.id,
-      userId: 'patron-kabir',
-      userName: 'Kabir Deshmukh',
-      rating: 5,
-      title: 'Worth every rupee — truly one of a kind',
-      comment:
-        'Ordered this as a thoughtful gift and it exceeded all expectations. Supporting independent Indian makers directly makes it even more special.',
-      verifiedPurchase: true,
-      dateLabel: '11 Sep 2026',
-    },
-  ];
-
-  const allProductReviews = [...cloudReviews, ...defaultProductReviews];
+  // Live Firestore reviews for this product (no hardcoded fake reviews)
+  const allProductReviews = cloudReviews;
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -800,6 +774,17 @@ export const ProductDetailPage: React.FC = () => {
 
             {/* Right Column: Live Customer Reviews Feed (7 cols) */}
             <div className="lg:col-span-7 space-y-4">
+              {allProductReviews.length === 0 && (
+                <div className="bg-[#FFF8EA] rounded-2xl p-8 border border-[#07545A]/10 text-center space-y-2">
+                  <Star className="w-8 h-8 text-[#F2A900] mx-auto" />
+                  <h4 className="text-sm font-bold text-[#173B3D]">
+                    No Customer Reviews Yet
+                  </h4>
+                  <p className="text-xs text-[#687778] max-w-md mx-auto">
+                    Be the first verified patron to rate and review {selectedProduct.name} by {selectedProduct.creatorName}.
+                  </p>
+                </div>
+              )}
               {allProductReviews.map((rev) => (
                 <div
                   key={rev.id}

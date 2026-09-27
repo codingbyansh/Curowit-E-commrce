@@ -26,7 +26,7 @@ export const SignInPage: React.FC = () => {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('+91 ');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
