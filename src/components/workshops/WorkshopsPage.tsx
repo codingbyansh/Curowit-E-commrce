@@ -1,14 +1,46 @@
 import React from 'react';
 import { WORKSHOPS, Workshop } from '../../data/mockData';
 import { useStore } from '../../context/StoreContext';
+import { openRazorpayCheckout } from '../../utils/razorpay';
 import { Calendar, Clock, Video, MapPin, Sparkles, ArrowRight } from 'lucide-react';
 
 export const WorkshopsPage: React.FC = () => {
-  const { showToast, workshops } = useStore();
+  const { showToast, workshops, user, requireAuthForAction } = useStore();
   const allWorkshops = workshops && workshops.length > 0 ? workshops : WORKSHOPS;
 
-  const handleBookSpot = (ws: Workshop) => {
-    showToast(`Booked: ${ws.title}`, `Confirmation & craft prep kit details sent to your email`);
+  const handleBookSpot = async (ws: Workshop) => {
+    if (!user.isLoggedIn) {
+      requireAuthForAction({
+        targetView: 'workshops',
+        reason: 'workshop',
+        productName: ws.title,
+      });
+      return;
+    }
+
+    await openRazorpayCheckout({
+      amountInRupees: ws.price,
+      customerName: user.name,
+      customerEmail: user.email,
+      customerPhone: user.phone,
+      description: `Workshop Spot: ${ws.title}`,
+      notes: {
+        workshopId: ws.id,
+        creator: ws.creatorName,
+      },
+      onSuccess: (payment) => {
+        showToast(
+          `Booked: ${ws.title}`,
+          `Razorpay Payment Verified (${payment.razorpay_payment_id})`
+        );
+      },
+      onDismiss: () => {
+        showToast('Workshop Booking Paused', 'You can complete payment anytime.', 'info');
+      },
+      onError: (errMsg) => {
+        showToast('Payment Failed', errMsg, 'error');
+      },
+    });
   };
 
   return (

@@ -171,10 +171,22 @@ export const AccountPage: React.FC = () => {
                     <div>
                       <span className="font-bold text-sm text-[#07545A]">Order #{order.id}</span>
                       <span className="text-xs text-[#687778] ml-2">Placed on {order.date}</span>
+                      {order.razorpayPaymentId && (
+                        <span className="block text-[11px] text-[#3F704B] font-mono mt-0.5">
+                          Razorpay ID: {order.razorpayPaymentId}
+                        </span>
+                      )}
                     </div>
-                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#3F704B]/15 text-[#3F704B]">
-                      {order.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {order.paymentStatus && (
+                        <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#07545A]/10 text-[#07545A]">
+                          {order.paymentStatus}
+                        </span>
+                      )}
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#3F704B]/15 text-[#3F704B]">
+                        {order.status}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="space-y-3">

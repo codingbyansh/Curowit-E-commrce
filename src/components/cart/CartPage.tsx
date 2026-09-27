@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore, Order } from '../../context/StoreContext';
+import { openRazorpayCheckout } from '../../utils/razorpay';
 import { Minus, Plus, Trash2, Heart, ArrowRight, ShieldCheck, ShoppingBag, CheckCircle2, Lock } from 'lucide-react';
 
 export const CartPage: React.FC = () => {
@@ -18,12 +19,14 @@ export const CartPage: React.FC = () => {
     requireAuthForAction,
     shouldAutoOpenCheckout,
     setShouldAutoOpenCheckout,
+    showToast,
   } = useStore();
 
   const [promoCode, setPromoCode] = useState('');
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoError, setPromoError] = useState('');
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
 
   // Checkout form state (starts blank unless user has a saved profile/address)
@@ -80,20 +83,73 @@ export const CartPage: React.FC = () => {
 
   const finalTotal = Math.max(0, cartTotal - promoDiscount);
 
-  const handleCheckoutSubmit = (e: React.FormEvent) => {
+  const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const order = placeOrder(
-      {
-        fullName,
-        phone,
-        street,
-        city,
-        postalCode,
+
+    const shippingDetails = {
+      fullName: fullName.trim(),
+      phone: phone.trim(),
+      street: street.trim(),
+      city: city.trim(),
+      postalCode: postalCode.trim(),
+    };
+
+    // Cash on Delivery flow
+    if (paymentMethod === 'cod') {
+      const order = placeOrder(shippingDetails, 'Cash on Delivery', {
+        finalTotal,
+        paymentStatus: 'Cash on Delivery',
+      });
+      setPlacedOrder(order);
+      setIsCheckoutModalOpen(false);
+      showToast(`Order #${order.id} Confirmed`, 'Cash on Delivery order placed successfully.');
+      return;
+    }
+
+    // Razorpay Online Payment flow (UPI / GPay / Card / NetBanking)
+    setIsProcessingPayment(true);
+    await openRazorpayCheckout({
+      amountInRupees: finalTotal,
+      customerName: shippingDetails.fullName,
+      customerEmail: user.email || '',
+      customerPhone: shippingDetails.phone,
+      description: `Curowit Handmade Order (${cart.length} ${cart.length === 1 ? 'item' : 'items'})`,
+      preferredMethod: paymentMethod === 'upi' ? 'upi' : 'card',
+      notes: {
+        city: shippingDetails.city,
+        items: cart
+          .map((i) => `${i.product.name} x${i.quantity}`)
+          .join(', ')
+          .slice(0, 200),
       },
-      paymentMethod
-    );
-    setPlacedOrder(order);
-    setIsCheckoutModalOpen(false);
+      onSuccess: (payment) => {
+        setIsProcessingPayment(false);
+        const order = placeOrder(
+          shippingDetails,
+          paymentMethod === 'upi' ? 'Razorpay UPI' : 'Razorpay Card / NetBanking',
+          {
+            finalTotal,
+            paymentStatus: 'Paid',
+            razorpayPaymentId: payment.razorpay_payment_id,
+            razorpayOrderId: payment.razorpay_order_id,
+          }
+        );
+        setPlacedOrder(order);
+        setIsCheckoutModalOpen(false);
+        showToast(
+          'Razorpay Payment Successful!',
+          `Payment ID: ${payment.razorpay_payment_id}`
+        );
+      },
+      onDismiss: () => {
+        setIsProcessingPayment(false);
+        showToast('Payment Cancelled', 'You can resume Razorpay checkout anytime.', 'info');
+      },
+      onError: (errMsg) => {
+        setIsProcessingPayment(false);
+        showToast('Payment Failed', errMsg, 'error');
+      },
+    });
   };
 
   if (placedOrder) {
@@ -118,9 +174,23 @@ export const CartPage: React.FC = () => {
             <div className="text-[#687778]">
               {placedOrder.shippingAddress.street}, {placedOrder.shippingAddress.city} - {placedOrder.shippingAddress.postalCode}
             </div>
+            {placedOrder.paymentMethod && (
+              <div className="flex justify-between pt-2 border-t border-[#07545A]/10 text-[#173B3D]">
+                <span>Payment Method:</span>
+                <span className="font-semibold text-[#07545A]">
+                  {placedOrder.paymentMethod} ({placedOrder.paymentStatus || 'Paid'})
+                </span>
+              </div>
+            )}
+            {placedOrder.razorpayPaymentId && (
+              <div className="flex justify-between text-[#3F704B] font-medium">
+                <span>Razorpay Payment ID:</span>
+                <span className="font-mono text-[11px]">{placedOrder.razorpayPaymentId}</span>
+              </div>
+            )}
             <div className="flex justify-between pt-2 border-t border-[#07545A]/10 font-bold text-[#07545A]">
-              <span>Amount Paid:</span>
-              <span className="tabular-nums">₹{placedOrder.total}</span>
+              <span>{placedOrder.paymentStatus === 'Cash on Delivery' ? 'Amount Payable on Delivery:' : 'Amount Paid:'}</span>
+              <span className="tabular-nums">₹{placedOrder.total.toLocaleString('en-IN')}</span>
             </div>
           </div>
 
@@ -418,18 +488,23 @@ export const CartPage: React.FC = () => {
 
               {/* Payment Method */}
               <div>
-                <label className="text-xs font-bold text-[#173B3D] block mb-2">Payment Method</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-[#173B3D]">Payment Method</label>
+                  <span className="text-[10px] font-semibold text-[#07545A] bg-[#07545A]/10 px-2 py-0.5 rounded-full">
+                    Secured by Razorpay
+                  </span>
+                </div>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: 'upi', label: 'UPI / GPay' },
-                    { id: 'card', label: 'Card / Net' },
+                    { id: 'upi', label: 'Razorpay UPI' },
+                    { id: 'card', label: 'Razorpay Card' },
                     { id: 'cod', label: 'Cash on Deliv' },
                   ].map((m) => (
                     <button
                       type="button"
                       key={m.id}
                       onClick={() => setPaymentMethod(m.id as any)}
-                      className={`py-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer ${
+                      className={`py-2.5 px-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer ${
                         paymentMethod === m.id
                           ? 'bg-[#07545A] text-[#FFF8EA] border-[#07545A]'
                           : 'bg-[#F7EBD7] text-[#173B3D] border-[#07545A]/15'
@@ -451,16 +526,22 @@ export const CartPage: React.FC = () => {
                 <div className="flex gap-2">
                   <button
                     type="button"
+                    disabled={isProcessingPayment}
                     onClick={() => setIsCheckoutModalOpen(false)}
-                    className="px-4 py-2.5 rounded-xl text-xs font-semibold text-[#173B3D] hover:bg-[#F7EBD7] cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl text-xs font-semibold text-[#173B3D] hover:bg-[#F7EBD7] cursor-pointer disabled:opacity-50"
                   >
                     Back
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-[#07545A] text-[#FFF8EA] text-xs font-bold hover:bg-[#063F45] cursor-pointer shadow-xs active:scale-95"
+                    disabled={isProcessingPayment}
+                    className="px-6 py-2.5 rounded-xl bg-[#07545A] text-[#FFF8EA] text-xs font-bold hover:bg-[#063F45] cursor-pointer shadow-xs active:scale-95 disabled:opacity-60"
                   >
-                    Confirm & Pay
+                    {isProcessingPayment
+                      ? 'Opening Razorpay...'
+                      : paymentMethod === 'cod'
+                      ? 'Place COD Order'
+                      : `Pay ₹${finalTotal.toLocaleString('en-IN')} via Razorpay`}
                   </button>
                 </div>
               </div>

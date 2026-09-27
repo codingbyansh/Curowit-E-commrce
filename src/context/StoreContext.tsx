@@ -47,6 +47,10 @@ export interface Order {
   items: CartItem[];
   total: number;
   status: 'Confirmed' | 'Crafting' | 'Dispatched' | 'Delivered';
+  paymentMethod?: string;
+  paymentStatus?: 'Paid' | 'Cash on Delivery';
+  razorpayPaymentId?: string;
+  razorpayOrderId?: string;
   shippingAddress: {
     fullName: string;
     phone: string;
@@ -228,7 +232,16 @@ interface StoreContextType {
   addresses: SavedAddress[];
   saveAddress: (addr: Omit<SavedAddress, 'id'> & { id?: string }) => void;
   deleteAddress: (id: string) => void;
-  placeOrder: (shippingDetails: Order['shippingAddress'], paymentMethod: string) => Order;
+  placeOrder: (
+    shippingDetails: Order['shippingAddress'],
+    paymentMethod: string,
+    paymentMeta?: {
+      finalTotal?: number;
+      razorpayPaymentId?: string;
+      razorpayOrderId?: string;
+      paymentStatus?: 'Paid' | 'Cash on Delivery';
+    }
+  ) => Order;
 
   // Notification Toast
   toasts: ToastMessage[];
@@ -1105,21 +1118,36 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       })
     : [];
 
-  const placeOrder = (shippingDetails: Order['shippingAddress'], _paymentMethod: string): Order => {
+  const placeOrder = (
+    shippingDetails: Order['shippingAddress'],
+    paymentMethod: string,
+    paymentMeta?: {
+      finalTotal?: number;
+      razorpayPaymentId?: string;
+      razorpayOrderId?: string;
+      paymentStatus?: 'Paid' | 'Cash on Delivery';
+    }
+  ): Order => {
     const orderId = `CW-${Math.floor(1000 + Math.random() * 9000)}`;
     const orderDate = new Date().toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
     });
+    const resolvedTotal = paymentMeta?.finalTotal ?? cartTotal;
     const newOrder: Order = {
       id: orderId,
       date: orderDate,
       userEmail: user.email || undefined,
       userId: user.uid || undefined,
       items: [...cart],
-      total: cartTotal,
+      total: resolvedTotal,
       status: 'Confirmed',
+      paymentMethod,
+      paymentStatus:
+        paymentMeta?.paymentStatus || (paymentMethod === 'cod' ? 'Cash on Delivery' : 'Paid'),
+      razorpayPaymentId: paymentMeta?.razorpayPaymentId,
+      razorpayOrderId: paymentMeta?.razorpayOrderId,
       shippingAddress: shippingDetails,
     };
     setOrders((prev) => [newOrder, ...prev]);
