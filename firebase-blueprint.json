@@ -338,6 +338,10 @@
           "type": "string",
           "maxLength": 2000
         },
+        "meetingUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
         "updatedAt": {
           "type": "string",
           "format": "date-time"

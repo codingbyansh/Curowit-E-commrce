@@ -127,7 +127,7 @@ service cloud.firestore {
       data.keys().hasOnly([
         'id', 'visibility', 'cmsAccessKey', 'title', 'creatorName',
         'date', 'time', 'duration', 'format', 'location', 'price',
-        'seatsLeft', 'image', 'description', 'updatedAt'
+        'seatsLeft', 'image', 'description', 'meetingUrl', 'updatedAt'
       ]) &&
       isValidId(data.id) &&
       data.visibility is string && data.visibility.size() == 6 && data.visibility == 'public' &&
@@ -143,6 +143,7 @@ service cloud.firestore {
       data.seatsLeft is number && data.seatsLeft >= 0 &&
       data.image is string && data.image.size() >= 1 && data.image.size() <= 700000 &&
       data.description is string && data.description.size() <= 2000 &&
+      (!('meetingUrl' in data) || (data.meetingUrl is string && data.meetingUrl.size() <= 500)) &&
       data.updatedAt == request.time;
     }
 

@@ -25,6 +25,11 @@ import {
   Minus,
   Plus,
   Share2,
+  Copy,
+  Check,
+  X,
+  ExternalLink,
+  Mail,
   MessageSquarePlus,
   CheckCircle2,
   Lock,
@@ -190,12 +195,50 @@ export const ProductDetailPage: React.FC = () => {
     }
   };
 
-  const handleShare = () => {
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const getProductShareData = () => {
+    const url = `${window.location.origin}${window.location.pathname}?product=${encodeURIComponent(selectedProduct.id)}`;
+    const title = `${selectedProduct.name} | Curowit`;
+    const text = `Discover "${selectedProduct.name}" by ${selectedProduct.creatorName} (₹${selectedProduct.price}) on Curowit — Handcrafted Artisan Marketplace.`;
+    return { url, title, text };
+  };
+
+  const handleCopyLink = () => {
+    const { url } = getProductShareData();
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href);
-      showToast('Link copied to clipboard', 'Share this handmade creation with friends');
+      navigator.clipboard.writeText(url);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2500);
+      showToast('Product URL Copied!', 'Link copied to clipboard — share with friends');
     } else {
       showToast('Share link ready');
+    }
+  };
+
+  const handleNativeShare = async () => {
+    const { url, title, text } = getProductShareData();
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
+        showToast('Shared successfully!', 'Thank you for supporting independent makers.');
+        setIsShareModalOpen(false);
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          handleCopyLink();
+        }
+      }
+    } else {
+      handleCopyLink();
+    }
+  };
+
+  const handleShareClick = () => {
+    if (navigator.share && /mobile|android|iphone|ipad/i.test(navigator.userAgent || '')) {
+      handleNativeShare();
+    } else {
+      setIsShareModalOpen(true);
     }
   };
 
