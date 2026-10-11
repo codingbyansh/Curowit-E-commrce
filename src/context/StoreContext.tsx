@@ -46,7 +46,7 @@ export interface Order {
   userId?: string;
   items: CartItem[];
   total: number;
-  status: 'Confirmed' | 'Crafting' | 'Dispatched' | 'Delivered';
+  status: 'Confirmed' | 'Crafting' | 'Dispatched' | 'Delivered' | 'Cancelled';
   paymentMethod?: string;
   paymentStatus?: 'Paid' | 'Cash on Delivery';
   razorpayPaymentId?: string;
@@ -58,6 +58,9 @@ export interface Order {
     city: string;
     postalCode: string;
   };
+  trackingAwb?: string;
+  courierPartner?: string;
+  estimatedDelivery?: string;
 }
 
 export interface UserProfile {
@@ -252,6 +255,10 @@ interface StoreContextType {
   navigateToProduct: (productId: string) => void;
   navigateToCreator: (creatorId: string) => void;
   navigateToCategory: (categoryName: string) => void;
+  trackingOrderId: string | null;
+  setTrackingOrderId: (id: string | null) => void;
+  navigateToTrackOrder: (orderId?: string) => void;
+  getOrderById: (orderId: string) => Order | undefined;
 
   // Admin CMS & Security
   isAdminAuthenticated: boolean;
