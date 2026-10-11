@@ -90,6 +90,7 @@ import {
   KeyRound,
   Filter,
   Upload,
+  Video,
 } from 'lucide-react';
 import { OrderManagement } from './OrderManagement';
 
@@ -116,6 +117,8 @@ export const AdminCMSPage: React.FC = () => {
     addWorkshop,
     updateWorkshop,
     deleteWorkshop,
+    bookedWorkshops,
+    updateWorkshopMeetingDetails,
     stories,
     addStory,
     updateStory,
@@ -147,6 +150,7 @@ export const AdminCMSPage: React.FC = () => {
 
   const [editingWorkshop, setEditingWorkshop] = useState<Workshop | null>(null);
   const [isNewWorkshopModalOpen, setIsNewWorkshopModalOpen] = useState(false);
+  const [meetingModalWorkshop, setMeetingModalWorkshop] = useState<Workshop | null>(null);
 
   const [editingStory, setEditingStory] = useState<Story | null>(null);
   const [isNewStoryModalOpen, setIsNewStoryModalOpen] = useState(false);

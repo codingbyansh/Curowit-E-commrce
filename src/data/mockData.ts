@@ -56,6 +56,9 @@ export interface Workshop {
   seatsLeft: number;
   image: string;
   description: string;
+  meetingLink?: string;
+  meetingPlatform?: 'Google Meet' | 'Zoom' | 'Studio Offline';
+  meetingNotes?: string;
 }
 
 export interface Story {

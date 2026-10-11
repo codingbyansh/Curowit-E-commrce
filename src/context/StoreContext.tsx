@@ -71,6 +71,29 @@ export interface Order {
   estimatedDelivery?: string;
 }
 
+export interface BookedWorkshop {
+  id: string; // e.g. "BK-8291"
+  workshopId: string;
+  workshopTitle: string;
+  creatorName: string;
+  date: string;
+  time: string;
+  duration: string;
+  format: 'Live Online' | 'Studio Offline';
+  location?: string;
+  price: number;
+  image: string;
+  userEmail?: string;
+  userName?: string;
+  userPhone?: string;
+  bookedAt: string;
+  paymentId?: string;
+  meetingLink?: string;
+  meetingPlatform?: 'Google Meet' | 'Zoom' | 'Studio Offline';
+  meetingNotes?: string;
+  status: 'Confirmed' | 'Completed' | 'Cancelled';
+}
+
 export interface UserProfile {
   uid?: string;
   name: string;
@@ -241,6 +264,16 @@ interface StoreContextType {
   setShouldAutoOpenCheckout: (open: boolean) => void;
   orders: Order[];
   userOrders: Order[];
+  bookedWorkshops: BookedWorkshop[];
+  bookWorkshop: (workshop: Workshop, paymentDetails?: { paymentId?: string }) => BookedWorkshop;
+  isWorkshopBooked: (workshopId: string) => boolean;
+  updateWorkshopBooking: (bookingId: string, updates: Partial<BookedWorkshop>) => void;
+  updateWorkshopMeetingDetails: (
+    workshopId: string,
+    meetingLink: string,
+    meetingNotes?: string,
+    platform?: 'Google Meet' | 'Zoom'
+  ) => void;
   addresses: SavedAddress[];
   saveAddress: (addr: Omit<SavedAddress, 'id'> & { id?: string }) => void;
   deleteAddress: (id: string) => void;
@@ -524,6 +557,154 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setAddresses([]);
     }
   }, [user.isLoggedIn, user.email, user.uid]);
+
+  // Booked Workshops per user / system
+  const [bookedWorkshops, setBookedWorkshops] = useState<BookedWorkshop[]>(() => {
+    try {
+      const saved = localStorage.getItem('curowit_booked_workshops_v2');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [];
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('curowit_booked_workshops_v2', JSON.stringify(bookedWorkshops));
+    } catch {}
+  }, [bookedWorkshops]);
+
+  // Sync workshop_bookings with Firestore
+  useEffect(() => {
+    const unsub = onSnapshot(
+      collection(db, 'workshop_bookings'),
+      (snap) => {
+        if (!snap.empty) {
+          const remoteList = snap.docs.map((d) => d.data() as BookedWorkshop);
+          setBookedWorkshops((prev) => {
+            const map = new Map<string, BookedWorkshop>();
+            remoteList.forEach((b) => map.set(b.id, b));
+            prev.forEach((b) => {
+              if (!map.has(b.id)) map.set(b.id, b);
+            });
+            return Array.from(map.values());
+          });
+        }
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, 'workshop_bookings')
+    );
+    return () => unsub();
+  }, []);
+
+  const isWorkshopBooked = (workshopId: string): boolean => {
+    return bookedWorkshops.some(
+      (b) =>
+        b.workshopId === workshopId &&
+        b.status !== 'Cancelled' &&
+        (!user.isLoggedIn || !user.email || b.userEmail === user.email || !b.userEmail)
+    );
+  };
+
+  const bookWorkshop = (
+    workshop: Workshop,
+    paymentDetails?: { paymentId?: string }
+  ): BookedWorkshop => {
+    const bookingId = `BK-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newBooking: BookedWorkshop = {
+      id: bookingId,
+      workshopId: workshop.id,
+      workshopTitle: workshop.title,
+      creatorName: workshop.creatorName,
+      date: workshop.date,
+      time: workshop.time,
+      duration: workshop.duration,
+      format: workshop.format,
+      location: workshop.location,
+      price: workshop.price,
+      image: workshop.image,
+      userEmail: user.email || undefined,
+      userName: user.name || 'Artisan Learner',
+      userPhone: user.phone || undefined,
+      bookedAt: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+      paymentId: paymentDetails?.paymentId,
+      meetingLink: workshop.meetingLink || undefined,
+      meetingPlatform: workshop.meetingPlatform || (workshop.format === 'Live Online' ? 'Google Meet' : 'Studio Offline'),
+      meetingNotes: workshop.meetingNotes || 'Google Meet / Zoom link will be provided prior to session start.',
+      status: 'Confirmed',
+    };
+
+    setBookedWorkshops((prev) => [newBooking, ...prev]);
+
+    // Decrement seatsLeft on the workshop in state
+    setWorkshops((prev) =>
+      prev.map((w) =>
+        w.id === workshop.id ? { ...w, seatsLeft: Math.max(0, w.seatsLeft - 1) } : w
+      )
+    );
+
+    // Save to Firestore
+    setDoc(doc(db, 'workshop_bookings', bookingId), newBooking).catch((err) =>
+      handleFirestoreError(err, OperationType.WRITE, `workshop_bookings/${bookingId}`)
+    );
+
+    showToast(
+      'Seat Reserved!',
+      `Booked spot for "${workshop.title}". Access details added to your Profile.`
+    );
+    return newBooking;
+  };
+
+  const updateWorkshopBooking = (bookingId: string, updates: Partial<BookedWorkshop>) => {
+    setBookedWorkshops((prev) =>
+      prev.map((b) => (b.id === bookingId ? { ...b, ...updates } : b))
+    );
+    setDoc(doc(db, 'workshop_bookings', bookingId), updates, { merge: true }).catch((err) =>
+      handleFirestoreError(err, OperationType.WRITE, `workshop_bookings/${bookingId}`)
+    );
+    showToast('Booking Updated', 'Workshop booking record updated');
+  };
+
+  const updateWorkshopMeetingDetails = (
+    workshopId: string,
+    meetingLink: string,
+    meetingNotes?: string,
+    platform: 'Google Meet' | 'Zoom' = 'Google Meet'
+  ) => {
+    // 1. Update the workshop in catalog
+    setWorkshops((prev) =>
+      prev.map((w) =>
+        w.id === workshopId
+          ? { ...w, meetingLink, meetingNotes, meetingPlatform: platform }
+          : w
+      )
+    );
+    setDoc(
+      doc(db, 'workshops', workshopId),
+      { meetingLink, meetingNotes, meetingPlatform: platform },
+      { merge: true }
+    ).catch(() => {});
+
+    // 2. Broadcast to all attendees who booked this workshop
+    setBookedWorkshops((prev) =>
+      prev.map((b) =>
+        b.workshopId === workshopId
+          ? { ...b, meetingLink, meetingNotes, meetingPlatform: platform }
+          : b
+      )
+    );
+
+    // Update attendee docs in Firestore
+    bookedWorkshops
+      .filter((b) => b.workshopId === workshopId)
+      .forEach((b) => {
+        setDoc(
+          doc(db, 'workshop_bookings', b.id),
+          { meetingLink, meetingNotes, meetingPlatform: platform },
+          { merge: true }
+        ).catch(() => {});
+      });
+
+    showToast('Meeting Link Broadcasted', `Live ${platform} link shared with all registered attendees.`);
+  };
 
   const saveAddress = (addrData: Omit<SavedAddress, 'id'> & { id?: string }) => {
     if (!user.isLoggedIn) return;
@@ -1697,6 +1878,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setShouldAutoOpenCheckout,
         orders,
         userOrders,
+        bookedWorkshops,
+        bookWorkshop,
+        isWorkshopBooked,
+        updateWorkshopBooking,
+        updateWorkshopMeetingDetails,
         addresses,
         saveAddress,
         deleteAddress,

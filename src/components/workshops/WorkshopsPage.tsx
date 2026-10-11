@@ -2,10 +2,18 @@ import React from 'react';
 import { WORKSHOPS, Workshop } from '../../data/mockData';
 import { useStore } from '../../context/StoreContext';
 import { openRazorpayCheckout } from '../../utils/razorpay';
-import { Calendar, Clock, Video, MapPin, Sparkles, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, Video, MapPin, Sparkles, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 export const WorkshopsPage: React.FC = () => {
-  const { showToast, workshops, user, requireAuthForAction } = useStore();
+  const {
+    showToast,
+    workshops,
+    user,
+    requireAuthForAction,
+    bookWorkshop,
+    isWorkshopBooked,
+    setActiveView,
+  } = useStore();
   const allWorkshops = workshops && workshops.length > 0 ? workshops : WORKSHOPS;
 
   const handleBookSpot = async (ws: Workshop) => {
@@ -15,6 +23,12 @@ export const WorkshopsPage: React.FC = () => {
         reason: 'workshop',
         productName: ws.title,
       });
+      return;
+    }
+
+    if (isWorkshopBooked(ws.id)) {
+      showToast('Seat Already Booked', `You already have a reserved seat for "${ws.title}". View in your profile.`);
+      setActiveView('account');
       return;
     }
 
@@ -29,10 +43,7 @@ export const WorkshopsPage: React.FC = () => {
         creator: ws.creatorName,
       },
       onSuccess: (payment) => {
-        showToast(
-          `Booked: ${ws.title}`,
-          `Razorpay Payment Verified (${payment.razorpay_payment_id})`
-        );
+        bookWorkshop(ws, { paymentId: payment.razorpay_payment_id });
       },
       onDismiss: () => {
         showToast('Workshop Booking Paused', 'You can complete payment anytime.', 'info');
@@ -133,14 +144,28 @@ export const WorkshopsPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <button
-                    onClick={() => handleBookSpot(ws)}
-                    className="px-3.5 py-1.5 rounded-lg bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
-                    aria-label={`Book spot for ${ws.title}`}
-                  >
-                    <span>Book Spot</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </button>
+                  {isWorkshopBooked(ws.id) ? (
+                    <button
+                      onClick={() => {
+                        setActiveView('account');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-[#FFF8EA] text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                      title="You already have a reserved seat for this workshop. View details and meet link in your profile."
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#F2A900]" />
+                      <span>Seat Booked ✓</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleBookSpot(ws)}
+                      className="px-3.5 py-1.5 rounded-lg bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
+                      aria-label={`Book spot for ${ws.title}`}
+                    >
+                      <span>Book Spot</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

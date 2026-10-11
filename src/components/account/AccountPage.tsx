@@ -9,6 +9,13 @@ import {
   CheckCircle2,
   Plus,
   Trash2,
+  Video,
+  Clock,
+  Calendar,
+  ExternalLink,
+  Sparkles,
+  ShieldCheck,
+  Check,
 } from 'lucide-react';
 
 export const AccountPage: React.FC = () => {
@@ -16,6 +23,7 @@ export const AccountPage: React.FC = () => {
     user,
     userOrders,
     addresses,
+    bookedWorkshops,
     saveAddress,
     deleteAddress,
     logout,
@@ -23,7 +31,42 @@ export const AccountPage: React.FC = () => {
     navigateToTrackOrder,
     showToast,
   } = useStore();
-  const [activeTab, setActiveTab] = useState<'orders' | 'addresses' | 'notifications' | 'support'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'workshops' | 'addresses' | 'notifications' | 'support'>('orders');
+  const [hasViewedNotifications, setHasViewedNotifications] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('curowit_viewed_notifications') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('curowit_dismissed_notifications');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleDismissNotification = (orderId: string) => {
+    const next = [...dismissedNotificationIds, orderId];
+    setDismissedNotificationIds(next);
+    try {
+      localStorage.setItem('curowit_dismissed_notifications', JSON.stringify(next));
+    } catch {}
+    showToast('Notification Cleared', 'Alert removed from your notification feed');
+  };
+
+  const handleClearAllNotifications = () => {
+    const allIds = userOrders.map((o) => o.id);
+    setDismissedNotificationIds(allIds);
+    setHasViewedNotifications(true);
+    try {
+      localStorage.setItem('curowit_viewed_notifications', 'true');
+      localStorage.setItem('curowit_dismissed_notifications', JSON.stringify(allIds));
+    } catch {}
+    showToast('All Notifications Cleared', 'Your notification feed is all caught up');
+  };
 
   // New Address Form State
   const [isAddingAddress, setIsAddingAddress] = useState(false);
@@ -127,8 +170,23 @@ export const AccountPage: React.FC = () => {
         <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-6 border-b border-[#07545A]/10">
           {[
             { id: 'orders', label: 'My Orders', icon: Package, count: userOrders.length },
+            {
+              id: 'workshops',
+              label: 'My Workshops',
+              icon: Video,
+              count: bookedWorkshops.filter(
+                (b) => !user.isLoggedIn || !user.email || b.userEmail === user.email || !b.userEmail
+              ).length,
+            },
             { id: 'addresses', label: 'Addresses', icon: MapPin, count: addresses.length },
-            { id: 'notifications', label: 'Notifications', icon: Bell, count: userOrders.length },
+            {
+              id: 'notifications',
+              label: 'Notifications',
+              icon: Bell,
+              count: hasViewedNotifications
+                ? 0
+                : userOrders.filter((o) => !dismissedNotificationIds.includes(o.id)).length,
+            },
             { id: 'support', label: 'Care & Support', icon: LifeBuoy },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -136,7 +194,15 @@ export const AccountPage: React.FC = () => {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => {
+                  setActiveTab(tab.id as any);
+                  if (tab.id === 'notifications') {
+                    setHasViewedNotifications(true);
+                    try {
+                      localStorage.setItem('curowit_viewed_notifications', 'true');
+                    } catch {}
+                  }
+                }}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                   isActive
                     ? 'bg-[#07545A] text-[#FFF8EA]'
@@ -244,6 +310,144 @@ export const AccountPage: React.FC = () => {
                   className="px-5 py-2.5 bg-[#07545A] text-[#FFF8EA] text-xs font-semibold rounded-xl hover:bg-[#063F45] transition-colors cursor-pointer"
                 >
                   Start Shopping
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Workshops Content (User's Real Booked Workshops) */}
+        {activeTab === 'workshops' && (
+          <div className="space-y-4">
+            {bookedWorkshops.filter(
+              (b) => !user.isLoggedIn || !user.email || b.userEmail === user.email || !b.userEmail
+            ).length > 0 ? (
+              bookedWorkshops
+                .filter(
+                  (b) => !user.isLoggedIn || !user.email || b.userEmail === user.email || !b.userEmail
+                )
+                .map((booking) => (
+                  <div
+                    key={booking.id}
+                    className="bg-[#FFF8EA] rounded-2xl border border-[#07545A]/12 p-5 sm:p-6 shadow-2xs space-y-4"
+                  >
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[#07545A]/10">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <span className="font-mono font-bold text-xs bg-[#07545A]/10 text-[#07545A] px-2.5 py-1 rounded-lg">
+                          #{booking.id}
+                        </span>
+                        <span className="text-xs text-[#687778]">Booked on {booking.bookedAt}</span>
+                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          Seat Reserved · {booking.status}
+                        </span>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-xs text-[#687778] block">Fee Paid</span>
+                        <span className="text-base font-extrabold text-[#07545A]">₹{booking.price}</span>
+                      </div>
+                    </div>
+
+                    {/* Workshop Details Box */}
+                    <div className="flex flex-col md:flex-row gap-4 items-start">
+                      <img
+                        src={booking.image}
+                        alt={booking.workshopTitle}
+                        className="w-full md:w-36 h-28 rounded-xl object-cover border border-[#07545A]/10 shrink-0"
+                      />
+
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2 text-[11px] text-[#687778]">
+                          <span className="flex items-center gap-1 font-semibold text-[#07545A]">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {booking.date}
+                          </span>
+                          <span>·</span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-[#07545A]" />
+                            {booking.time} ({booking.duration})
+                          </span>
+                        </div>
+
+                        <h3 className="text-base font-bold text-[#173B3D] font-display">
+                          {booking.workshopTitle}
+                        </h3>
+
+                        <p className="text-xs text-[#07545A] font-semibold">
+                          Instructor: {booking.creatorName}
+                        </p>
+
+                        {/* LIVE MEETING ACCESS BOX (Provided by Admin Panel) */}
+                        <div className="mt-3 p-3.5 rounded-xl bg-white border border-[#07545A]/15 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-[#07545A]">
+                              <Video className="w-4 h-4 text-[#F2A900]" />
+                              <span>Live Session Access</span>
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#07545A]/10 text-[#07545A]">
+                                {booking.meetingPlatform || 'Google Meet'}
+                              </span>
+                            </div>
+
+                            {booking.meetingLink && (
+                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                Link Active
+                              </span>
+                            )}
+                          </div>
+
+                          {booking.meetingLink ? (
+                            <div className="space-y-2 pt-1">
+                              <p className="text-xs text-[#173B3D]/80">
+                                Your live workshop link has been assigned by the studio organizer:
+                              </p>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <a
+                                  href={booking.meetingLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-4 py-2 bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                                >
+                                  <Video className="w-3.5 h-3.5" />
+                                  <span>Join Live Session ({booking.meetingPlatform || 'Google Meet / Zoom'})</span>
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                              </div>
+                              {booking.meetingNotes && (
+                                <p className="text-[11px] text-[#687778] italic pt-1">
+                                  Note: {booking.meetingNotes}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="bg-[#FFFDF7] p-2.5 rounded-lg border border-[#F2A900]/30 text-xs text-[#173B3D]/80 flex items-start gap-2">
+                              <Clock className="w-4 h-4 text-[#E97868] shrink-0 mt-0.5" />
+                              <div>
+                                <span className="font-bold text-[#07545A] block">
+                                  Meet link or Zoom link will be provided on that time
+                                </span>
+                                <p className="text-[11px] text-[#687778] mt-0.5 leading-relaxed">
+                                  Our studio organizers verify attendee registration and activate the Google Meet / Zoom link 30 minutes before the scheduled time. It will appear right here and be sent to your registered contact details.
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+            ) : (
+              <div className="text-center py-16 bg-[#FFF8EA] rounded-2xl border border-[#07545A]/10">
+                <Video className="w-10 h-10 text-[#07545A]/30 mx-auto mb-3" />
+                <h3 className="text-sm font-bold text-[#173B3D] mb-1">No Workshops Booked Yet</h3>
+                <p className="text-xs text-[#687778] mb-4">
+                  Explore intimate hands-on sessions hosted by verified makers.
+                </p>
+                <button
+                  onClick={() => setActiveView('workshops')}
+                  className="px-5 py-2.5 bg-[#07545A] text-[#FFF8EA] text-xs font-semibold rounded-xl hover:bg-[#063F45] transition-colors cursor-pointer"
+                >
+                  Browse Craft Workshops
                 </button>
               </div>
             )}
@@ -418,24 +622,68 @@ export const AccountPage: React.FC = () => {
 
         {/* Notifications (Based on Real Account Activity) */}
         {activeTab === 'notifications' && (
-          <div className="bg-[#FFF8EA] rounded-2xl border border-[#07545A]/10 p-5 space-y-3">
-            {userOrders.length > 0 ? (
-              userOrders.map((order) => (
-                <div key={order.id} className="p-3.5 rounded-xl bg-[#F7EBD7] text-xs">
-                  <span className="font-bold text-[#07545A] block mb-0.5">
-                    Order #{order.id} — {order.status}
-                  </span>
-                  <p className="text-[#173B3D]/75">
-                    Your order placed on {order.date} (₹{order.total}) is currently marked as{' '}
-                    <strong>{order.status}</strong>.
-                  </p>
-                </div>
-              ))
+          <div className="bg-[#FFF8EA] rounded-2xl border border-[#07545A]/10 p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#07545A]/10">
+              <div className="flex items-center gap-2">
+                <Bell className="w-4 h-4 text-[#07545A]" />
+                <h3 className="text-sm font-bold text-[#07545A] font-display">Account Alerts & Updates</h3>
+              </div>
+              {userOrders.filter((o) => !dismissedNotificationIds.includes(o.id)).length > 0 && (
+                <button
+                  onClick={handleClearAllNotifications}
+                  className="text-xs font-semibold text-[#07545A] hover:text-[#063F45] hover:underline cursor-pointer"
+                >
+                  Clear All Notifications
+                </button>
+              )}
+            </div>
+
+            {userOrders.filter((o) => !dismissedNotificationIds.includes(o.id)).length > 0 ? (
+              userOrders
+                .filter((o) => !dismissedNotificationIds.includes(o.id))
+                .map((order) => (
+                  <div
+                    key={order.id}
+                    className="p-3.5 sm:p-4 rounded-xl bg-[#F7EBD7] text-xs flex items-start justify-between gap-3 transition-all hover:bg-[#F3E4CC]"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-[#07545A]">Order #{order.id}</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#07545A]/10 text-[#07545A]">
+                          {order.status}
+                        </span>
+                      </div>
+                      <p className="text-[#173B3D]/80 leading-relaxed">
+                        Your order placed on {order.date} (₹{order.total}) is currently{' '}
+                        <strong>{order.status}</strong>. Click below to track live transit steps.
+                      </p>
+                      <div className="pt-1.5 flex items-center gap-3">
+                        <button
+                          onClick={() => navigateToTrackOrder(order.id)}
+                          className="font-bold text-[#07545A] hover:underline cursor-pointer inline-flex items-center gap-1"
+                        >
+                          <span>Track Live Order</span>
+                          <span>→</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleDismissNotification(order.id)}
+                      className="p-1 text-[#173B3D]/40 hover:text-[#173B3D] hover:bg-[#07545A]/10 rounded-lg transition-colors cursor-pointer shrink-0"
+                      title="Dismiss notification"
+                      aria-label="Dismiss notification"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
             ) : (
               <div className="text-center py-10">
                 <Bell className="w-8 h-8 text-[#07545A]/30 mx-auto mb-2" />
+                <h4 className="text-xs font-bold text-[#173B3D] mb-1">All Caught Up!</h4>
                 <p className="text-xs text-[#687778]">
-                  No new notifications yet. Order updates and delivery alerts will appear here.
+                  No unread notifications. Order updates and delivery alerts will appear here.
                 </p>
               </div>
             )}

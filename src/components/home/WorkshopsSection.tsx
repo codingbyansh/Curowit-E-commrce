@@ -1,14 +1,57 @@
 import React from 'react';
 import { WORKSHOPS, Workshop } from '../../data/mockData';
 import { useStore } from '../../context/StoreContext';
-import { Calendar, Clock, MapPin, Sparkles, ArrowRight, Video } from 'lucide-react';
+import { openRazorpayCheckout } from '../../utils/razorpay';
+import { Calendar, Clock, MapPin, Sparkles, ArrowRight, Video, CheckCircle2 } from 'lucide-react';
 
 export const WorkshopsSection: React.FC = () => {
-  const { showToast, workshops } = useStore();
+  const {
+    showToast,
+    workshops,
+    user,
+    requireAuthForAction,
+    bookWorkshop,
+    isWorkshopBooked,
+    setActiveView,
+  } = useStore();
   const allWorkshops = workshops && workshops.length > 0 ? workshops : WORKSHOPS;
 
-  const handleRegister = (ws: Workshop) => {
-    showToast(`Saved spot for ${ws.title}`, 'Workshop details and preparation guide sent to your email');
+  const handleRegister = async (ws: Workshop) => {
+    if (!user.isLoggedIn) {
+      requireAuthForAction({
+        targetView: 'home',
+        reason: 'workshop',
+        productName: ws.title,
+      });
+      return;
+    }
+
+    if (isWorkshopBooked(ws.id)) {
+      showToast('Seat Already Booked', `You already have a reserved seat for "${ws.title}". View in your profile.`);
+      setActiveView('account');
+      return;
+    }
+
+    await openRazorpayCheckout({
+      amountInRupees: ws.price,
+      customerName: user.name,
+      customerEmail: user.email,
+      customerPhone: user.phone,
+      description: `Workshop Spot: ${ws.title}`,
+      notes: {
+        workshopId: ws.id,
+        creator: ws.creatorName,
+      },
+      onSuccess: (payment) => {
+        bookWorkshop(ws, { paymentId: payment.razorpay_payment_id });
+      },
+      onDismiss: () => {
+        showToast('Workshop Booking Paused', 'You can complete payment anytime.', 'info');
+      },
+      onError: (errMsg) => {
+        showToast('Payment Failed', errMsg, 'error');
+      },
+    });
   };
 
   return (
@@ -139,16 +182,30 @@ export const WorkshopsSection: React.FC = () => {
                       </span>
                     </div>
 
-                    {/* Small Button with Changed Text ("Book Spot") */}
-                    <button
-                      onClick={() => handleRegister(ws)}
-                      className="px-3 py-1.5 rounded-lg bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
-                      title={`Book a spot for ${ws.title}`}
-                      aria-label="Book spot"
-                    >
-                      <span>Book Spot</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
+                    {/* Small Button with Changed Text ("Book Spot") or "Seat Booked ✓" */}
+                    {isWorkshopBooked(ws.id) ? (
+                      <button
+                        onClick={() => {
+                          setActiveView('account');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-[#FFF8EA] text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                        title="You already have a reserved seat for this workshop. View in your profile."
+                      >
+                        <CheckCircle2 className="w-3 h-3 text-[#F2A900]" />
+                        <span>Seat Booked ✓</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleRegister(ws)}
+                        className="px-3 py-1.5 rounded-lg bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
+                        title={`Book a spot for ${ws.title}`}
+                        aria-label="Book spot"
+                      >
+                        <span>Book Spot</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -223,16 +280,29 @@ export const WorkshopsSection: React.FC = () => {
                       </span>
                     </div>
 
-                    {/* Small Button with Changed Text ("Book Spot") */}
-                    <button
-                      onClick={() => handleRegister(ws)}
-                      className="px-3 py-1.5 rounded-lg bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
-                      title={`Book a spot for ${ws.title}`}
-                      aria-label="Book spot"
-                    >
-                      <span>Book Spot</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
+                    {isWorkshopBooked(ws.id) ? (
+                      <button
+                        onClick={() => {
+                          setActiveView('account');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-[#FFF8EA] text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
+                        title="You already have a reserved seat for this workshop. View in your profile."
+                      >
+                        <CheckCircle2 className="w-3 h-3 text-[#F2A900]" />
+                        <span>Seat Booked ✓</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleRegister(ws)}
+                        className="px-3 py-1.5 rounded-lg bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
+                        title={`Book a spot for ${ws.title}`}
+                        aria-label="Book spot"
+                      >
+                        <span>Book Spot</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
