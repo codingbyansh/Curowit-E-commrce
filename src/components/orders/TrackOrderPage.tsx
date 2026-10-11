@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { OrderTracking } from './OrderTracking';
+export { OrderTracking };
 import { useStore, Order } from '../../context/StoreContext';
 import { CurowitLogo } from '../common/CurowitLogo';
 import {

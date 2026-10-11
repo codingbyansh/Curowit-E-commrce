@@ -13,6 +13,14 @@ import {
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { db, auth, googleProvider, handleFirestoreError, OperationType } from '../firebase';
 import {
+  supabase,
+  fetchOrdersFromSupabase,
+  upsertOrderToSupabase,
+  updateOrderStatusInSupabase,
+  deleteOrderFromSupabase,
+  mapSupabaseToOrder,
+} from '../supabase';
+import {
   Product,
   PRODUCTS,
   CREATORS,
@@ -104,11 +112,12 @@ interface ToastMessage {
   type?: 'success' | 'info' | 'error';
 }
 
-const normalizeImageUrl = (url?: string, fallback = '/images/hero_handmade_1790260978568.jpg'): string => {
-  if (!url) return fallback;
+const normalizeImageUrl = (url?: string, fallback?: unknown): string => {
+  const defaultFallback = typeof fallback === 'string' ? fallback : '/images/hero_handmade_1790260978568.jpg';
+  if (!url) return defaultFallback;
   // Detect base64 strings that were previously truncated by .slice(0, 750000) or .slice(0, 700000)
   if (url.startsWith('data:') && (url.length === 750000 || url.length === 700000 || url.length === 500000)) {
-    return fallback;
+    return defaultFallback;
   }
   return url.replace(/^\/src\/assets\/images\//, '/images/');
 };
@@ -285,7 +294,11 @@ interface StoreContextType {
   updateStory: (id: string, updated: Partial<Story>) => void;
   deleteStory: (id: string) => void;
 
-  updateOrder: (id: string, updated: Partial<Order>) => void;
+  updateOrder: (
+    id: string,
+    updated: Partial<Order>,
+    trackingInfo?: { location?: string; description?: string; carrier?: string; awb?: string }
+  ) => void;
   deleteOrder: (id: string) => void;
 
   updateHeroSlides: (slides: HeroBannerSlide[]) => void;
@@ -306,6 +319,24 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
+  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
+
+  const navigateToTrackOrder = (orderId?: string) => {
+    if (orderId) {
+      setTrackingOrderId(orderId);
+    }
+    setActiveView('track-order');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const getOrderById = (orderId: string): Order | undefined => {
+    const clean = orderId.trim().toUpperCase();
+    return orders.find(
+      (o) =>
+        o.id.toUpperCase() === clean ||
+        o.id.toUpperCase().replace(/^CW-/, '') === clean.replace(/^CW-/, '')
+    );
+  };
 
   // Admin Authentication State
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
@@ -911,6 +942,99 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {}
   }, [orders]);
 
+  // Realtime Supabase synchronization for 'orders' and 'order_tracking'
+  useEffect(() => {
+    let isMounted = true;
+
+    // 1. Initial fetch from Supabase
+    const initSupabaseOrders = async () => {
+      try {
+        const remoteOrders = await fetchOrdersFromSupabase();
+        if (!isMounted) return;
+        if (remoteOrders && remoteOrders.length > 0) {
+          setOrders((prev) => {
+            const map = new Map<string, Order>();
+            // Remote orders from Supabase take priority
+            remoteOrders.forEach((o) => map.set(o.id, o));
+            // Keep any local-only orders and push them to Supabase
+            prev.forEach((o) => {
+              if (!map.has(o.id)) {
+                map.set(o.id, o);
+                upsertOrderToSupabase(o).catch(() => {});
+              }
+            });
+            return Array.from(map.values());
+          });
+        }
+      } catch (err) {
+        console.warn('Initial Supabase orders sync warning:', err);
+      }
+    };
+
+    initSupabaseOrders();
+
+    // 2. Realtime listener for 'orders' table
+    const ordersChannel = supabase
+      .channel('realtime_public_orders')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        (payload) => {
+          if (!isMounted) return;
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const mapped = mapSupabaseToOrder(payload.new);
+            setOrders((prev) => {
+              const exists = prev.some((o) => o.id === mapped.id);
+              if (exists) {
+                return prev.map((o) => (o.id === mapped.id ? { ...o, ...mapped } : o));
+              }
+              return [mapped, ...prev];
+            });
+          } else if (payload.eventType === 'DELETE') {
+            const deletedId = (payload.old as any)?.id;
+            if (deletedId) {
+              setOrders((prev) => prev.filter((o) => o.id !== deletedId));
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    // 3. Realtime listener for 'order_tracking' table
+    const trackingChannel = supabase
+      .channel('realtime_public_order_tracking')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'order_tracking' },
+        (payload) => {
+          if (!isMounted) return;
+          const track = payload.new as any;
+          if (track?.order_id && track?.status) {
+            setOrders((prev) =>
+              prev.map((o) => {
+                if (o.id === track.order_id) {
+                  return {
+                    ...o,
+                    status: track.status,
+                    ...(track.carrier ? { courierPartner: track.carrier } : {}),
+                    ...(track.awb_number ? { trackingAwb: track.awb_number } : {}),
+                  };
+                }
+                return o;
+              })
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(trackingChannel);
+    };
+  }, []);
+
   const showToast = (title: string, description?: string, type: 'success' | 'info' | 'error' = 'success') => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, title, description, type }]);
@@ -1171,6 +1295,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
     }
 
+    // Sync new customer order to Supabase orders & order_tracking tables
+    upsertOrderToSupabase(newOrder).catch((err) =>
+      console.warn('Supabase upsertOrder error:', err)
+    );
+    updateOrderStatusInSupabase(newOrder.id, 'Confirmed', {
+      location: 'Curowit Fulfillment Hub',
+      description: 'Order confirmed and atelier artisan assigned.',
+      carrier: newOrder.courierPartner,
+      awb: newOrder.trackingAwb,
+    }).catch((err) => console.warn('Supabase tracking error:', err));
+
     // Sync new customer order to Firestore so Admin CMS sees it across all devices
     const itemsSummary = cart
       .map((i) => `${i.product.name} (x${i.quantity})`)
@@ -1369,17 +1504,40 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast('Story Removed', 'Story deleted globally');
   };
 
-  // Order Management
-  const updateOrder = (id: string, updated: Partial<Order>) => {
-    setOrders((prev) =>
-      prev.map((order) => (order.id === id ? { ...order, ...updated } : order))
-    );
-    showToast('Order Updated', `Order ${id} status updated`);
+  // Order Management (Synced globally via Supabase & Local state)
+  const updateOrder = (
+    id: string,
+    updated: Partial<Order>,
+    trackingInfo?: { location?: string; description?: string; carrier?: string; awb?: string }
+  ) => {
+    setOrders((prev) => {
+      const next = prev.map((order) => (order.id === id ? { ...order, ...updated } : order));
+      const target = next.find((o) => o.id === id);
+      if (target) {
+        // Sync order row to Supabase
+        upsertOrderToSupabase(target).catch((err) =>
+          console.warn('Supabase update order sync failed:', err)
+        );
+        // Sync milestone event to Supabase order_tracking
+        if (updated.status) {
+          updateOrderStatusInSupabase(id, updated.status, {
+            carrier: updated.courierPartner || target.courierPartner,
+            awb: updated.trackingAwb || target.trackingAwb,
+            ...trackingInfo,
+          }).catch((err) => console.warn('Supabase milestone update failed:', err));
+        }
+      }
+      return next;
+    });
+    showToast('Order Updated', `Order #${id} status updated to ${updated.status || 'saved'}`);
   };
 
   const deleteOrder = (id: string) => {
     setOrders((prev) => prev.filter((order) => order.id !== id));
-    showToast('Order Deleted', `Order ${id} removed from system`);
+    deleteOrderFromSupabase(id).catch((err) =>
+      console.warn('Supabase delete order error:', err)
+    );
+    showToast('Order Deleted', `Order #${id} removed from system`);
   };
 
   // Hero & Announcement mutators (Synced globally via Firestore)
@@ -1549,6 +1707,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         navigateToProduct,
         navigateToCreator,
         navigateToCategory,
+        trackingOrderId,
+        setTrackingOrderId,
+        navigateToTrackOrder,
+        getOrderById,
 
         // Admin CMS
         isAdminAuthenticated,

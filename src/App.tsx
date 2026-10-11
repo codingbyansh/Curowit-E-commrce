@@ -29,6 +29,7 @@ import { StoriesPage } from './components/stories/StoriesPage';
 import { AccountPage } from './components/account/AccountPage';
 import { SignInPage } from './components/auth/SignInPage';
 import { AdminCMSPage } from './components/admin/AdminCMSPage';
+import { OrderTracking } from './components/orders/OrderTracking';
 
 // Overlays & Utilities
 import { SearchDrawer } from './components/common/SearchDrawer';
@@ -271,6 +272,9 @@ const MainContent: React.FC = () => {
         {activeView === 'stories' && <StoriesPage />}
         {activeView === 'account' && <AccountPage />}
         {activeView === 'signin' && <SignInPage />}
+        {(activeView === 'track-order' || activeView === 'order-tracking' || activeView === 'track') && (
+          <OrderTracking />
+        )}
       </main>
 
       <Footer />

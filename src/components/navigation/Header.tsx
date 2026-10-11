@@ -32,6 +32,7 @@ export const Header: React.FC = () => {
     { label: 'Creators', view: 'creators' },
     { label: 'Workshops', view: 'workshops' },
     { label: 'Stories', view: 'stories' },
+    { label: 'Track Order', view: 'track-order' },
   ];
 
   return (

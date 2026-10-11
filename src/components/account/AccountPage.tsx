@@ -20,6 +20,7 @@ export const AccountPage: React.FC = () => {
     deleteAddress,
     logout,
     setActiveView,
+    navigateToTrackOrder,
     showToast,
   } = useStore();
   const [activeTab, setActiveTab] = useState<'orders' | 'addresses' | 'notifications' | 'support'>('orders');
@@ -222,9 +223,7 @@ export const AccountPage: React.FC = () => {
                         Total: ₹{order.total}
                       </span>
                       <button
-                        onClick={() =>
-                          showToast(`Order #${order.id} Status: ${order.status}`, 'We will update you as your package progresses.')
-                        }
+                        onClick={() => navigateToTrackOrder(order.id)}
                         className="px-3 py-1.5 rounded-lg bg-[#F7EBD7] text-[#07545A] font-semibold hover:bg-[#07545A]/10 cursor-pointer"
                       >
                         Track Order

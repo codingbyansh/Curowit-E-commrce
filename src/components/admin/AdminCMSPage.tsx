@@ -91,6 +91,9 @@ import {
   Filter,
   Upload,
 } from 'lucide-react';
+import { OrderManagement } from './OrderManagement';
+
+export { OrderManagement };
 
 export const AdminCMSPage: React.FC = () => {
   const {
@@ -533,131 +536,10 @@ export const AdminCMSPage: React.FC = () => {
         )}
 
         {/* ========================================================
-            TAB 2: ORDERS MANAGER
+            TAB 2: ORDERS MANAGER (SUPABASE REALTIME SYNC)
             ======================================================== */}
-        {activeTab === 'orders' && (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#FFF8EA] p-4 sm:p-5 rounded-3xl border border-[#07545A]/12 shadow-xs">
-              <div className="relative flex-1 max-w-md">
-                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#07545A]/60" />
-                <input
-                  type="text"
-                  value={orderSearch}
-                  onChange={(e) => setOrderSearch(e.target.value)}
-                  placeholder="Search by order ID, customer name, status..."
-                  className="w-full pl-9 pr-3.5 py-2 text-xs font-medium bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl focus:border-[#07545A] focus:ring-1 focus:ring-[#07545A] outline-none"
-                />
-              </div>
+        {activeTab === 'orders' && <OrderManagement />}
 
-              <div className="text-xs text-[#07545A] font-bold">
-                Total Orders: <span className="text-[#E97868]">{orders.length}</span>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {filteredOrders.map((order) => (
-                <div
-                  key={order.id}
-                  className="bg-[#FFF8EA] rounded-3xl border border-[#07545A]/15 p-5 shadow-xs flex flex-col md:flex-row justify-between gap-6"
-                >
-                  <div className="space-y-3 flex-1">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="font-extrabold text-sm text-[#07545A] bg-[#07545A]/10 px-3 py-1 rounded-xl">
-                        {order.id}
-                      </span>
-                      <span className="text-xs text-[#173B3D]/60">{order.date}</span>
-                      <span
-                        className={`text-[11px] font-bold px-3 py-0.5 rounded-full border ${
-                          order.status === 'Delivered'
-                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                            : order.status === 'Dispatched'
-                            ? 'bg-blue-100 text-blue-800 border-blue-300'
-                            : order.status === 'Crafting'
-                            ? 'bg-amber-100 text-amber-800 border-amber-300'
-                            : 'bg-stone-100 text-stone-800 border-stone-300'
-                        }`}
-                      >
-                        {order.status}
-                      </span>
-                    </div>
-
-                    <div className="text-xs text-[#173B3D]">
-                      <span className="font-bold">{order.shippingAddress.fullName}</span> ·{' '}
-                      <span>{order.shippingAddress.phone}</span>
-                      <p className="text-[11px] text-[#173B3D]/70 mt-0.5">
-                        {order.shippingAddress.street}, {order.shippingAddress.city} -{' '}
-                        {order.shippingAddress.postalCode}
-                      </p>
-                    </div>
-
-                    {/* Items */}
-                    <div className="flex flex-wrap gap-2 pt-2 border-t border-[#07545A]/10">
-                      {order.items.map((it, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center gap-2 bg-[#FFFDF7] p-2 rounded-xl border border-[#07545A]/10 text-xs"
-                        >
-                          <img
-                            src={it.product.image}
-                            alt=""
-                            className="w-8 h-8 rounded-lg object-cover border border-[#07545A]/10"
-                          />
-                          <div>
-                            <span className="font-semibold block truncate max-w-[150px]">
-                              {it.product.name}
-                            </span>
-                            <span className="text-[10px] text-[#687778]">
-                              Qty: {it.quantity} · ₹{it.product.price}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Status update controls & Total */}
-                  <div className="flex flex-col justify-between items-end gap-4 shrink-0 border-t md:border-t-0 md:border-l border-[#07545A]/10 pt-4 md:pt-0 md:pl-6">
-                    <div className="text-right">
-                      <span className="text-[10px] uppercase font-bold text-[#687778] block">
-                        Total Amount
-                      </span>
-                      <span className="text-xl font-extrabold text-[#07545A]">
-                        ₹{order.total}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={order.status}
-                        onChange={(e) =>
-                          updateOrder(order.id, {
-                            status: e.target.value as Order['status'],
-                          })
-                        }
-                        className="px-3 py-1.5 text-xs font-bold bg-[#FFFDF7] border border-[#07545A]/25 rounded-xl text-[#07545A] outline-none cursor-pointer"
-                      >
-                        <option value="Confirmed">Confirmed</option>
-                        <option value="Crafting">Crafting</option>
-                        <option value="Dispatched">Dispatched</option>
-                        <option value="Delivered">Delivered</option>
-                      </select>
-
-                      <button
-                        onClick={() => {
-                          if (confirm(`Delete order ${order.id}?`)) deleteOrder(order.id);
-                        }}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
-                        title="Delete order"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* ========================================================
             TAB 3: ARTISANS & MAKERS MANAGER

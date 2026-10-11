@@ -154,6 +154,10 @@ export const BreadcrumbNav: React.FC = () => {
     crumbs.push({
       label: 'Sign In & Store Checkout',
     });
+  } else if (activeView === 'track-order' || activeView === 'order-tracking' || activeView === 'track') {
+    crumbs.push({
+      label: 'Track Order',
+    });
   }
 
   return (

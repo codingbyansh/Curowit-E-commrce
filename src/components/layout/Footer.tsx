@@ -207,6 +207,14 @@ export const Footer: React.FC = () => {
                   All Collections
                 </button>
               </li>
+              <li>
+                <button
+                  onClick={() => handleNavClick('track-order')}
+                  className="hover:text-white transition-colors cursor-pointer text-[#F2A900] font-semibold"
+                >
+                  Track Your Order
+                </button>
+              </li>
             </ul>
           </div>
 
