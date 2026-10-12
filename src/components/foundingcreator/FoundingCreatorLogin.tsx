@@ -56,19 +56,6 @@ export const FoundingCreatorLogin: React.FC<FoundingCreatorLoginProps> = ({ onNa
     }
   };
 
-  const handleQuickDemoLogin = (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword('demopass123');
-    const res = foundingCreatorService.loginCreator(demoEmail);
-    if (res.success && res.creator) {
-      if (res.creator.accountStatus === 'approved') {
-        onNavigate('foundingcreator-dashboard');
-      } else {
-        onNavigate(`foundingcreator-status?id=${res.creator.email}`);
-      }
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#FFFDF7] text-[#173B3D] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md space-y-4 text-center">
@@ -178,39 +165,11 @@ export const FoundingCreatorLogin: React.FC<FoundingCreatorLoginProps> = ({ onNa
             </form>
           )}
 
-          {/* Quick Demo Login Helpers */}
-          <div className="pt-4 border-t border-[#07545A]/10 space-y-2">
-            <span className="text-[10px] font-bold text-[#687778] uppercase block text-center">
-              Instant Demo Access for Testing
-            </span>
-            <div className="grid grid-cols-1 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('meera@studiodhaga.in')}
-                className="w-full py-2 px-3 rounded-xl bg-[#FFF8EA] hover:bg-[#F2A900]/20 text-[#07545A] border border-[#07545A]/15 text-xs font-bold transition-colors cursor-pointer flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Meera Sharma (Approved Creator)</span>
-                </div>
-                <span className="text-[10px] uppercase font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded">
-                  Approved
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('aarav@mittifire.in')}
-                className="w-full py-2 px-3 rounded-xl bg-[#FFF8EA] hover:bg-[#F2A900]/20 text-[#07545A] border border-[#07545A]/15 text-xs font-bold transition-colors cursor-pointer flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Aarav Patel (Mitti & Fire Studio)</span>
-                </div>
-                <span className="text-[10px] uppercase font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">
-                  Pending
-                </span>
-              </button>
+          {/* Secure Artisan Credentials Note */}
+          <div className="pt-3 border-t border-[#07545A]/10 text-center">
+            <div className="inline-flex items-center gap-1.5 text-[11px] text-[#173B3D]/70 font-medium">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Secure encrypted artisan access with Supabase sync</span>
             </div>
           </div>
 

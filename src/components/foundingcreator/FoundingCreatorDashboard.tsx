@@ -30,6 +30,12 @@ import {
 } from 'lucide-react';
 import { foundingCreatorService } from '../../services/foundingCreatorService';
 import {
+  foundingCreatorSyncService,
+  StoreDocument,
+  StoreDocumentType,
+  syncEventBus,
+} from '../../lib/foundingCreatorSync';
+import {
   CreatorProfile,
   CreatorProduct,
   CreatorOrderItem,
@@ -54,6 +60,7 @@ type DashboardTab =
   | 'earnings'
   | 'payouts'
   | 'payment-details'
+  | 'documents'
   | 'profile'
   | 'notifications'
   | 'support'
@@ -70,6 +77,10 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
   const [paymentMethod, setPaymentMethod] = useState<CreatorPaymentMethod | null>(null);
   const [notifications, setNotifications] = useState<CreatorNotification[]>([]);
   const [tickets, setTickets] = useState<CreatorSupportTicket[]>([]);
+  const [documents, setDocuments] = useState<StoreDocument[]>([]);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+  const [docTypeChoice, setDocTypeChoice] = useState<StoreDocumentType>('portfolio');
+  const [docNotes, setDocNotes] = useState('');
 
   // Payout request modal state
   const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
@@ -111,6 +122,13 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
     }
     setCreator(current);
     refreshData(current.id);
+
+    // Subscribe to reactive database sync events
+    const unsubscribe = syncEventBus.subscribe(() => {
+      refreshData(current.id);
+    });
+
+    return unsubscribe;
   }, []);
 
   const refreshData = (creatorId: string) => {
@@ -120,6 +138,7 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
     setPaymentMethod(foundingCreatorService.getCreatorPaymentMethod(creatorId));
     setNotifications(foundingCreatorService.getCreatorNotifications(creatorId));
     setTickets(foundingCreatorService.getCreatorTickets(creatorId));
+    foundingCreatorSyncService.fetchStoreDocuments(creatorId).then(setDocuments);
   };
 
   if (!creator) return null;
@@ -130,6 +149,38 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
   const handleLogout = () => {
     foundingCreatorService.setCurrentCreator(null);
     onNavigate('foundingcreator-login');
+  };
+
+  const handleStoreDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !creator) return;
+
+    setIsUploadingDoc(true);
+    try {
+      for (const file of Array.from(files)) {
+        await foundingCreatorSyncService.uploadAndPersistStoreDocument(
+          creator.id,
+          file,
+          docTypeChoice,
+          { notes: docNotes }
+        );
+      }
+      showToast('Store document uploaded & synchronized to Supabase.');
+      const updatedDocs = await foundingCreatorSyncService.fetchStoreDocuments(creator.id);
+      setDocuments(updatedDocs);
+      setDocNotes('');
+    } catch (err: any) {
+      showToast('Document upload notice: ' + (err.message || 'File recorded locally'));
+    } finally {
+      setIsUploadingDoc(false);
+    }
+  };
+
+  const handleDeleteStoreDocument = async (docId: string) => {
+    if (!creator) return;
+    await foundingCreatorSyncService.deleteStoreDocument(docId, creator.id);
+    setDocuments((prev) => prev.filter((d) => d.id !== docId));
+    showToast('Document removed.');
   };
 
   const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -364,8 +415,43 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
 
       {/* Main Layout (Sidebar + Content View) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col md:flex-row gap-6">
-        {/* Sidebar Navigation */}
-        <aside className="w-full md:w-60 shrink-0">
+        {/* Mobile / Tablet Horizontal Scrollable Quick Tabs */}
+        <div className="md:hidden w-full overflow-x-auto pb-2 scrollbar-none flex items-center gap-1.5 px-1 bg-white/80 backdrop-blur-xs p-1.5 rounded-2xl border border-[#07545A]/15 shrink-0">
+          {[
+            { id: 'overview', label: 'Overview', icon: Layers },
+            { id: 'products', label: `Products (${products.length})`, icon: Package },
+            { id: 'new-product', label: '+ Product', icon: Plus },
+            { id: 'orders', label: `Orders (${orders.length})`, icon: ShoppingBag },
+            { id: 'shipments', label: 'Shipments', icon: Truck },
+            { id: 'earnings', label: 'Earnings', icon: TrendingUp },
+            { id: 'payouts', label: 'Payouts', icon: CreditCard },
+            { id: 'documents', label: `Docs (${documents.length})`, icon: FileText },
+            { id: 'payment-details', label: 'Payments', icon: Building2 },
+            { id: 'profile', label: 'Profile', icon: User },
+            { id: 'support', label: 'Support', icon: HelpCircle },
+            { id: 'policies', label: 'Terms', icon: FileText },
+          ].map((item) => {
+            const Icon = item.icon;
+            const isCurrent = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id as any)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
+                  isCurrent
+                    ? 'bg-[#07545A] text-[#FFF8EA] shadow-xs'
+                    : 'bg-[#FFF8EA] text-[#07545A] border border-[#07545A]/10 hover:bg-[#07545A]/10'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Desktop Sidebar Navigation */}
+        <aside className="hidden md:block w-60 shrink-0">
           <div className="bg-[#FFFDF7] rounded-3xl border border-[#07545A]/15 p-3 space-y-1 shadow-2xs sticky top-22">
             <button
               onClick={() => setActiveTab('overview')}
@@ -472,6 +558,21 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
             >
               <Building2 className="w-4 h-4" />
               <span>Payment Details</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('documents')}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                activeTab === 'documents'
+                  ? 'bg-[#07545A] text-[#FFF8EA]'
+                  : 'text-[#173B3D]/80 hover:bg-[#FFF8EA] hover:text-[#07545A]'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <FileText className="w-4 h-4" />
+                <span>Store Documents</span>
+              </div>
+              <span className="text-[10px] opacity-80">{documents.length}</span>
             </button>
 
             <div className="pt-2 border-t border-[#07545A]/10 mt-2 space-y-1">
@@ -1531,6 +1632,162 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: STORE DOCUMENTS (SUPABASE & FIREBASE SYNC) */}
+          {activeTab === 'documents' && (
+            <div className="space-y-6">
+              <div className="bg-[#FFFDF7] rounded-3xl border border-[#07545A]/15 p-6 shadow-2xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold text-[#07545A] text-base font-display flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-[#07545A]" />
+                      <span>Artisan Atelier & Store Documents</span>
+                    </h3>
+                    <p className="text-xs text-[#173B3D]/70">
+                      Upload portfolio proofs, studio registrations, bank statements, or craft certificates. Persisted to Supabase with reactive synchronization.
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold text-[#07545A] bg-[#FFF8EA] px-3 py-1.5 rounded-full border border-[#07545A]/15 self-start sm:self-auto">
+                    {documents.length} Document{documents.length === 1 ? '' : 's'} on Record
+                  </span>
+                </div>
+
+                {/* Upload Document Box */}
+                <div className="bg-[#FFF8EA]/50 rounded-2xl border border-dashed border-[#07545A]/25 p-5 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-bold text-[#07545A] block mb-1">
+                        Document Classification *
+                      </label>
+                      <select
+                        value={docTypeChoice}
+                        onChange={(e) => setDocTypeChoice(e.target.value as any)}
+                        className="w-full px-3 py-2 bg-white border border-[#07545A]/20 rounded-xl text-xs font-semibold outline-none focus:border-[#07545A]"
+                      >
+                        <option value="portfolio">Portfolio / Lookbook Image</option>
+                        <option value="craft_certificate">Artisan / Craft Certificate</option>
+                        <option value="identity_proof">Identity Verification Proof</option>
+                        <option value="business_license">Business / GST Registration</option>
+                        <option value="bank_proof">Bank Account Proof / Passbook</option>
+                        <option value="studio_photograph">Studio Workshop Photograph</option>
+                        <option value="product_catalog">Product Catalog / Spec Sheet</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-[#07545A] block mb-1">
+                        Notes / Document Reference (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={docNotes}
+                        onChange={(e) => setDocNotes(e.target.value)}
+                        placeholder="e.g. Master Weaver certificate, Studio Jaipur"
+                        className="w-full px-3 py-2 bg-white border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex items-center justify-between flex-wrap gap-3">
+                    <input
+                      type="file"
+                      id="store-doc-upload"
+                      multiple
+                      accept="image/*,application/pdf"
+                      onChange={handleStoreDocumentUpload}
+                      className="hidden"
+                      disabled={isUploadingDoc}
+                    />
+                    <label
+                      htmlFor="store-doc-upload"
+                      className="px-5 py-2.5 rounded-xl bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-2"
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span>{isUploadingDoc ? 'Uploading & Syncing...' : 'Upload & Synchronize Document'}</span>
+                    </label>
+                    <span className="text-[11px] text-[#173B3D]/60">
+                      Real-time synchronized with Supabase store_documents
+                    </span>
+                  </div>
+                </div>
+
+                {/* Documents Table / Grid */}
+                {documents.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-[#173B3D]/60 bg-[#FFF8EA]/20 rounded-2xl border border-stone-200">
+                    No store documents uploaded yet. Add your studio photos, artisan IDs, or craft certificates above.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {documents.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="p-4 bg-white border border-[#07545A]/15 rounded-2xl flex flex-col justify-between gap-3 shadow-2xs hover:shadow-xs transition-shadow"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start gap-2.5 min-w-0">
+                            <div className="w-9 h-9 rounded-xl bg-[#FFF8EA] text-[#07545A] flex items-center justify-center shrink-0 border border-[#07545A]/10">
+                              <FileText className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <span className="font-bold text-xs text-[#07545A] truncate block">
+                                {doc.fileName}
+                              </span>
+                              <span className="text-[10px] uppercase font-bold text-[#687778] tracking-wider block">
+                                {doc.documentType.replace('_', ' ')}
+                              </span>
+                              {doc.notes && (
+                                <span className="text-[11px] text-[#173B3D]/70 block truncate mt-0.5">
+                                  {doc.notes}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${
+                              doc.verificationStatus === 'verified'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : doc.verificationStatus === 'rejected'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            {doc.verificationStatus}
+                          </span>
+                        </div>
+
+                        <div className="pt-2 border-t border-[#07545A]/10 flex items-center justify-between text-[11px]">
+                          <span className="text-[#173B3D]/60">
+                            {new Date(doc.uploadedAt).toLocaleDateString('en-GB')}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {doc.fileUrl && (
+                              <a
+                                href={doc.fileUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[#07545A] hover:underline font-bold flex items-center gap-1"
+                              >
+                                <span>View</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteStoreDocument(doc.id)}
+                              className="text-red-600 hover:text-red-800 font-bold ml-2 cursor-pointer"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

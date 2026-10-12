@@ -1,6 +1,7 @@
 import { supabase } from '../supabase';
 import { storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { foundingCreatorSyncService, StoreDocument, StoreDocumentType } from '../lib/foundingCreatorSync';
 import {
   CreatorProfile,
   CreatorApplication,
@@ -575,59 +576,9 @@ export const foundingCreatorService = {
     apps.unshift(newApplication);
     localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
 
-    // Best-effort sync with Supabase
+    // Synchronize to Supabase database & reactive event bus via service layer
     try {
-      await supabase.from('creator_profiles').upsert([
-        {
-          id: newCreator.id,
-          user_id: newCreator.userId,
-          creator_id: newCreator.creatorId,
-          full_name: newCreator.fullName,
-          display_name: newCreator.displayName,
-          email: newCreator.email,
-          phone: newCreator.phone,
-          city: newCreator.city,
-          state: newCreator.state,
-          pincode: newCreator.pincode,
-          country: newCreator.country,
-          brand_name: newCreator.brandName,
-          creator_type: newCreator.creatorType,
-          social_links: newCreator.socialLinks,
-          categories: newCreator.categories,
-          account_status: newCreator.accountStatus,
-          created_at: newCreator.createdAt,
-          updated_at: newCreator.updatedAt,
-        },
-      ]);
-
-      await supabase.from('creator_applications').upsert([
-        {
-          id: newApplication.id,
-          application_id: newApplication.applicationId,
-          creator_id: newApplication.creatorId,
-          applicant_name: newApplication.applicantName,
-          applicant_email: newApplication.applicantEmail,
-          applicant_phone: newApplication.applicantPhone,
-          brand_name: newApplication.brandName,
-          creator_type: newApplication.creatorType,
-          city: newApplication.city,
-          state: newApplication.state,
-          pincode: newApplication.pincode,
-          categories: newApplication.categories,
-          intro: newApplication.intro,
-          craft_description: newApplication.craftDescription,
-          years_experience: newApplication.yearsExperience,
-          monthly_capacity: newApplication.monthlyCapacity,
-          craft_method: newApplication.craftMethod,
-          lead_time: newApplication.leadTime,
-          accepts_custom_orders: newApplication.acceptsCustomOrders,
-          sells_elsewhere: newApplication.sellsElsewhere,
-          portfolio_links: newApplication.portfolioLinks,
-          portfolio_files: newApplication.portfolioFiles,
-          application_status: newApplication.applicationStatus,
-          submitted_at: newApplication.submittedAt,
-        },
-      ]);
+      await foundingCreatorSyncService.persistCreatorApplication(newApplication, newCreator);
     } catch (err) {
       console.warn('Notice: Background sync to Supabase table queued:', err);
     }
@@ -768,6 +719,14 @@ export const foundingCreatorService = {
       isRead: false,
     });
 
+    // Synchronize to Supabase via service layer
+    foundingCreatorSyncService
+      .updateApplicationStatus(app.applicationId, 'approved', {
+        reviewerName,
+        reviewNotes: notes,
+      })
+      .catch(() => {});
+
     return true;
   },
 
@@ -791,6 +750,13 @@ export const foundingCreatorService = {
       localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
     }
 
+    foundingCreatorSyncService
+      .updateApplicationStatus(app.applicationId, 'rejected', {
+        reviewerName,
+        rejectionReason: reason,
+      })
+      .catch(() => {});
+
     return true;
   },
 
@@ -804,6 +770,13 @@ export const foundingCreatorService = {
     app.requestedInfo = requestedInfo;
     apps[appIndex] = app;
     localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
+
+    foundingCreatorSyncService
+      .updateApplicationStatus(app.applicationId, 'additional_info_required', {
+        requestedInfo,
+      })
+      .catch(() => {});
+
     return true;
   },
 
@@ -840,6 +813,10 @@ export const foundingCreatorService = {
     const all = this.getAllProducts();
     all.unshift(newProduct);
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(all));
+
+    // Sync to Supabase
+    foundingCreatorSyncService.persistCreatorProduct(newProduct).catch(() => {});
+
     return newProduct;
   },
 
@@ -850,6 +827,10 @@ export const foundingCreatorService = {
 
     all[idx] = { ...all[idx], ...updates, updatedAt: new Date().toISOString() };
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(all));
+
+    // Sync to Supabase
+    foundingCreatorSyncService.persistCreatorProduct(all[idx]).catch(() => {});
+
     return true;
   },
 
@@ -1219,5 +1200,28 @@ export const foundingCreatorService = {
     all.unshift(newTicket);
     localStorage.setItem(STORAGE_KEYS.SUPPORT_TICKETS, JSON.stringify(all));
     return newTicket;
+  },
+
+  // 13. STORE DOCUMENTS PERSISTENCE & SYNC
+  async uploadStoreDocument(
+    creatorId: string,
+    file: File,
+    documentType: StoreDocumentType,
+    metadata?: { applicationId?: string; notes?: string }
+  ): Promise<StoreDocument> {
+    return await foundingCreatorSyncService.uploadAndPersistStoreDocument(
+      creatorId,
+      file,
+      documentType,
+      metadata
+    );
+  },
+
+  async getStoreDocuments(creatorId: string): Promise<StoreDocument[]> {
+    return await foundingCreatorSyncService.fetchStoreDocuments(creatorId);
+  },
+
+  async deleteStoreDocument(docId: string, creatorId: string): Promise<boolean> {
+    return await foundingCreatorSyncService.deleteStoreDocument(docId, creatorId);
   },
 };

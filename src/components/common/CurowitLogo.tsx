@@ -112,7 +112,7 @@ export const CurowitLogo: React.FC<CurowitLogoProps> = ({
       {showTagline && (
         <span
           className={`tracking-normal font-bold mt-0.5 select-none ${config.taglineSize} ${
-            responsiveTagline ? 'hidden lg:block' : ''
+            responsiveTagline ? 'block md:hidden lg:block' : ''
           }`}
           style={{
             color: taglineColor,

@@ -13,6 +13,7 @@ import {
   Send,
 } from 'lucide-react';
 import { foundingCreatorService } from '../../services/foundingCreatorService';
+import { foundingCreatorSyncService } from '../../lib/foundingCreatorSync';
 import { CreatorApplication, CreatorProfile } from '../../types/foundingCreator';
 
 interface FoundingCreatorStatusProps {
@@ -50,7 +51,7 @@ export const FoundingCreatorStatus: React.FC<FoundingCreatorStatusProps> = ({
     e.preventDefault();
     if (!result?.application || !submittedAdditionalInfo.trim()) return;
 
-    // Update locally
+    // Update locally and Supabase via foundingCreatorSyncService
     const apps = foundingCreatorService.getAllApplications();
     const idx = apps.findIndex((a) => a.id === result.application!.id);
     if (idx !== -1) {
@@ -58,6 +59,12 @@ export const FoundingCreatorStatus: React.FC<FoundingCreatorStatusProps> = ({
       apps[idx].reviewNotes = `Additional info provided by applicant: ${submittedAdditionalInfo.trim()}`;
       apps[idx].updatedAt = new Date().toISOString();
       localStorage.setItem('curowit_fc_applications_v1', JSON.stringify(apps));
+
+      foundingCreatorSyncService
+        .updateApplicationStatus(apps[idx].applicationId, 'under_review', {
+          reviewNotes: apps[idx].reviewNotes,
+        })
+        .catch(() => {});
 
       setResult({
         ...result,
@@ -169,30 +176,10 @@ export const FoundingCreatorStatus: React.FC<FoundingCreatorStatusProps> = ({
             </button>
           </form>
 
-          {/* Quick Demo Pre-fill links */}
-          <div className="pt-1 flex items-center gap-2 text-[11px] text-[#173B3D]/60 flex-wrap">
-            <span>Quick test lookup:</span>
-            <button
-              type="button"
-              onClick={() => {
-                setQuery('APP-FC-98421');
-                handleSearch('APP-FC-98421');
-              }}
-              className="underline text-[#07545A] font-bold cursor-pointer"
-            >
-              APP-FC-98421 (Approved)
-            </button>
-            <span>·</span>
-            <button
-              type="button"
-              onClick={() => {
-                setQuery('APP-FC-10543');
-                handleSearch('APP-FC-10543');
-              }}
-              className="underline text-[#07545A] font-bold cursor-pointer"
-            >
-              APP-FC-10543 (Pending)
-            </button>
+          {/* Search guidance note */}
+          <div className="pt-1 flex items-center gap-1.5 text-[11px] text-[#173B3D]/60 flex-wrap">
+            <span className="font-medium">Lookup tip:</span>
+            <span>Enter your 9-digit application reference code or registered email address.</span>
           </div>
         </div>
 

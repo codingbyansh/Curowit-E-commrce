@@ -248,7 +248,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                     type="text"
                     value={statusQuery}
                     onChange={(e) => setStatusQuery(e.target.value)}
-                    placeholder="Check application by ID (e.g. APP-FC-98421)..."
+                    placeholder="Check application by Reference ID or Email..."
                     className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-[#07545A]/20 rounded-xl outline-none focus:border-[#07545A]"
                   />
                 </div>
@@ -261,7 +261,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
               </form>
 
               {/* Badges Row */}
-              <div className="pt-2 flex items-center gap-6 text-xs text-[#173B3D]/70">
+              <div className="pt-2 flex flex-wrap items-center gap-3 sm:gap-6 text-xs text-[#173B3D]/70">
                 <div className="flex items-center gap-1.5 font-semibold">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
                   <span>No Upfront Listing Fees</span>

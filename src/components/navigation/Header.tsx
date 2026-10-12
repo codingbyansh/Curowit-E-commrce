@@ -32,7 +32,6 @@ export const Header: React.FC = () => {
     { label: 'Creators', view: 'creators' },
     { label: 'Workshops', view: 'workshops' },
     { label: 'Stories', view: 'stories' },
-    { label: 'Founding Creator', view: 'foundingcreator' },
     { label: 'Track Order', view: 'track-order' },
   ];
 
@@ -75,9 +74,8 @@ export const Header: React.FC = () => {
                 {navLinks.map((link) => {
                   const isActive = activeView === link.view;
                   const isTrackOrder = link.view === 'track-order';
-                  const isFoundingCreator = link.view === 'foundingcreator';
-                  // On tablet (md:max-lg), hide Home, Track Order, Stories, and Founding Creator to guarantee zero crowding
-                  const isTabletHidden = link.view === 'home' || isTrackOrder || link.view === 'stories' || isFoundingCreator;
+                  // On tablet (md:max-lg), hide Home, Track Order, and Stories to guarantee zero crowding
+                  const isTabletHidden = link.view === 'home' || isTrackOrder || link.view === 'stories';
                   return (
                     <button
                       key={link.view}
@@ -86,7 +84,7 @@ export const Header: React.FC = () => {
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
                       className={`relative py-1 px-1.5 lg:px-2 text-xs lg:text-[13px] xl:text-[15px] font-bold tracking-normal transition-colors duration-200 cursor-pointer whitespace-nowrap shrink-0 ${
-                        isTrackOrder || isFoundingCreator
+                        isTrackOrder
                           ? 'hidden xl:inline-block'
                           : isTabletHidden
                           ? 'hidden lg:inline-block'
@@ -94,8 +92,6 @@ export const Header: React.FC = () => {
                       } ${
                         isActive
                           ? 'text-[#07545A] font-extrabold'
-                          : isFoundingCreator
-                          ? 'text-[#E97868] hover:text-[#07545A]'
                           : 'text-[#173B3D] hover:text-[#07545A]'
                       }`}
                     >
