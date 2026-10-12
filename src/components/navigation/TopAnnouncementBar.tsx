@@ -150,13 +150,6 @@ export const TopAnnouncementBar: React.FC = () => {
       />
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-8 sm:h-9 md:h-10 flex items-center justify-center">
-        {/* Left Side: Subtle Brand Monogram (Laptop View) */}
-        <div className="hidden lg:flex items-center gap-2 text-[11px] font-medium tracking-wider text-white/90 shrink-0 whitespace-nowrap mr-4">
-          <span className="font-semibold text-white tracking-wide">CUROWIT</span>
-          <span style={{ color: activeMessage.sparkleColor }}>✦</span>
-          <span className="text-white/80">Home of creatives</span>
-        </div>
-
         {/* Center: Single-Line Animated Vertical Slide + Fade Carousel */}
         <div
           onClick={handleClick}

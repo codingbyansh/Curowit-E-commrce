@@ -269,9 +269,12 @@ export const Footer: React.FC = () => {
               </span>
               {/* Hidden Admin Passkey Trigger on Footer */}
               <button
-                onClick={openAdminModal}
+                onClick={() => {
+                  window.history.pushState(null, '', '/admincurowit');
+                  setActiveView('admin');
+                }}
                 className="opacity-25 hover:opacity-100 p-1 text-[#FFF8EA] hover:text-[#F2A900] transition-opacity cursor-pointer inline-flex items-center"
-                title="Owner CMS Access"
+                title="Owner CMS Access (/admincurowit)"
                 aria-label="Staff Passkey Portal"
               >
                 <Lock className="w-3.5 h-3.5" />

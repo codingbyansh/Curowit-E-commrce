@@ -69,13 +69,12 @@ export const Header: React.FC = () => {
                 <CurowitLogo variant="horizontal" size="md" responsiveTagline />
               </div>
 
-              {/* Zone 2: Navigation Links (Responsive: Compact on Tablet, Full on Desktop) */}
+              {/* Zone 2: Navigation Links (Responsive: Compact on Tablet with Track Order, Full on Desktop) */}
               <nav className="hidden md:flex items-center gap-1 md:gap-1.5 lg:gap-3 xl:gap-5 text-[#173B3D] min-w-0 shrink overflow-hidden">
                 {navLinks.map((link) => {
                   const isActive = activeView === link.view;
-                  const isTrackOrder = link.view === 'track-order';
-                  // On tablet (md:max-lg), hide Home, Track Order, and Stories to guarantee zero crowding
-                  const isTabletHidden = link.view === 'home' || isTrackOrder || link.view === 'stories';
+                  // On tablet (md:max-lg), hide Home and Stories to maintain balanced spacing while keeping Track Order
+                  const isTabletHidden = link.view === 'home' || link.view === 'stories';
                   return (
                     <button
                       key={link.view}
@@ -84,11 +83,7 @@ export const Header: React.FC = () => {
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
                       className={`relative py-1 px-1.5 lg:px-2 text-xs lg:text-[13px] xl:text-[15px] font-bold tracking-normal transition-colors duration-200 cursor-pointer whitespace-nowrap shrink-0 ${
-                        isTrackOrder
-                          ? 'hidden xl:inline-block'
-                          : isTabletHidden
-                          ? 'hidden lg:inline-block'
-                          : 'inline-block'
+                        isTabletHidden ? 'hidden lg:inline-block' : 'inline-block'
                       } ${
                         isActive
                           ? 'text-[#07545A] font-extrabold'

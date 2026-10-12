@@ -192,6 +192,14 @@ const DynamicMetadataManager: React.FC = () => {
           'Curowit Storefront Content Management System for managing products, creators, workshops, stories, and hero campaigns.';
         break;
       }
+      case 'track-order':
+      case 'order-tracking':
+      case 'track': {
+        title = 'Track Order — Curowit';
+        description =
+          'Track your handcrafted orders with live AWB courier milestones, dispatch status, and delivery tracking on Curowit.';
+        break;
+      }
       case 'foundingcreator': {
         title = 'Founding Creator Program — Curowit | 70% Revenue Share';
         description =
@@ -227,7 +235,7 @@ const DynamicMetadataManager: React.FC = () => {
 const MainContent: React.FC = () => {
   const { activeView, openAdminModal, navigateToProduct, setActiveView, selectedProduct } = useStore();
 
-  // Deep linking: parse ?product=..., ?workshop=..., ?view=..., and /foundingcreator on mount
+  // Deep linking: parse ?product=..., ?workshop=..., ?view=..., and routes on mount
   useEffect(() => {
     try {
       const pathname = window.location.pathname;
@@ -236,12 +244,23 @@ const MainContent: React.FC = () => {
       const wsParam = params.get('workshop');
       const viewParam = params.get('view');
 
-      if (pathname.startsWith('/foundingcreator')) {
+      if (pathname.startsWith('/admincurowit')) {
+        setActiveView('admin');
+      } else if (pathname.startsWith('/admin')) {
+        // Redirect legacy route /admin to /admincurowit
+        window.history.replaceState(null, '', '/admincurowit');
+        setActiveView('admin');
+      } else if (pathname.startsWith('/foundingcreator')) {
         setActiveView('foundingcreator');
+      } else if (pathname.startsWith('/track')) {
+        setActiveView('track-order');
       } else if (prodParam) {
         navigateToProduct(prodParam);
       } else if (wsParam) {
         setActiveView('workshops');
+      } else if (viewParam === 'admin' || viewParam === 'admincurowit') {
+        window.history.replaceState(null, '', '/admincurowit');
+        setActiveView('admin');
       } else if (viewParam) {
         setActiveView(viewParam);
       }
@@ -252,8 +271,15 @@ const MainContent: React.FC = () => {
   useEffect(() => {
     const handlePopState = () => {
       const pathname = window.location.pathname;
-      if (pathname.startsWith('/foundingcreator')) {
+      if (pathname.startsWith('/admincurowit')) {
+        setActiveView('admin');
+      } else if (pathname.startsWith('/admin')) {
+        window.history.replaceState(null, '', '/admincurowit');
+        setActiveView('admin');
+      } else if (pathname.startsWith('/foundingcreator')) {
         setActiveView('foundingcreator');
+      } else if (pathname.startsWith('/track')) {
+        setActiveView('track-order');
       } else if (pathname === '/' || pathname === '') {
         setActiveView('home');
       }
@@ -261,6 +287,20 @@ const MainContent: React.FC = () => {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, [setActiveView]);
+
+  // Synchronize browser URL bar with active view (e.g., /admincurowit and products)
+  useEffect(() => {
+    try {
+      const pathname = window.location.pathname;
+      if (activeView === 'admin') {
+        if (pathname !== '/admincurowit') {
+          window.history.pushState(null, '', '/admincurowit');
+        }
+      } else if (pathname === '/admincurowit' || pathname.startsWith('/admin')) {
+        window.history.pushState(null, '', '/');
+      }
+    } catch {}
+  }, [activeView]);
 
   // Synchronize browser URL bar with active shared product
   useEffect(() => {
@@ -281,12 +321,13 @@ const MainContent: React.FC = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
         e.preventDefault();
-        openAdminModal();
+        window.history.pushState(null, '', '/admincurowit');
+        setActiveView('admin');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [openAdminModal]);
+  }, [setActiveView]);
 
   if (activeView === 'admin') {
     return (
