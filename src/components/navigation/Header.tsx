@@ -32,6 +32,7 @@ export const Header: React.FC = () => {
     { label: 'Creators', view: 'creators' },
     { label: 'Workshops', view: 'workshops' },
     { label: 'Stories', view: 'stories' },
+    { label: 'Founding Creator', view: 'foundingcreator' },
     { label: 'Track Order', view: 'track-order' },
   ];
 
@@ -51,7 +52,7 @@ export const Header: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-2 sm:gap-3 md:gap-4 lg:gap-6 w-full">
             {/* Left Group: Brand Logo & Navigation with Protected Boundaries */}
-            <div className="flex items-center gap-2.5 sm:gap-4 md:gap-3 lg:gap-6 xl:gap-8 min-w-0 shrink">
+            <div className="flex items-center gap-2 sm:gap-3 md:gap-2.5 lg:gap-6 xl:gap-8 min-w-0 shrink overflow-hidden">
               {/* Zone 1: Brand Wordmark / Logo */}
               <div
                 onClick={() => {
@@ -66,16 +67,17 @@ export const Header: React.FC = () => {
                 }}
                 aria-label="Curowit Home"
               >
-                <CurowitLogo variant="horizontal" size="md" />
+                <CurowitLogo variant="horizontal" size="md" responsiveTagline />
               </div>
 
               {/* Zone 2: Navigation Links (Responsive: Compact on Tablet, Full on Desktop) */}
-              <nav className="hidden md:flex items-center gap-1.5 md:gap-2 lg:gap-4 xl:gap-5 text-[#173B3D] min-w-0 shrink">
+              <nav className="hidden md:flex items-center gap-1 md:gap-1.5 lg:gap-3 xl:gap-5 text-[#173B3D] min-w-0 shrink overflow-hidden">
                 {navLinks.map((link) => {
                   const isActive = activeView === link.view;
                   const isTrackOrder = link.view === 'track-order';
-                  // On tablet (md:max-lg), hide Home (already accessible via Logo) and Track Order to prevent crowding
-                  const isTabletHidden = link.view === 'home' || isTrackOrder;
+                  const isFoundingCreator = link.view === 'foundingcreator';
+                  // On tablet (md:max-lg), hide Home, Track Order, Stories, and Founding Creator to guarantee zero crowding
+                  const isTabletHidden = link.view === 'home' || isTrackOrder || link.view === 'stories' || isFoundingCreator;
                   return (
                     <button
                       key={link.view}
@@ -84,7 +86,7 @@ export const Header: React.FC = () => {
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
                       className={`relative py-1 px-1.5 lg:px-2 text-xs lg:text-[13px] xl:text-[15px] font-bold tracking-normal transition-colors duration-200 cursor-pointer whitespace-nowrap shrink-0 ${
-                        isTrackOrder
+                        isTrackOrder || isFoundingCreator
                           ? 'hidden xl:inline-block'
                           : isTabletHidden
                           ? 'hidden lg:inline-block'
@@ -92,6 +94,8 @@ export const Header: React.FC = () => {
                       } ${
                         isActive
                           ? 'text-[#07545A] font-extrabold'
+                          : isFoundingCreator
+                          ? 'text-[#E97868] hover:text-[#07545A]'
                           : 'text-[#173B3D] hover:text-[#07545A]'
                       }`}
                     >
@@ -106,33 +110,33 @@ export const Header: React.FC = () => {
             </div>
 
             {/* Zone 3: Actions (Search, Wishlist, Account, Cart) - Guaranteed No Overlap at Tablet & Desktop */}
-            <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3 lg:gap-3.5 shrink-0 ml-auto">
+            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3.5 shrink-0 ml-auto z-10 flex-nowrap">
               {/* Search Button */}
               <button
                 onClick={() => setIsSearchOpen(true)}
-                className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-[#173B3D]/80 hover:text-[#07545A] hover:bg-[#07545A]/5 rounded-full transition-colors cursor-pointer shrink-0"
+                className="w-8 h-8 sm:w-8.5 sm:h-8.5 md:w-9 md:h-9 flex items-center justify-center text-[#173B3D]/80 hover:text-[#07545A] hover:bg-[#07545A]/5 rounded-full transition-colors cursor-pointer shrink-0"
                 aria-label="Search products"
                 title="Search products"
               >
-                <Search className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+                <Search className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0" />
               </button>
 
               {/* Wishlist Button with Self-Contained Badge (Zero Horizontal Overflow) */}
-              <div className="relative shrink-0">
+              <div className="relative shrink-0 flex items-center justify-center">
                 <button
                   onClick={() => {
                     setActiveView('wishlist');
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-[#173B3D]/80 hover:text-[#07545A] hover:bg-[#07545A]/5 rounded-full transition-colors cursor-pointer group"
+                  className="w-8 h-8 sm:w-8.5 sm:h-8.5 md:w-9 md:h-9 flex items-center justify-center text-[#173B3D]/80 hover:text-[#07545A] hover:bg-[#07545A]/5 rounded-full transition-colors cursor-pointer group shrink-0"
                   aria-label={`View Wishlist (${wishlistCount} items)`}
                   title="Wishlist"
                 >
-                  <Heart className="w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform group-hover:scale-105" />
+                  <Heart className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0 transition-transform group-hover:scale-105" />
                 </button>
                 {wishlistCount > 0 && (
                   <span
-                    className="pointer-events-none absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 bg-[#E97868] text-white text-[9.5px] font-bold rounded-full flex items-center justify-center leading-none shadow-2xs border-2 border-[#F7EBD7] animate-in zoom-in-50 duration-200"
+                    className="pointer-events-none absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-1 bg-[#E97868] text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none shadow-2xs border border-[#F7EBD7] animate-in zoom-in-50 duration-200 z-10"
                     aria-label={`${wishlistCount} items in wishlist`}
                   >
                     {wishlistCount > 99 ? '99+' : wishlistCount}
@@ -153,7 +157,7 @@ export const Header: React.FC = () => {
                 className={`hidden sm:inline-flex items-center justify-center gap-1.5 sm:gap-2 transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
                   user.isLoggedIn
                     ? 'p-1.5 pr-2.5 sm:pr-3 text-[#173B3D] hover:text-[#07545A] hover:bg-[#07545A]/5 rounded-full'
-                    : 'px-3 sm:px-3.5 py-1.5 rounded-full bg-[#07545A]/10 hover:bg-[#07545A] text-[#07545A] hover:text-[#FFF8EA] text-xs font-bold'
+                    : 'px-2.5 sm:px-3 md:px-3.5 py-1.5 rounded-full bg-[#07545A]/10 hover:bg-[#07545A] text-[#07545A] hover:text-[#FFF8EA] text-xs font-bold'
                 }`}
                 aria-label={user.isLoggedIn ? 'Account' : 'Sign In'}
                 title={user.isLoggedIn ? user.name : 'Sign In to Curowit'}
@@ -179,27 +183,27 @@ export const Header: React.FC = () => {
                 ) : (
                   <>
                     <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-                    <span>Sign In</span>
+                    <span className="text-xs">Sign In</span>
                   </>
                 )}
               </button>
 
               {/* Cart Icon Button (Fixed Width, Self-Contained Badge) */}
-              <div className="relative shrink-0">
+              <div className="relative shrink-0 flex items-center justify-center">
                 <button
                   onClick={() => {
                     setActiveView('cart');
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-[#173B3D]/80 hover:text-[#07545A] hover:bg-[#07545A]/5 rounded-full transition-colors cursor-pointer group"
+                  className="w-8 h-8 sm:w-8.5 sm:h-8.5 md:w-9 md:h-9 flex items-center justify-center text-[#173B3D]/80 hover:text-[#07545A] hover:bg-[#07545A]/5 rounded-full transition-colors cursor-pointer group shrink-0"
                   aria-label={`View Cart (${cartCount} items)`}
                   title="Cart"
                 >
-                  <ShoppingBag className="w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform group-hover:scale-105" />
+                  <ShoppingBag className="w-4 h-4 sm:w-4.5 sm:h-4.5 shrink-0 transition-transform group-hover:scale-105" />
                 </button>
                 {cartCount > 0 && (
                   <span
-                    className="pointer-events-none absolute -top-0.5 -right-0.5 min-w-[17px] h-[17px] px-1 bg-[#07545A] text-[#FFF8EA] text-[9.5px] font-bold rounded-full flex items-center justify-center leading-none shadow-2xs border-2 border-[#F7EBD7] animate-in zoom-in-50 duration-200"
+                    className="pointer-events-none absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 bg-[#07545A] text-[#FFF8EA] text-[9px] font-bold rounded-full flex items-center justify-center leading-none shadow-2xs border border-[#F7EBD7] animate-in zoom-in-50 duration-200 z-10"
                     aria-label={`${cartCount} items in cart`}
                   >
                     {cartCount > 99 ? '99+' : cartCount}

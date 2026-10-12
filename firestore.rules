@@ -127,7 +127,8 @@ service cloud.firestore {
       data.keys().hasOnly([
         'id', 'visibility', 'cmsAccessKey', 'title', 'creatorName',
         'date', 'time', 'duration', 'format', 'location', 'price',
-        'seatsLeft', 'image', 'description', 'meetingUrl', 'updatedAt'
+        'seatsLeft', 'image', 'description', 'meetingUrl', 'meetingLink',
+        'meetingPlatform', 'meetingNotes', 'updatedAt'
       ]) &&
       isValidId(data.id) &&
       data.visibility is string && data.visibility.size() == 6 && data.visibility == 'public' &&
@@ -144,6 +145,9 @@ service cloud.firestore {
       data.image is string && data.image.size() >= 1 && data.image.size() <= 700000 &&
       data.description is string && data.description.size() <= 2000 &&
       (!('meetingUrl' in data) || (data.meetingUrl is string && data.meetingUrl.size() <= 500)) &&
+      (!('meetingLink' in data) || (data.meetingLink is string && data.meetingLink.size() <= 500)) &&
+      (!('meetingPlatform' in data) || (data.meetingPlatform is string && data.meetingPlatform in ['Google Meet', 'Zoom', 'Studio Offline'])) &&
+      (!('meetingNotes' in data) || (data.meetingNotes is string && data.meetingNotes.size() <= 1000)) &&
       data.updatedAt == request.time;
     }
 
@@ -258,6 +262,40 @@ service cloud.firestore {
       data.createdAt == request.time;
     }
 
+    // Validation Blueprint: Workshop Booking
+    function isValidWorkshopBooking(data) {
+      return data.keys().hasAll([
+        'id', 'workshopId', 'workshopTitle', 'creatorName', 'date',
+        'time', 'duration', 'format', 'price', 'image', 'bookedAt', 'status'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'workshopId', 'workshopTitle', 'creatorName', 'date',
+        'time', 'duration', 'format', 'location', 'price', 'image',
+        'userEmail', 'userName', 'userPhone', 'bookedAt', 'paymentId',
+        'meetingLink', 'meetingPlatform', 'meetingNotes', 'status'
+      ]) &&
+      isValidId(data.id) &&
+      isValidId(data.workshopId) &&
+      data.workshopTitle is string && data.workshopTitle.size() >= 1 && data.workshopTitle.size() <= 200 &&
+      data.creatorName is string && data.creatorName.size() <= 120 &&
+      data.date is string && data.date.size() <= 80 &&
+      data.time is string && data.time.size() <= 80 &&
+      data.duration is string && data.duration.size() <= 60 &&
+      data.format is string && data.format in ['Live Online', 'Studio Offline'] &&
+      (!('location' in data) || (data.location is string && data.location.size() <= 200)) &&
+      data.price is number && data.price >= 0 &&
+      data.image is string && data.image.size() >= 1 && data.image.size() <= 700000 &&
+      (!('userEmail' in data) || (data.userEmail is string && data.userEmail.size() <= 120)) &&
+      (!('userName' in data) || (data.userName is string && data.userName.size() <= 120)) &&
+      (!('userPhone' in data) || (data.userPhone is string && data.userPhone.size() <= 40)) &&
+      data.bookedAt is string && data.bookedAt.size() <= 80 &&
+      (!('paymentId' in data) || (data.paymentId is string && data.paymentId.size() <= 120)) &&
+      (!('meetingLink' in data) || (data.meetingLink is string && data.meetingLink.size() <= 500)) &&
+      (!('meetingPlatform' in data) || (data.meetingPlatform is string && data.meetingPlatform in ['Google Meet', 'Zoom', 'Studio Offline'])) &&
+      (!('meetingNotes' in data) || (data.meetingNotes is string && data.meetingNotes.size() <= 1000)) &&
+      data.status is string && data.status in ['Confirmed', 'Completed', 'Cancelled'];
+    }
+
     // Admin Registry
     match /admins/{adminId} {
       allow get: if isValidId(adminId) && isAdmin();
@@ -307,7 +345,9 @@ service cloud.firestore {
         isAdmin() ||
         incoming().diff(existing()).affectedKeys().hasOnly([
           'title', 'creatorName', 'date', 'time', 'duration', 'format',
-          'location', 'price', 'seatsLeft', 'image', 'description', 'updatedAt', 'cmsAccessKey'
+          'location', 'price', 'seatsLeft', 'image', 'description',
+          'meetingLink', 'meetingPlatform', 'meetingNotes', 'meetingUrl',
+          'updatedAt', 'cmsAccessKey'
         ])
       );
       allow delete: if isValidId(workshopId) && (isAdmin() || existing().cmsAccessKey == 'ansh@siya');

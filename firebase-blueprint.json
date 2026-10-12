@@ -342,6 +342,19 @@
           "type": "string",
           "maxLength": 500
         },
+        "meetingLink": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "meetingNotes": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "meetingPlatform": {
+          "type": "string",
+          "enum": ["Google Meet", "Zoom", "Studio Offline"],
+          "maxLength": 60
+        },
         "updatedAt": {
           "type": "string",
           "format": "date-time"
@@ -662,6 +675,113 @@
         "dateLabel",
         "createdAt"
       ]
+    },
+    "WorkshopBooking": {
+      "title": "WorkshopBooking",
+      "description": "Artisan workshop seat reservation record and attendee meeting details.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "workshopId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128
+        },
+        "workshopTitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "creatorName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "date": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "time": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "duration": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "format": {
+          "type": "string",
+          "enum": ["Live Online", "Studio Offline"],
+          "maxLength": 40
+        },
+        "location": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "price": {
+          "type": "number"
+        },
+        "image": {
+          "type": "string",
+          "maxLength": 700000
+        },
+        "userEmail": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 120
+        },
+        "userName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "userPhone": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "bookedAt": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "paymentId": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "meetingLink": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "meetingPlatform": {
+          "type": "string",
+          "enum": ["Google Meet", "Zoom", "Studio Offline"],
+          "maxLength": 60
+        },
+        "meetingNotes": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Confirmed", "Completed", "Cancelled"],
+          "maxLength": 30
+        }
+      },
+      "required": [
+        "id",
+        "workshopId",
+        "workshopTitle",
+        "creatorName",
+        "date",
+        "time",
+        "duration",
+        "format",
+        "price",
+        "image",
+        "bookedAt",
+        "status"
+      ]
     }
   },
   "firestore": {
@@ -700,6 +820,10 @@
     "/reviews/{reviewId}": {
       "schema": { "$ref": "#/entities/Review" },
       "description": "Product reviews submitted by authenticated store patrons."
+    },
+    "/workshop_bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/WorkshopBooking" },
+      "description": "Workshop seat bookings and attendee roster."
     }
   }
 }

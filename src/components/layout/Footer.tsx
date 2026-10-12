@@ -234,10 +234,10 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <button
-                  onClick={() => handleStaticClick('Become a Creator')}
-                  className="hover:text-white transition-colors cursor-pointer text-[#F2A900] font-semibold"
+                  onClick={() => handleNavClick('foundingcreator')}
+                  className="hover:text-white transition-colors cursor-pointer text-[#F2A900] font-semibold flex items-center gap-1"
                 >
-                  Become a Creator
+                  <span>Founding Creator Portal (70/30)</span>
                 </button>
               </li>
               <li>

@@ -6,6 +6,7 @@ import {
   doc,
   getDocFromServer,
 } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Suppress transient WebChannel reconnect console noise in proxied iframe environments
@@ -21,6 +22,7 @@ export const db = initializeFirestore(
 );
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+export const storage = getStorage(app);
 
 export enum OperationType {
   CREATE = 'create',

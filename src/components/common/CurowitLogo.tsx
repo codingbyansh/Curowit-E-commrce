@@ -5,6 +5,8 @@ interface CurowitLogoProps {
   theme?: 'dark' | 'light'; // dark = teal on light background; light = cream on dark teal background
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  showTagline?: boolean;
+  responsiveTagline?: boolean;
 }
 
 export const CurowitLogo: React.FC<CurowitLogoProps> = ({
@@ -12,6 +14,8 @@ export const CurowitLogo: React.FC<CurowitLogoProps> = ({
   theme = 'dark',
   className = '',
   size = 'md',
+  showTagline = true,
+  responsiveTagline = false,
 }) => {
   const isLight = theme === 'light';
   const textColor = isLight ? '#FFF8EA' : '#07545A';
@@ -105,17 +109,21 @@ export const CurowitLogo: React.FC<CurowitLogoProps> = ({
         <span>t</span>
       </div>
 
-      <span
-        className={`tracking-normal font-bold mt-0.5 select-none ${config.taglineSize}`}
-        style={{
-          color: taglineColor,
-          fontFamily: "'Fraunces', Georgia, serif",
-          fontWeight: 700,
-          fontStyle: 'normal',
-        }}
-      >
-        Home of Creatives.
-      </span>
+      {showTagline && (
+        <span
+          className={`tracking-normal font-bold mt-0.5 select-none ${config.taglineSize} ${
+            responsiveTagline ? 'hidden lg:block' : ''
+          }`}
+          style={{
+            color: taglineColor,
+            fontFamily: "'Fraunces', Georgia, serif",
+            fontWeight: 700,
+            fontStyle: 'normal',
+          }}
+        >
+          Home of Creatives.
+        </span>
+      )}
     </div>
   );
 

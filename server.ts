@@ -28,6 +28,120 @@ async function startServer() {
     });
   });
 
+  // ==============================================================================
+  // FOUNDING CREATOR PORTAL SERVER ENDPOINTS
+  // ==============================================================================
+  app.get('/api/founding-creator/config', (_req, res) => {
+    res.json({
+      programName: 'Curowit Founding Creator Program',
+      commissionSplit: {
+        creatorSharePercentage: 70,
+        platformCommissionPercentage: 30,
+      },
+      payoutPolicy: {
+        cycle: '7-day-post-delivery',
+        description: 'Earnings become eligible for payout 7 calendar days after confirmed delivery.',
+      },
+      agreementVersion: 'v1.0-founding',
+      acceptedCategories: [
+        'Handmade jewellery',
+        'Crochet and yarn crafts',
+        'Keychains and charms',
+        'Bags and accessories',
+        'Paintings and artwork',
+        'Candles and home decor',
+        'Personalized gifts',
+        'DIY kits and creative supplies',
+        'Paper crafts and stationery',
+        'Other creative products',
+      ],
+    });
+  });
+
+  // Creator application validation & server logging
+  app.post('/api/founding-creator/apply', (req, res) => {
+    try {
+      const {
+        fullName,
+        email,
+        phone,
+        city,
+        state,
+        pincode,
+        creatorType,
+        categories,
+        craftDescription,
+      } = req.body || {};
+
+      if (!fullName || !email || !phone || !city || !state || !pincode || !craftDescription) {
+        res.status(400).json({ error: 'Missing mandatory application fields' });
+        return;
+      }
+
+      const randomNum = Math.floor(10000 + Math.random() * 90000);
+      const applicationId = `APP-FC-${randomNum}`;
+      const creatorId = `CR-FC-${randomNum}`;
+
+      console.log(`[Founding Creator] New application received: ${applicationId} from ${fullName} (${email})`);
+
+      res.json({
+        success: true,
+        applicationId,
+        creatorId,
+        status: 'pending_review',
+        submittedAt: new Date().toISOString(),
+        message: 'Application registered. Under curation team review.',
+      });
+    } catch (error) {
+      console.error('[Founding Creator] Error processing application:', error);
+      res.status(500).json({ error: 'Internal server error processing creator application' });
+    }
+  });
+
+  // Admin application review endpoint
+  app.post('/api/founding-creator/review-application', (req, res) => {
+    try {
+      const { applicationId, action, reviewer, notes, reason } = req.body || {};
+      if (!applicationId || !['approve', 'reject', 'request_info'].includes(action)) {
+        res.status(400).json({ error: 'Invalid application review action' });
+        return;
+      }
+
+      console.log(`[Founding Creator] Application ${applicationId} reviewed: ${action} by ${reviewer || 'Admin'}`);
+      res.json({
+        success: true,
+        applicationId,
+        action,
+        updatedStatus: action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'additional_info_required',
+        reviewedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to process application review' });
+    }
+  });
+
+  // Admin payout reconciliation
+  app.post('/api/founding-creator/reconcile-payout', (req, res) => {
+    try {
+      const { payoutId, transactionReference, adminId } = req.body || {};
+      if (!payoutId || !transactionReference) {
+        res.status(400).json({ error: 'Missing payoutId or transactionReference' });
+        return;
+      }
+
+      console.log(`[Founding Creator] Payout ${payoutId} settled with UTR: ${transactionReference}`);
+      res.json({
+        success: true,
+        payoutId,
+        transactionReference,
+        status: 'paid',
+        paidAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to reconcile payout' });
+    }
+  });
+
   // Create a Razorpay Order on the server
   app.post('/api/razorpay/create-order', async (req, res) => {
     try {

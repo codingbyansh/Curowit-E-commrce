@@ -205,15 +205,27 @@ export const ProductDetailPage: React.FC = () => {
     return { url, title, text };
   };
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     const { url } = getProductShareData();
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(url);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2500);
       showToast('Product URL Copied!', 'Link copied to clipboard — share with friends');
-    } else {
-      showToast('Share link ready');
+    } catch {
+      showToast('Share link ready', url);
     }
   };
 
@@ -235,12 +247,9 @@ export const ProductDetailPage: React.FC = () => {
   };
 
   const handleShareClick = () => {
-    if (navigator.share && /mobile|android|iphone|ipad/i.test(navigator.userAgent || '')) {
-      handleNativeShare();
-    } else {
-      setIsShareModalOpen(true);
-    }
+    setIsShareModalOpen(true);
   };
+  const handleShare = handleShareClick;
 
   // Live Firestore reviews for this product (no hardcoded fake reviews)
   const allProductReviews = cloudReviews;
@@ -346,12 +355,13 @@ export const ProductDetailPage: React.FC = () => {
           </button>
 
           <button
-            onClick={handleShare}
-            className="p-2 rounded-full text-[#07545A] hover:bg-[#07545A]/10 transition-colors cursor-pointer"
+            onClick={handleShareClick}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FFF8EA] text-[#07545A] hover:bg-[#07545A] hover:text-[#FFF8EA] border border-[#07545A]/15 text-xs font-bold transition-all shadow-2xs cursor-pointer group"
             aria-label="Share product"
-            title="Share"
+            title="Share this handmade creation"
           >
-            <Share2 className="w-4 h-4" />
+            <Share2 className="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
+            <span>Share</span>
           </button>
         </div>
 
@@ -550,6 +560,15 @@ export const ProductDetailPage: React.FC = () => {
                       isFavorited ? 'fill-current' : ''
                     } ${isHeartThrobbing ? 'animate-heart-throb' : ''}`}
                   />
+                </button>
+
+                <button
+                  onClick={handleShareClick}
+                  className="p-3 rounded-xl border border-[#07545A]/15 bg-[#F7EBD7] text-[#173B3D]/70 hover:text-[#07545A] hover:border-[#07545A]/30 transition-all flex items-center justify-center cursor-pointer group"
+                  aria-label="Share product"
+                  title="Share this handmade creation"
+                >
+                  <Share2 className="w-4 h-4 transition-transform group-hover:scale-110" />
                 </button>
               </div>
 
@@ -940,7 +959,15 @@ export const ProductDetailPage: React.FC = () => {
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <button
+            onClick={handleShareClick}
+            className="p-2 rounded-xl border border-[#07545A]/20 bg-[#FFF8EA] text-[#07545A] hover:bg-[#07545A]/10 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+            aria-label="Share product"
+            title="Share"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+          </button>
           <button
             onClick={handleAddToCart}
             className="px-3.5 py-2 rounded-xl bg-[#07545A] text-[#FFF8EA] text-xs font-semibold hover:bg-[#063F45] transition-colors cursor-pointer active:scale-95 flex items-center gap-1.5"
@@ -956,6 +983,173 @@ export const ProductDetailPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Social Share Modal */}
+      {isShareModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => setIsShareModalOpen(false)}
+        >
+          <div
+            className="bg-[#FFFDF7] rounded-3xl border-2 border-[#07545A]/20 p-5 sm:p-6 max-w-md w-full shadow-2xl relative text-xs"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#07545A]/10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-[#07545A]/10 text-[#07545A] flex items-center justify-center shrink-0">
+                  <Share2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#07545A] font-display">
+                    Share Artisan Creation
+                  </h3>
+                  <p className="text-[11px] text-[#173B3D]/70">
+                    Spread the craft with friends & family
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsShareModalOpen(false)}
+                className="p-1.5 text-[#173B3D]/60 hover:text-[#07545A] hover:bg-[#07545A]/10 rounded-full transition-colors cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Product Snapshot Card */}
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#FFF8EA] border border-[#07545A]/12 mb-4">
+              <img
+                src={selectedProduct.image}
+                alt={selectedProduct.name}
+                referrerPolicy="no-referrer"
+                className="w-14 h-14 rounded-xl object-cover shrink-0 border border-[#07545A]/15 bg-white"
+              />
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#3F704B]">
+                  {selectedProduct.category}
+                </span>
+                <h4 className="font-bold text-[#07545A] text-sm truncate">
+                  {selectedProduct.name}
+                </h4>
+                <div className="flex items-center justify-between mt-0.5">
+                  <span className="text-[11px] text-[#687778] truncate">
+                    By {selectedProduct.creatorName}
+                  </span>
+                  <span className="font-bold text-[#07545A] tabular-nums shrink-0 ml-2">
+                    ₹{selectedProduct.price.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* URL Copy Box */}
+            <div className="mb-4">
+              <label className="font-bold text-[#07545A] block mb-1.5 text-[11px]">
+                Product Share Link
+              </label>
+              <div className="flex items-center gap-2 p-1.5 pl-3 bg-[#FFF8EA] border border-[#07545A]/20 rounded-xl">
+                <input
+                  type="text"
+                  readOnly
+                  value={getProductShareData().url}
+                  className="flex-1 bg-transparent border-none text-[11px] font-mono text-[#173B3D] outline-none select-all truncate"
+                />
+                <button
+                  onClick={handleCopyLink}
+                  className={`px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
+                    isCopied
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-[#07545A] text-[#FFF8EA] hover:bg-[#063F45]'
+                  }`}
+                >
+                  {isCopied ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-white" />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy Link</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Share to Social Apps */}
+            <div className="mb-4">
+              <span className="font-bold text-[#07545A] block mb-2 text-[11px]">
+                Share Directly To
+              </span>
+              <div className="grid grid-cols-4 gap-2 text-center">
+                {/* WhatsApp */}
+                <a
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${getProductShareData().text} ${getProductShareData().url}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors group cursor-pointer"
+                >
+                  <span className="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center mb-1 group-hover:scale-110 transition-transform font-bold text-xs">
+                    WA
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-900">WhatsApp</span>
+                </a>
+
+                {/* Twitter / X */}
+                <a
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(getProductShareData().text)}&url=${encodeURIComponent(getProductShareData().url)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 border border-stone-300 transition-colors group cursor-pointer"
+                >
+                  <span className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center mb-1 group-hover:scale-110 transition-transform font-bold text-xs">
+                    𝕏
+                  </span>
+                  <span className="text-[10px] font-bold text-stone-900">X (Twitter)</span>
+                </a>
+
+                {/* Facebook */}
+                <a
+                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getProductShareData().url)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors group cursor-pointer"
+                >
+                  <span className="w-7 h-7 rounded-full bg-[#1877F2] text-white flex items-center justify-center mb-1 group-hover:scale-110 transition-transform font-bold text-xs">
+                    f
+                  </span>
+                  <span className="text-[10px] font-bold text-blue-900">Facebook</span>
+                </a>
+
+                {/* Email */}
+                <a
+                  href={`mailto:?subject=${encodeURIComponent(getProductShareData().title)}&body=${encodeURIComponent(`${getProductShareData().text}\n\n${getProductShareData().url}`)}`}
+                  className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors group cursor-pointer"
+                >
+                  <div className="w-7 h-7 rounded-full bg-amber-600 text-white flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+                    <Mail className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-[10px] font-bold text-amber-900">Email</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Native Web Share API Button if Supported */}
+            {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && (
+              <button
+                onClick={handleNativeShare}
+                className="w-full py-2.5 px-4 rounded-xl bg-[#FFF8EA] hover:bg-[#07545A]/10 text-[#07545A] font-bold border border-[#07545A]/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              >
+                <Share2 className="w-4 h-4" />
+                <span>Share via Device Sheet (More Apps...)</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

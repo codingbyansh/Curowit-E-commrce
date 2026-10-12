@@ -16,6 +16,7 @@ import {
   Sparkles,
   ShieldCheck,
   Check,
+  X,
 } from 'lucide-react';
 
 export const AccountPage: React.FC = () => {

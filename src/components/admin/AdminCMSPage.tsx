@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useStore, HeroBannerSlide, TickerItem, Order } from '../../context/StoreContext';
+import { useStore, HeroBannerSlide, TickerItem, Order, BookedWorkshop } from '../../context/StoreContext';
 import { Product, Creator, Workshop, Story, CATEGORIES } from '../../data/mockData';
 
 /**
@@ -91,8 +91,14 @@ import {
   Filter,
   Upload,
   Video,
+  Share2,
+  Copy,
+  Download,
+  Mail,
+  Phone,
 } from 'lucide-react';
 import { OrderManagement } from './OrderManagement';
+import { FoundingCreatorsAdminSection } from './FoundingCreatorsAdminSection';
 
 export { OrderManagement };
 
@@ -119,6 +125,8 @@ export const AdminCMSPage: React.FC = () => {
     deleteWorkshop,
     bookedWorkshops,
     updateWorkshopMeetingDetails,
+    updateWorkshopBooking,
+    bookWorkshop,
     stories,
     addStory,
     updateStory,
@@ -133,7 +141,7 @@ export const AdminCMSPage: React.FC = () => {
 
   // Tab State
   const [activeTab, setActiveTab] = useState<
-    'products' | 'orders' | 'creators' | 'workshops' | 'stories' | 'banners'
+    'products' | 'orders' | 'creators' | 'founding-creators' | 'workshops' | 'stories' | 'banners'
   >('products');
 
   // Search & Filter State
@@ -150,7 +158,7 @@ export const AdminCMSPage: React.FC = () => {
 
   const [editingWorkshop, setEditingWorkshop] = useState<Workshop | null>(null);
   const [isNewWorkshopModalOpen, setIsNewWorkshopModalOpen] = useState(false);
-  const [meetingModalWorkshop, setMeetingModalWorkshop] = useState<Workshop | null>(null);
+  const [detailsWorkshop, setDetailsWorkshop] = useState<Workshop | null>(null);
 
   const [editingStory, setEditingStory] = useState<Story | null>(null);
   const [isNewStoryModalOpen, setIsNewStoryModalOpen] = useState(false);
@@ -348,6 +356,18 @@ export const AdminCMSPage: React.FC = () => {
           >
             <Users className="w-4 h-4" />
             <span>Artisans & Makers ({creators.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('founding-creators')}
+            className={`py-3 px-3.5 text-xs font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'founding-creators'
+                ? 'border-[#F2A900] text-[#F2A900] bg-white/5'
+                : 'border-transparent text-[#FFF8EA]/75 hover:text-white'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-[#F2A900]" />
+            <span>Founding Creators (70/30)</span>
           </button>
 
           <button
@@ -625,6 +645,13 @@ export const AdminCMSPage: React.FC = () => {
         )}
 
         {/* ========================================================
+            TAB 3.5: FOUNDING CREATORS CRM (70/30 MODEL & PAYOUTS)
+            ======================================================== */}
+        {activeTab === 'founding-creators' && (
+          <FoundingCreatorsAdminSection showToast={showToast} />
+        )}
+
+        {/* ========================================================
             TAB 4: WORKSHOPS MANAGER
             ======================================================== */}
         {activeTab === 'workshops' && (
@@ -648,53 +675,106 @@ export const AdminCMSPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {workshops.map((ws) => (
-                <div
-                  key={ws.id}
-                  className="bg-[#FFF8EA] rounded-3xl border border-[#07545A]/12 overflow-hidden shadow-xs flex flex-col justify-between"
-                >
-                  <img src={ws.image} alt={ws.title} className="w-full h-36 object-cover" />
-                  <div className="p-5 flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#3F704B] bg-[#FFF8EA] px-2 py-0.5 rounded-full border border-[#07545A]/15">
+              {workshops.map((ws) => {
+                const wsAttendees = bookedWorkshops.filter((b) => b.workshopId === ws.id);
+                const hasMeetingLink = Boolean(ws.meetingLink?.trim());
+                return (
+                  <div
+                    key={ws.id}
+                    className="bg-[#FFF8EA] rounded-3xl border border-[#07545A]/12 overflow-hidden shadow-xs flex flex-col justify-between group hover:shadow-md transition-shadow"
+                  >
+                    <div className="relative">
+                      <img src={ws.image} alt={ws.title} className="w-full h-36 object-cover" />
+                      <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#3F704B] bg-[#FFF8EA]/95 backdrop-blur-xs px-2 py-0.5 rounded-full border border-[#07545A]/15 shadow-2xs">
                           {ws.format}
                         </span>
-                        <span className="text-xs font-extrabold text-[#07545A]">
-                          ₹{ws.price}
-                        </span>
                       </div>
-                      <h4 className="font-bold text-[#07545A] text-base leading-tight mb-1">
-                        {ws.title}
-                      </h4>
-                      <p className="text-xs text-[#687778] mb-2">Hosted by {ws.creatorName}</p>
-                      <p className="text-xs text-[#173B3D]/80 line-clamp-2">{ws.description}</p>
+                      <div className="absolute top-2.5 right-2.5">
+                        {hasMeetingLink ? (
+                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50/95 backdrop-blur-xs px-2 py-0.5 rounded-full border border-emerald-300 shadow-2xs flex items-center gap-1">
+                            <Video className="w-3 h-3 text-emerald-600" />
+                            <span>Link Set</span>
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-amber-800 bg-amber-50/95 backdrop-blur-xs px-2 py-0.5 rounded-full border border-amber-300 shadow-2xs flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3 text-amber-600" />
+                            <span>No Link</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="pt-4 mt-3 border-t border-[#07545A]/10 flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-[#E97868]">
-                        {ws.seatsLeft} seats remaining
-                      </span>
-                      <div className="flex items-center gap-1.5">
+                    <div className="p-5 flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs text-[#687778] font-medium">Hosted by {ws.creatorName}</span>
+                          <span className="text-xs font-extrabold text-[#07545A]">
+                            ₹{ws.price}
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-[#07545A] text-base leading-tight mb-1">
+                          {ws.title}
+                        </h4>
+                        <div className="flex items-center gap-2 text-[11px] text-[#173B3D]/70 mb-2 font-medium">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-[#07545A]" />
+                            {ws.date}
+                          </span>
+                          <span>·</span>
+                          <span>{ws.duration}</span>
+                        </div>
+                        <p className="text-xs text-[#173B3D]/80 line-clamp-2">{ws.description}</p>
+                      </div>
+
+                      <div className="pt-3 mt-3 border-t border-[#07545A]/10 space-y-2.5">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-bold text-[#E97868]">
+                            {ws.seatsLeft} seats left
+                          </span>
+                          <span className="font-bold text-[#07545A] bg-[#07545A]/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            <span>{wsAttendees.length} booked</span>
+                          </span>
+                        </div>
+
+                        {/* Workshop Details & Attendee Roster Button */}
                         <button
-                          onClick={() => setEditingWorkshop(ws)}
-                          className="p-1.5 text-[#07545A] hover:bg-[#07545A]/10 rounded-lg cursor-pointer"
+                          onClick={() => setDetailsWorkshop(ws)}
+                          className="w-full py-2 px-3 bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-2xs transition-colors cursor-pointer group/btn"
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Users className="w-3.5 h-3.5 text-[#F2A900] group-hover/btn:scale-110 transition-transform" />
+                          <span>Workshop Details & Roster</span>
                         </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`Delete "${ws.title}"?`)) deleteWorkshop(ws.id);
-                          }}
-                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-[10px] text-[#687778]">
+                            {hasMeetingLink ? 'Master link active' : 'Session link needed'}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => setEditingWorkshop(ws)}
+                              className="p-1.5 text-[#07545A] hover:bg-[#07545A]/10 rounded-lg cursor-pointer"
+                              title="Edit Workshop info"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (confirm(`Delete "${ws.title}"?`)) deleteWorkshop(ws.id);
+                              }}
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg cursor-pointer"
+                              title="Delete Workshop"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -1094,6 +1174,33 @@ export const AdminCMSPage: React.FC = () => {
             addWorkshop(newWs);
             setIsNewWorkshopModalOpen(false);
           }}
+        />
+      )}
+
+      {/* ========================================================
+          WORKSHOP DETAILS & ATTENDEE ROSTER MODAL
+          ======================================================== */}
+      {detailsWorkshop && (
+        <WorkshopDetailsModal
+          workshop={detailsWorkshop}
+          attendees={bookedWorkshops.filter((b) => b.workshopId === detailsWorkshop.id)}
+          onClose={() => setDetailsWorkshop(null)}
+          onUpdateMeetingDetails={(workshopId, link, notes, platform) => {
+            updateWorkshopMeetingDetails(workshopId, link, notes, platform);
+            setDetailsWorkshop((prev) =>
+              prev && prev.id === workshopId
+                ? { ...prev, meetingLink: link, meetingNotes: notes, meetingPlatform: platform }
+                : prev
+            );
+          }}
+          onUpdateBookingStatus={(bookingId, status) => {
+            updateWorkshopBooking(bookingId, { status });
+          }}
+          onAddTestBooking={(ws) => {
+            const demoBooking = bookWorkshop(ws, { paymentId: `demo_pay_${Date.now().toString(36)}` });
+            showToast('Test Booking Created', `Added demo booking ${demoBooking.id} for "${ws.title}".`);
+          }}
+          showToast={showToast}
         />
       )}
 
@@ -1601,6 +1708,712 @@ const CreatorEditModal: React.FC<CreatorEditModalProps> = ({
 };
 
 // ========================================================
+// WORKSHOP DETAILS & ATTENDEE ROSTER MODAL ("Share Who Booked & Show Link")
+// ========================================================
+interface WorkshopDetailsModalProps {
+  workshop: Workshop;
+  attendees: BookedWorkshop[];
+  onClose: () => void;
+  onUpdateMeetingDetails: (
+    workshopId: string,
+    meetingLink: string,
+    meetingNotes?: string,
+    platform?: 'Google Meet' | 'Zoom'
+  ) => void;
+  onUpdateBookingStatus: (bookingId: string, status: 'Confirmed' | 'Completed' | 'Cancelled') => void;
+  onAddTestBooking: (workshop: Workshop) => void;
+  showToast: (title: string, description?: string, type?: 'success' | 'info' | 'error') => void;
+}
+
+const WorkshopDetailsModal: React.FC<WorkshopDetailsModalProps> = ({
+  workshop,
+  attendees,
+  onClose,
+  onUpdateMeetingDetails,
+  onUpdateBookingStatus,
+  onAddTestBooking,
+  showToast,
+}) => {
+  const [activeTab, setActiveTab] = useState<'roster' | 'meeting'>('roster');
+  const [meetingLink, setMeetingLink] = useState(workshop.meetingLink || '');
+  const [meetingPlatform, setMeetingPlatform] = useState<'Google Meet' | 'Zoom'>(
+    (workshop.meetingPlatform as 'Google Meet' | 'Zoom') || 'Google Meet'
+  );
+  const [meetingNotes, setMeetingNotes] = useState(workshop.meetingNotes || '');
+  const [isCopiedLink, setIsCopiedLink] = useState(false);
+  const [isCopiedRoster, setIsCopiedRoster] = useState(false);
+  const [isCopiedEmails, setIsCopiedEmails] = useState(false);
+  const [attendeeSearch, setAttendeeSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'Confirmed' | 'Completed' | 'Cancelled'>('all');
+
+  const filteredAttendees = attendees.filter((a) => {
+    const term = attendeeSearch.toLowerCase().trim();
+    const matchesSearch =
+      !term ||
+      (a.userName || '').toLowerCase().includes(term) ||
+      (a.userEmail || '').toLowerCase().includes(term) ||
+      (a.userPhone || '').includes(term) ||
+      (a.id || '').toLowerCase().includes(term);
+    const matchesStatus = statusFilter === 'all' || a.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const totalRevenue = attendees.reduce((sum, a) => sum + (a.price || workshop.price), 0);
+  const confirmedAttendees = attendees.filter((a) => a.status !== 'Cancelled');
+  const currentLink = meetingLink.trim() || workshop.meetingLink || '';
+
+  // Copy Meeting Link
+  const handleCopyMeetingLink = async () => {
+    if (!currentLink) {
+      showToast('No Meeting Link', 'Please configure a master meeting link below.', 'error');
+      return;
+    }
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(currentLink);
+      }
+      setIsCopiedLink(true);
+      setTimeout(() => setIsCopiedLink(false), 2500);
+      showToast('Master Meeting Link Copied!', currentLink);
+    } catch {
+      showToast('Meeting Link Ready', currentLink);
+    }
+  };
+
+  // Share / Copy Session Invite
+  const handleShareSessionInvite = async () => {
+    const linkStr = currentLink || 'Link will be sent prior to session';
+    const notesStr = meetingNotes.trim() || workshop.meetingNotes || 'Please join on time with your materials.';
+    const inviteText = `✨ Workshop Invitation: ${workshop.title}
+Instructor: ${workshop.creatorName}
+Format: ${workshop.format}
+Date & Time: ${workshop.date} at ${workshop.time} (${workshop.duration})
+Master Session Link: ${linkStr}
+Notes: ${notesStr}
+
+Curowit — Home of Creatives`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Workshop Invitation: ${workshop.title}`,
+          text: inviteText,
+          url: currentLink.startsWith('http') ? currentLink : undefined,
+        });
+        showToast('Shared successfully!');
+      } else {
+        await navigator.clipboard.writeText(inviteText);
+        showToast('Session Invite Copied!', 'Invitation text copied to clipboard.');
+      }
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        await navigator.clipboard.writeText(inviteText);
+        showToast('Session Invite Copied!');
+      }
+    }
+  };
+
+  // Copy Who Booked (Roster)
+  const handleCopyRoster = async () => {
+    if (attendees.length === 0) {
+      showToast('No Attendees', 'No customers have booked this workshop yet.', 'info');
+      return;
+    }
+
+    const rosterText = `=== Workshop Attendees Roster ===
+Workshop: ${workshop.title}
+Host Maker: ${workshop.creatorName}
+Date: ${workshop.date} at ${workshop.time}
+Total Registered: ${attendees.length} (${confirmedAttendees.length} Confirmed)
+Master Session Link: ${workshop.meetingLink || 'Pending setup'}
+
+Enrolled Patrons:
+${attendees
+  .map(
+    (a, idx) =>
+      `${idx + 1}. ${a.userName || 'Artisan Learner'} | Email: ${a.userEmail || 'N/A'} | Phone: ${a.userPhone || 'N/A'} | Ref: ${a.id} | Booked: ${a.bookedAt} | Status: ${a.status} | Payment: ${a.paymentId || 'Verified'}`
+  )
+  .join('\n')}
+
+Curowit Workshop Administration`;
+
+    try {
+      await navigator.clipboard.writeText(rosterText);
+      setIsCopiedRoster(true);
+      setTimeout(() => setIsCopiedRoster(false), 2500);
+      showToast('Attendee Roster Copied!', 'Full list of who booked copied to clipboard.');
+    } catch {
+      showToast('Copy Failed', 'Unable to access clipboard.', 'error');
+    }
+  };
+
+  // Copy All Emails
+  const handleCopyEmails = async () => {
+    const emails = attendees
+      .map((a) => a.userEmail?.trim())
+      .filter(Boolean) as string[];
+
+    if (emails.length === 0) {
+      showToast('No Emails Found', 'No email addresses recorded for attendees.', 'info');
+      return;
+    }
+
+    const uniqueEmails = Array.from(new Set(emails)).join(', ');
+    try {
+      await navigator.clipboard.writeText(uniqueEmails);
+      setIsCopiedEmails(true);
+      setTimeout(() => setIsCopiedEmails(false), 2500);
+      showToast('Attendee Emails Copied!', `Copied ${emails.length} attendee emails (ready for calendar/email).`);
+    } catch {
+      showToast('Copy Failed', 'Unable to access clipboard.', 'error');
+    }
+  };
+
+  // Export CSV
+  const handleExportCSV = () => {
+    if (attendees.length === 0) {
+      showToast('No Data', 'No attendee records to export.', 'info');
+      return;
+    }
+
+    const headers = ['Booking ID', 'Customer Name', 'Email', 'Phone', 'Booked Date', 'Status', 'Payment ID', 'Fee'];
+    const rows = attendees.map((a) => [
+      `"${a.id}"`,
+      `"${a.userName || ''}"`,
+      `"${a.userEmail || ''}"`,
+      `"${a.userPhone || ''}"`,
+      `"${a.bookedAt || ''}"`,
+      `"${a.status || 'Confirmed'}"`,
+      `"${a.paymentId || ''}"`,
+      `"${a.price || workshop.price}"`,
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `workshop-${workshop.id}-attendees.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('CSV Exported', `Downloaded attendee roster for "${workshop.title}".`);
+  };
+
+  // Save Master Meeting Link
+  const handleSaveMeetingLink = (e: React.FormEvent) => {
+    e.preventDefault();
+    onUpdateMeetingDetails(workshop.id, meetingLink.trim(), meetingNotes.trim(), meetingPlatform);
+    showToast('Meeting Link Saved & Broadcasted', 'Master link updated for workshop and all attendees.');
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs overflow-y-auto">
+      <div className="bg-[#FFFDF7] rounded-3xl border-2 border-[#07545A]/25 p-5 sm:p-7 max-w-4xl w-full shadow-2xl my-6 text-xs max-h-[92vh] flex flex-col">
+        {/* Top Header */}
+        <div className="flex items-start justify-between pb-4 border-b border-[#07545A]/10 gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <img
+              src={workshop.image}
+              alt={workshop.title}
+              className="w-16 h-14 rounded-2xl object-cover border border-[#07545A]/20 bg-white shrink-0"
+            />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#3F704B] bg-[#FFF8EA] px-2 py-0.5 rounded-full border border-[#07545A]/15">
+                  {workshop.format}
+                </span>
+                <span className="text-[11px] font-extrabold text-[#07545A]">
+                  ₹{workshop.price} / seat
+                </span>
+                <span className="text-[11px] text-[#687778]">
+                  Hosted by {workshop.creatorName}
+                </span>
+              </div>
+              <h3 className="text-lg sm:text-xl font-bold text-[#07545A] font-display truncate">
+                {workshop.title}
+              </h3>
+              <p className="text-[11px] text-[#173B3D]/70 flex items-center gap-2 mt-0.5">
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-[#07545A]" />
+                  {workshop.date} · {workshop.time}
+                </span>
+                <span>·</span>
+                <span>{workshop.duration}</span>
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="p-2 text-[#173B3D]/60 hover:text-[#07545A] hover:bg-[#07545A]/10 rounded-full transition-colors cursor-pointer shrink-0"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Metric Cards Row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 my-4 shrink-0">
+          <div className="bg-[#FFF8EA] p-3 rounded-2xl border border-[#07545A]/12">
+            <span className="text-[10px] text-[#687778] uppercase font-bold block mb-0.5">Total Booked</span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xl font-bold text-[#07545A] font-display tabular-nums">
+                {attendees.length}
+              </span>
+              <span className="text-[10px] text-[#173B3D]/60 font-medium">patrons</span>
+            </div>
+          </div>
+
+          <div className="bg-[#FFF8EA] p-3 rounded-2xl border border-[#07545A]/12">
+            <span className="text-[10px] text-[#687778] uppercase font-bold block mb-0.5">Confirmed Active</span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xl font-bold text-emerald-800 font-display tabular-nums">
+                {confirmedAttendees.length}
+              </span>
+              <span className="text-[10px] text-emerald-800/80 font-medium">active</span>
+            </div>
+          </div>
+
+          <div className="bg-[#FFF8EA] p-3 rounded-2xl border border-[#07545A]/12">
+            <span className="text-[10px] text-[#687778] uppercase font-bold block mb-0.5">Seats Remaining</span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xl font-bold text-[#E97868] font-display tabular-nums">
+                {workshop.seatsLeft}
+              </span>
+              <span className="text-[10px] text-[#687778] font-medium">open</span>
+            </div>
+          </div>
+
+          <div className="bg-[#FFF8EA] p-3 rounded-2xl border border-[#07545A]/12">
+            <span className="text-[10px] text-[#687778] uppercase font-bold block mb-0.5">Total Revenue</span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xl font-bold text-[#07545A] font-display tabular-nums">
+                ₹{totalRevenue.toLocaleString('en-IN')}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Master Meeting Link Callout ("Show The Link Not Specific Customer") */}
+        <div className="bg-gradient-to-r from-[#FFF8EA] to-[#F7EBD7] border-2 border-[#07545A]/20 p-4 rounded-2xl mb-4 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-6 h-6 rounded-lg bg-[#07545A] text-[#FFF8EA] flex items-center justify-center shrink-0">
+                  <Video className="w-3.5 h-3.5" />
+                </div>
+                <h4 className="font-bold text-[#07545A] text-sm">
+                  Workshop Master Meeting Link
+                </h4>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-900 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                  Shared With All Patrons
+                </span>
+              </div>
+              <p className="text-[11px] text-[#173B3D]/80">
+                This session link is broadcasted to all enrolled patrons for this workshop (not tied to an individual customer profile).
+              </p>
+            </div>
+
+            {/* Quick Actions for Link */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleCopyMeetingLink}
+                className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
+                  isCopiedLink
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-[#07545A] text-[#FFF8EA] hover:bg-[#063F45]'
+                }`}
+                title="Copy master meeting link"
+              >
+                {isCopiedLink ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copy Link</span>
+                  </>
+                )}
+              </button>
+
+              {currentLink && currentLink.startsWith('http') && (
+                <a
+                  href={currentLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-xl font-bold text-xs bg-[#FFF8EA] text-[#07545A] hover:bg-[#07545A]/10 border border-[#07545A]/20 flex items-center gap-1.5 transition-all cursor-pointer"
+                  title="Test / Open meeting link"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Open</span>
+                </a>
+              )}
+
+              <button
+                type="button"
+                onClick={handleShareSessionInvite}
+                className="px-3 py-1.5 rounded-xl font-bold text-xs bg-[#FFF8EA] text-[#07545A] hover:bg-[#07545A]/10 border border-[#07545A]/20 flex items-center gap-1.5 transition-all cursor-pointer"
+                title="Share session invitation text"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Share Invite</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Current link display pill */}
+          <div className="mt-2.5 pt-2.5 border-t border-[#07545A]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-[10px] font-bold text-[#687778] uppercase shrink-0">Current URL:</span>
+              {currentLink ? (
+                <span className="font-mono text-[11px] text-[#07545A] font-bold truncate bg-white px-2 py-0.5 rounded-lg border border-[#07545A]/15 select-all">
+                  {currentLink}
+                </span>
+              ) : (
+                <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
+                  No meeting link configured yet. Set below.
+                </span>
+              )}
+            </div>
+            {workshop.meetingNotes && (
+              <span className="text-[11px] text-[#687778] italic truncate">
+                Notes: {workshop.meetingNotes}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Modal Tab Switcher */}
+        <div className="flex items-center gap-2 border-b border-[#07545A]/15 mb-3 shrink-0">
+          <button
+            onClick={() => setActiveTab('roster')}
+            className={`py-2 px-3 text-xs font-bold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'roster'
+                ? 'border-[#07545A] text-[#07545A]'
+                : 'border-transparent text-[#173B3D]/70 hover:text-[#07545A]'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>Who Booked & Attendees ({attendees.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('meeting')}
+            className={`py-2 px-3 text-xs font-bold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'meeting'
+                ? 'border-[#07545A] text-[#07545A]'
+                : 'border-transparent text-[#173B3D]/70 hover:text-[#07545A]'
+            }`}
+          >
+            <Video className="w-3.5 h-3.5" />
+            <span>Update Meeting Link & Instructions</span>
+          </button>
+        </div>
+
+        {/* Tab 1: Who Booked And All (Attendee Roster) */}
+        {activeTab === 'roster' && (
+          <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+            {/* Toolbar for Sharing and Filters */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-[#FFF8EA] p-3 rounded-2xl border border-[#07545A]/12">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="relative flex-1">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#173B3D]/50" />
+                  <input
+                    type="text"
+                    placeholder="Search attendee by name, email, phone, or ID..."
+                    value={attendeeSearch}
+                    onChange={(e) => setAttendeeSearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 bg-white border border-[#07545A]/20 rounded-xl outline-none text-xs"
+                  />
+                </div>
+
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  className="px-2.5 py-1.5 bg-white border border-[#07545A]/20 rounded-xl outline-none text-xs font-semibold shrink-0"
+                >
+                  <option value="all">All Status</option>
+                  <option value="Confirmed">Confirmed</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              {/* Action Buttons: "Share Who book And All" */}
+              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleCopyRoster}
+                  className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
+                    isCopiedRoster
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-[#07545A] text-[#FFF8EA] hover:bg-[#063F45]'
+                  }`}
+                  title="Copy full attendee roster text to clipboard to share"
+                >
+                  {isCopiedRoster ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Roster Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="w-3.5 h-3.5" />
+                      <span>Share Who Booked</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCopyEmails}
+                  className={`px-2.5 py-1.5 rounded-xl font-bold text-xs bg-white text-[#07545A] hover:bg-[#07545A]/10 border border-[#07545A]/25 flex items-center gap-1.5 transition-all cursor-pointer ${
+                    isCopiedEmails ? 'text-emerald-700 border-emerald-400' : ''
+                  }`}
+                  title="Copy all attendee emails separated by comma"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>{isCopiedEmails ? 'Emails Copied!' : 'Copy Emails'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportCSV}
+                  className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-white text-[#07545A] hover:bg-[#07545A]/10 border border-[#07545A]/25 flex items-center gap-1.5 transition-all cursor-pointer"
+                  title="Download attendees CSV spreadsheet"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Export CSV</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Attendees List / Table */}
+            {filteredAttendees.length === 0 ? (
+              <div className="text-center py-10 bg-[#FFF8EA]/50 rounded-2xl border border-dashed border-[#07545A]/20 p-6">
+                <Users className="w-10 h-10 text-[#07545A]/40 mx-auto mb-2" />
+                <h4 className="font-bold text-[#07545A] text-sm mb-1">
+                  {attendees.length === 0 ? 'No Patrons Have Booked Yet' : 'No Attendees Match Filter'}
+                </h4>
+                <p className="text-xs text-[#173B3D]/70 max-w-sm mx-auto mb-4">
+                  {attendees.length === 0
+                    ? 'When patrons reserve seats on the store, their booking details and contacts will automatically show here.'
+                    : 'Try clearing your search term or status filter.'}
+                </p>
+                {attendees.length === 0 && (
+                  <div className="flex items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => onAddTestBooking(workshop)}
+                      className="px-4 py-2 bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] font-bold rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Demo Booking</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const publicUrl = `${window.location.origin}/?view=workshops&workshop=${workshop.id}`;
+                        navigator.clipboard?.writeText(publicUrl);
+                        showToast('Workshop URL Copied!', publicUrl);
+                      }}
+                      className="px-4 py-2 bg-white text-[#07545A] hover:bg-[#07545A]/10 font-bold border border-[#07545A]/20 rounded-xl cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy Workshop Public Link</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="border border-[#07545A]/15 rounded-2xl overflow-hidden shadow-2xs">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-[#FFF8EA] text-[#07545A] border-b border-[#07545A]/15 uppercase font-bold text-[10px] tracking-wider">
+                      <tr>
+                        <th className="p-3">Attendee Name</th>
+                        <th className="p-3">Contact Details</th>
+                        <th className="p-3">Booking Ref</th>
+                        <th className="p-3">Booked Date</th>
+                        <th className="p-3">Payment ID</th>
+                        <th className="p-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#07545A]/10 bg-white">
+                      {filteredAttendees.map((b) => (
+                        <tr key={b.id} className="hover:bg-[#FFF8EA]/40 transition-colors">
+                          <td className="p-3">
+                            <div className="flex items-center gap-2.5">
+                              <span className="w-7 h-7 rounded-full bg-[#07545A] text-[#FFF8EA] font-bold flex items-center justify-center text-[11px] shrink-0">
+                                {(b.userName || 'U').charAt(0).toUpperCase()}
+                              </span>
+                              <div>
+                                <span className="font-bold text-[#173B3D] block text-xs">
+                                  {b.userName || 'Anonymous Patron'}
+                                </span>
+                                <span className="text-[10px] text-[#687778]">
+                                  Fee: ₹{b.price || workshop.price}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="p-3">
+                            <div className="space-y-0.5">
+                              {b.userEmail ? (
+                                <a
+                                  href={`mailto:${b.userEmail}`}
+                                  className="text-[#07545A] hover:underline flex items-center gap-1 text-[11px] font-medium"
+                                >
+                                  <Mail className="w-3 h-3 text-[#07545A]/70 shrink-0" />
+                                  <span className="truncate max-w-[170px]">{b.userEmail}</span>
+                                </a>
+                              ) : (
+                                <span className="text-[#687778] italic text-[10px]">No email</span>
+                              )}
+                              {b.userPhone && (
+                                <a
+                                  href={`tel:${b.userPhone}`}
+                                  className="text-[#173B3D]/80 hover:text-[#07545A] flex items-center gap-1 text-[10px]"
+                                >
+                                  <Phone className="w-3 h-3 text-[#173B3D]/50 shrink-0" />
+                                  <span>{b.userPhone}</span>
+                                </a>
+                              )}
+                            </div>
+                          </td>
+
+                          <td className="p-3 font-mono font-bold text-[#07545A] text-[11px]">
+                            {b.id}
+                          </td>
+
+                          <td className="p-3 text-[#173B3D]/80 text-[11px] whitespace-nowrap">
+                            {b.bookedAt || 'Recently'}
+                          </td>
+
+                          <td className="p-3">
+                            <span className="font-mono text-[10px] text-[#687778] bg-[#FFF8EA] px-2 py-0.5 rounded border border-[#07545A]/10">
+                              {b.paymentId ? b.paymentId.slice(0, 14) : 'Online Confirmed'}
+                            </span>
+                          </td>
+
+                          <td className="p-3">
+                            <select
+                              value={b.status}
+                              onChange={(e) => onUpdateBookingStatus(b.id, e.target.value as any)}
+                              className={`text-[10px] font-bold px-2 py-1 rounded-lg border outline-none cursor-pointer ${
+                                b.status === 'Confirmed'
+                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                  : b.status === 'Completed'
+                                  ? 'bg-blue-50 text-blue-800 border-blue-300'
+                                  : 'bg-red-50 text-red-800 border-red-300'
+                              }`}
+                            >
+                              <option value="Confirmed">Confirmed</option>
+                              <option value="Completed">Completed</option>
+                              <option value="Cancelled">Cancelled</option>
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 2: Update Master Meeting Link & Instructions */}
+        {activeTab === 'meeting' && (
+          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+            <form onSubmit={handleSaveMeetingLink} className="space-y-4 bg-[#FFF8EA] p-5 rounded-2xl border border-[#07545A]/15">
+              <div>
+                <h4 className="font-bold text-[#07545A] text-sm mb-1">
+                  Configure Master Workshop Link
+                </h4>
+                <p className="text-xs text-[#173B3D]/70 mb-4">
+                  Changes made here update the workshop’s master meeting credentials and broadcast to all enrolled patrons' profile dashboards.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="font-bold text-[#07545A] block mb-1">Session Platform</label>
+                  <select
+                    value={meetingPlatform}
+                    onChange={(e) => setMeetingPlatform(e.target.value as any)}
+                    className="w-full px-3 py-2 bg-white border border-[#07545A]/20 rounded-xl outline-none font-semibold text-xs"
+                  >
+                    <option value="Google Meet">Google Meet</option>
+                    <option value="Zoom">Zoom</option>
+                  </select>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="font-bold text-[#07545A] block mb-1">
+                    Meeting URL / Access Link
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://meet.google.com/abc-defg-hij"
+                    value={meetingLink}
+                    onChange={(e) => setMeetingLink(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 bg-white border border-[#07545A]/20 rounded-xl outline-none font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-[#07545A] block mb-1">
+                  Preparation Instructions & Meeting Notes
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="e.g. Please join 5 minutes early. Materials needed: 3.5mm hook, cotton yarn, stitch markers."
+                  value={meetingNotes}
+                  onChange={(e) => setMeetingNotes(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-[#07545A]/20 rounded-xl outline-none text-xs"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-between">
+                <span className="text-[11px] text-[#687778]">
+                  Enrolled attendees will immediately see this updated link in their patron account.
+                </span>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] font-bold rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-2"
+                >
+                  <Video className="w-3.5 h-3.5 text-[#F2A900]" />
+                  <span>Save & Broadcast Link</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Modal Footer */}
+        <div className="pt-3 mt-3 border-t border-[#07545A]/10 flex items-center justify-between shrink-0">
+          <span className="text-[11px] text-[#687778]">
+            Workshop ID: <code className="font-mono text-[#07545A] font-bold">{workshop.id}</code>
+          </span>
+          <button
+            onClick={onClose}
+            className="px-4 py-1.5 font-bold text-[#173B3D]/80 hover:bg-[#07545A]/10 rounded-xl cursor-pointer"
+          >
+            Close Details
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ========================================================
 // REUSABLE WORKSHOP EDIT / ADD MODAL COMPONENT
 // ========================================================
 interface WorkshopEditModalProps {
@@ -1626,6 +2439,11 @@ const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
   const [seatsLeft, setSeatsLeft] = useState(workshop?.seatsLeft || 8);
   const [image, setImage] = useState(workshop?.image || '/images/hero_handmade_1790260978568.jpg');
   const [description, setDescription] = useState(workshop?.description || '');
+  const [meetingLink, setMeetingLink] = useState(workshop?.meetingLink || '');
+  const [meetingPlatform, setMeetingPlatform] = useState<'Google Meet' | 'Zoom' | 'Studio Offline'>(
+    workshop?.meetingPlatform || (workshop?.format === 'Studio Offline' ? 'Studio Offline' : 'Google Meet')
+  );
+  const [meetingNotes, setMeetingNotes] = useState(workshop?.meetingNotes || '');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1642,6 +2460,9 @@ const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
       seatsLeft: Number(seatsLeft),
       image,
       description,
+      meetingLink: meetingLink.trim(),
+      meetingPlatform,
+      meetingNotes: meetingNotes.trim(),
     });
   };
 
@@ -1766,6 +2587,50 @@ const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
             </div>
           </div>
 
+          {/* Master Meeting Link Configuration ("Show The Link Not Specific Customer") */}
+          <div className="p-3.5 bg-[#FFF8EA] rounded-2xl border border-[#07545A]/15 space-y-3">
+            <div className="flex items-center gap-1.5 font-bold text-[#07545A]">
+              <Video className="w-3.5 h-3.5" />
+              <span>Session Access Link (Broadcast to All Attendees)</span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className="col-span-1">
+                <label className="font-medium text-[#687778] block mb-1 text-[11px]">Platform</label>
+                <select
+                  value={meetingPlatform}
+                  onChange={(e) => setMeetingPlatform(e.target.value as any)}
+                  className="w-full px-2.5 py-1.5 bg-white border border-[#07545A]/20 rounded-xl outline-none font-semibold text-xs"
+                >
+                  <option value="Google Meet">Google Meet</option>
+                  <option value="Zoom">Zoom</option>
+                  <option value="Studio Offline">Studio Offline</option>
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="font-medium text-[#687778] block mb-1 text-[11px]">Meeting URL</label>
+                <input
+                  type="url"
+                  placeholder="https://meet.google.com/xyz-uvw-rst"
+                  value={meetingLink}
+                  onChange={(e) => setMeetingLink(e.target.value)}
+                  className="w-full px-2.5 py-1.5 bg-white border border-[#07545A]/20 rounded-xl outline-none font-mono text-xs"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="font-medium text-[#687778] block mb-1 text-[11px]">Preparation Notes</label>
+              <input
+                type="text"
+                placeholder="e.g. Please join 5 mins early with craft kit ready"
+                value={meetingNotes}
+                onChange={(e) => setMeetingNotes(e.target.value)}
+                className="w-full px-2.5 py-1.5 bg-white border border-[#07545A]/20 rounded-xl outline-none text-xs"
+              />
+            </div>
+          </div>
+
           <div>
             <label className="font-bold text-[#07545A] block mb-1">Experience Description</label>
             <textarea
@@ -1786,7 +2651,7 @@ const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-[#07545A] hover:bg-[#064247] text-[#FFF8EA] font-bold rounded-xl shadow-md cursor-pointer"
+              className="px-5 py-2 bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] font-bold rounded-xl shadow-md cursor-pointer"
             >
               {isNew ? 'Publish Workshop' : 'Save Changes'}
             </button>

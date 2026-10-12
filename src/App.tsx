@@ -30,6 +30,7 @@ import { AccountPage } from './components/account/AccountPage';
 import { SignInPage } from './components/auth/SignInPage';
 import { AdminCMSPage } from './components/admin/AdminCMSPage';
 import { OrderTracking } from './components/orders/OrderTracking';
+import { FoundingCreatorPortal } from './components/foundingcreator/FoundingCreatorPortal';
 
 // Overlays & Utilities
 import { SearchDrawer } from './components/common/SearchDrawer';
@@ -191,6 +192,12 @@ const DynamicMetadataManager: React.FC = () => {
           'Curowit Storefront Content Management System for managing products, creators, workshops, stories, and hero campaigns.';
         break;
       }
+      case 'foundingcreator': {
+        title = 'Founding Creator Program — Curowit | 70% Revenue Share';
+        description =
+          "Join Curowit's Founding Creator community. Showcase your handmade products, reach new patrons, and grow your creative business with 70% revenue share and 7-day payouts.";
+        break;
+      }
       default:
         break;
     }
@@ -218,7 +225,56 @@ const DynamicMetadataManager: React.FC = () => {
 };
 
 const MainContent: React.FC = () => {
-  const { activeView, openAdminModal } = useStore();
+  const { activeView, openAdminModal, navigateToProduct, setActiveView, selectedProduct } = useStore();
+
+  // Deep linking: parse ?product=..., ?workshop=..., ?view=..., and /foundingcreator on mount
+  useEffect(() => {
+    try {
+      const pathname = window.location.pathname;
+      const params = new URLSearchParams(window.location.search);
+      const prodParam = params.get('product');
+      const wsParam = params.get('workshop');
+      const viewParam = params.get('view');
+
+      if (pathname.startsWith('/foundingcreator')) {
+        setActiveView('foundingcreator');
+      } else if (prodParam) {
+        navigateToProduct(prodParam);
+      } else if (wsParam) {
+        setActiveView('workshops');
+      } else if (viewParam) {
+        setActiveView(viewParam);
+      }
+    } catch {}
+  }, []);
+
+  // Listen for browser Back/Forward popstate
+  useEffect(() => {
+    const handlePopState = () => {
+      const pathname = window.location.pathname;
+      if (pathname.startsWith('/foundingcreator')) {
+        setActiveView('foundingcreator');
+      } else if (pathname === '/' || pathname === '') {
+        setActiveView('home');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [setActiveView]);
+
+  // Synchronize browser URL bar with active shared product
+  useEffect(() => {
+    try {
+      if (activeView === 'product' && selectedProduct) {
+        const targetSearch = `?product=${encodeURIComponent(selectedProduct.id)}`;
+        if (window.location.search !== targetSearch) {
+          window.history.replaceState(null, '', `${window.location.pathname}${targetSearch}`);
+        }
+      } else if (activeView !== 'product' && window.location.search.includes('product=')) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    } catch {}
+  }, [activeView, selectedProduct]);
 
   // Global shortcut to open owner CMS portal (Ctrl + Shift + A)
   useEffect(() => {
@@ -238,6 +294,16 @@ const MainContent: React.FC = () => {
         <AdminCMSPage />
         <AdminPasskeyModal />
         <ToastContainer />
+      </div>
+    );
+  }
+
+  if (activeView === 'foundingcreator' || activeView.startsWith('foundingcreator')) {
+    return (
+      <div className="min-h-screen bg-[#FFFDF7] text-[#173B3D]">
+        <FoundingCreatorPortal onNavigateHome={() => setActiveView('home')} />
+        <ToastContainer />
+        <AdminPasskeyModal />
       </div>
     );
   }
