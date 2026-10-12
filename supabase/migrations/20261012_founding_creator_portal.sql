@@ -325,3 +325,54 @@ CREATE POLICY "public_read_published_products" ON creator_products
 -- Creators can only read their own order items
 CREATE POLICY "creators_read_own_order_items" ON creator_order_items
   FOR SELECT USING (creator_id = (SELECT id FROM creator_profiles WHERE user_id = auth.uid()) OR auth.role() = 'service_role');
+
+-- 14. STORE DOCUMENTS (KYC, GST, Bank Proof, Artisan Certificates)
+CREATE TABLE IF NOT EXISTS creator_documents (
+  id VARCHAR(64) PRIMARY KEY,
+  creator_id VARCHAR(64) REFERENCES creator_profiles(id) ON DELETE CASCADE,
+  document_type VARCHAR(64) NOT NULL, -- gstin, pan_card, identity_proof, bank_verification, craft_certificate, brand_trademark, agreement_signature, store_logo, other
+  title VARCHAR(255) NOT NULL,
+  file_url TEXT NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  file_size BIGINT,
+  mime_type VARCHAR(128),
+  verification_status VARCHAR(32) NOT NULL DEFAULT 'pending_verification', -- pending_verification, verified, rejected, draft
+  rejection_reason TEXT,
+  notes TEXT,
+  uploaded_at TIMESTAMPTZ DEFAULT NOW(),
+  verified_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_creator_documents_creator ON creator_documents(creator_id);
+CREATE INDEX IF NOT EXISTS idx_creator_documents_type ON creator_documents(document_type);
+CREATE INDEX IF NOT EXISTS idx_creator_documents_status ON creator_documents(verification_status);
+
+ALTER TABLE creator_documents ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "creators_read_own_documents" ON creator_documents
+  FOR SELECT USING (creator_id = (SELECT id FROM creator_profiles WHERE user_id = auth.uid()) OR auth.role() = 'service_role');
+
+CREATE POLICY "creators_insert_own_documents" ON creator_documents
+  FOR INSERT WITH CHECK (creator_id = (SELECT id FROM creator_profiles WHERE user_id = auth.uid()) OR auth.role() = 'service_role');
+
+-- 15. CREATOR ONBOARDING LIFECYCLE & STEPS
+CREATE TABLE IF NOT EXISTS creator_onboarding (
+  creator_id VARCHAR(64) PRIMARY KEY REFERENCES creator_profiles(id) ON DELETE CASCADE,
+  current_step INTEGER NOT NULL DEFAULT 1,
+  completed_steps JSONB DEFAULT '[]'::jsonb,
+  status VARCHAR(32) NOT NULL DEFAULT 'not_started', -- not_started, in_progress, submitted, under_review, approved, active, suspended
+  has_personal_details BOOLEAN DEFAULT FALSE,
+  has_business_details BOOLEAN DEFAULT FALSE,
+  has_portfolio_or_products BOOLEAN DEFAULT FALSE,
+  has_signed_agreement BOOLEAN DEFAULT FALSE,
+  has_store_documents BOOLEAN DEFAULT FALSE,
+  has_payment_configured BOOLEAN DEFAULT FALSE,
+  notes TEXT,
+  last_updated TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE creator_onboarding ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "creators_manage_own_onboarding" ON creator_onboarding
+  FOR ALL USING (creator_id = (SELECT id FROM creator_profiles WHERE user_id = auth.uid()) OR auth.role() = 'service_role');
+

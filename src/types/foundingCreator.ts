@@ -313,3 +313,71 @@ export interface CreatorSupportTicket {
   createdAt: string;
   updatedAt: string;
 }
+
+export type DocumentType =
+  | 'gstin'
+  | 'pan_card'
+  | 'identity_proof'
+  | 'bank_verification'
+  | 'craft_certificate'
+  | 'brand_trademark'
+  | 'agreement_signature'
+  | 'store_logo'
+  | 'other';
+
+export type DocumentVerificationStatus =
+  | 'verified'
+  | 'pending_verification'
+  | 'rejected'
+  | 'draft';
+
+export interface CreatorStoreDocument {
+  id: string;
+  creatorId: string;
+  documentType: DocumentType;
+  title: string;
+  fileUrl: string;
+  fileName: string;
+  fileSize?: number;
+  mimeType?: string;
+  storagePath?: string;
+  verificationStatus: DocumentVerificationStatus;
+  rejectionReason?: string;
+  uploadedAt: string;
+  verifiedAt?: string;
+  notes?: string;
+}
+
+export type OnboardingStepNumber = 1 | 2 | 3 | 4 | 5;
+export type OnboardingLifecycleStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'submitted'
+  | 'under_review'
+  | 'approved'
+  | 'active'
+  | 'suspended';
+
+export interface CreatorOnboardingProgress {
+  creatorId: string;
+  applicationId?: string;
+  currentStep: OnboardingStepNumber;
+  completedSteps: OnboardingStepNumber[];
+  status: OnboardingLifecycleStatus;
+  hasPersonalDetails: boolean;
+  hasBusinessDetails: boolean;
+  hasPortfolioOrProducts: boolean;
+  hasSignedAgreement: boolean;
+  hasStoreDocuments: boolean;
+  hasPaymentConfigured: boolean;
+  notes?: string;
+  lastUpdated: string;
+}
+
+export interface FoundingCreatorSyncState {
+  isSyncing: boolean;
+  isOnline: boolean;
+  lastSyncedAt: string | null;
+  syncError: string | null;
+}
+
