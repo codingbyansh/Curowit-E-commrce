@@ -641,8 +641,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       )
     );
 
-    // Save to Firestore
-    setDoc(doc(db, 'workshop_bookings', bookingId), newBooking).catch((err) =>
+    // Save to Firestore with clean payload (omit undefined)
+    const firestorePayload = Object.fromEntries(
+      Object.entries(newBooking).filter(([_, v]) => v !== undefined)
+    );
+    setDoc(doc(db, 'workshop_bookings', bookingId), firestorePayload).catch((err) =>
       handleFirestoreError(err, OperationType.WRITE, `workshop_bookings/${bookingId}`)
     );
 
@@ -657,7 +660,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setBookedWorkshops((prev) =>
       prev.map((b) => (b.id === bookingId ? { ...b, ...updates } : b))
     );
-    setDoc(doc(db, 'workshop_bookings', bookingId), updates, { merge: true }).catch((err) =>
+    const cleanUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, v]) => v !== undefined)
+    );
+    setDoc(doc(db, 'workshop_bookings', bookingId), cleanUpdates, { merge: true }).catch((err) =>
       handleFirestoreError(err, OperationType.WRITE, `workshop_bookings/${bookingId}`)
     );
     showToast('Booking Updated', 'Workshop booking record updated');

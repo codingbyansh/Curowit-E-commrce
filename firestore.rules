@@ -27,6 +27,7 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == 'anshsingh.cse@gmail.com' ||
+        request.auth.token.email == 'gamerzansh78@gmail.com' ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid))
       );
     }
@@ -423,6 +424,20 @@ service cloud.firestore {
           ])
         );
       allow delete: if isValidId(reviewId) && (isAdmin() || existing().storeAuthToken == 'curowit_verified_patron');
+    }
+
+    // Workshop Bookings
+    match /workshop_bookings/{bookingId} {
+      allow get: if isValidId(bookingId);
+      allow list: if true;
+      allow create: if isValidId(bookingId) && isValidWorkshopBooking(incoming()) && incoming().id == bookingId;
+      allow update: if isValidId(bookingId) && isValidWorkshopBooking(incoming()) && incoming().id == existing().id && (
+        isAdmin() ||
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'meetingLink', 'meetingPlatform', 'meetingNotes', 'status'
+        ])
+      );
+      allow delete: if isValidId(bookingId) && isAdmin();
     }
   }
 }
