@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import {
   Sparkles,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   TrendingUp,
   Truck,
@@ -351,6 +352,14 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
             <span className="hidden sm:inline-block text-xs font-bold text-[#07545A] tracking-wide uppercase">
               Founding Creator Portal
             </span>
+            <button
+              onClick={() => onNavigate('home')}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#07545A] bg-[#07545A]/10 hover:bg-[#07545A]/15 border border-[#07545A]/20 px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ml-1"
+              title="Return to Curowit Storefront"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Store</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -387,7 +396,29 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
           3. HERO EDITORIAL SHOWCASE (WARM, AUTHENTIC, IMPACTFUL)
           ========================================================================= */}
       <section className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-24 border-b border-[#07545A]/10 bg-gradient-to-b from-[#FFF8EA]/50 via-[#FFFDF7] to-[#FFFDF7]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Craft Dotted Grid Layer */}
+        <div
+          className="pointer-events-none absolute inset-0 z-0 opacity-40 mix-blend-multiply"
+          style={{
+            backgroundImage: `radial-gradient(circle, rgba(23, 59, 61, 0.22) 1.25px, transparent 1.25px)`,
+            backgroundSize: '24px 24px',
+          }}
+          aria-hidden="true"
+        />
+
+        {/* Craft Blueprint Vector Drafting Lines */}
+        <svg
+          className="pointer-events-none absolute inset-0 w-full h-full z-0 opacity-35 select-none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <line x1="0" y1="20" x2="100%" y2="20" stroke="#173B3D" strokeWidth="1" strokeDasharray="4 6" strokeOpacity="0.4" />
+          <circle cx="92%" cy="140" r="130" fill="none" stroke="#173B3D" strokeWidth="1" strokeDasharray="3 5" strokeOpacity="0.3" />
+          <circle cx="92%" cy="140" r="160" fill="none" stroke="#173B3D" strokeWidth="0.8" strokeDasharray="8 6" strokeOpacity="0.25" />
+          <line x1="10%" y1="100%" x2="90%" y2="0" stroke="#173B3D" strokeWidth="0.8" strokeDasharray="6 8" strokeOpacity="0.2" />
+        </svg>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left Headline Column */}
             <div className="lg:col-span-7 space-y-6">

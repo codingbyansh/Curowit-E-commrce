@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { CREATORS, Creator } from '../../data/mockData';
 import { Sparkles, MapPin, Star, Rotate3d, Layers } from 'lucide-react';
+import { ArtisanCraftBackground } from './ArtisanCraftBackground';
 
 export const CreatorsListPage: React.FC = () => {
   const { creators } = useStore();
@@ -125,7 +126,7 @@ export const CreatorsListPage: React.FC = () => {
   }
 
   return (
-    <div className="bg-[#F7EBD7] min-h-[calc(100vh-64px)] py-6 sm:py-10 pb-28 md:pb-16 select-none flex flex-col items-center justify-center overflow-hidden">
+    <ArtisanCraftBackground theme="warm-paper" className="min-h-[calc(100vh-64px)] py-6 sm:py-10 pb-28 md:pb-16 select-none flex flex-col items-center justify-center overflow-hidden">
       <div className="max-w-md w-full px-4 flex flex-col items-center">
         {/* ========================================================
             Visual Stacked Deck Container
@@ -313,6 +314,6 @@ export const CreatorsListPage: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </ArtisanCraftBackground>
   );
 };

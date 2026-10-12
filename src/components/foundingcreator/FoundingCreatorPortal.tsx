@@ -42,8 +42,38 @@ export const FoundingCreatorPortal: React.FC<FoundingCreatorPortalProps> = ({
     }
   }, [initialSubRoute]);
 
+  // Handle browser Back/Forward inside the founding creator portal subroutes
+  useEffect(() => {
+    const handlePortalPopState = () => {
+      const path = window.location.pathname;
+      const searchParams = new URLSearchParams(window.location.search);
+      const idParam = searchParams.get('id') || '';
+      if (idParam) setInitialStatusId(idParam);
+
+      if (path === '/foundingcreator/apply') {
+        setCurrentView('apply');
+      } else if (path === '/foundingcreator/login') {
+        setCurrentView('login');
+      } else if (path === '/foundingcreator/dashboard') {
+        setCurrentView('dashboard');
+      } else if (
+        path === '/foundingcreator/application-status' ||
+        path === '/foundingcreator/status'
+      ) {
+        setCurrentView('status');
+      } else if (path === '/foundingcreator' || path === '/foundingcreator/') {
+        setCurrentView('landing');
+      }
+    };
+    window.addEventListener('popstate', handlePortalPopState);
+    return () => window.removeEventListener('popstate', handlePortalPopState);
+  }, []);
+
   const handleNavigate = (target: string) => {
     if (target === 'home') {
+      try {
+        window.history.pushState(null, '', '/');
+      } catch {}
       if (onNavigateHome) onNavigateHome();
       return;
     }

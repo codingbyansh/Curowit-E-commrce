@@ -209,6 +209,17 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <button
+                  onClick={() => {
+                    window.history.pushState(null, '', '/foundingcreator');
+                    handleNavClick('foundingcreator');
+                  }}
+                  className="hover:text-white transition-colors cursor-pointer text-[#F2A900] font-semibold flex items-center gap-1"
+                >
+                  <span>Founding Creator Program (70%)</span>
+                </button>
+              </li>
+              <li>
+                <button
                   onClick={() => handleNavClick('track-order')}
                   className="hover:text-white transition-colors cursor-pointer text-[#F2A900] font-semibold"
                 >

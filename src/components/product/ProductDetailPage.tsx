@@ -34,6 +34,7 @@ import {
   CheckCircle2,
   Lock,
   Trash2,
+  Instagram,
 } from 'lucide-react';
 
 interface ProductReview {
@@ -243,6 +244,34 @@ export const ProductDetailPage: React.FC = () => {
       }
     } else {
       handleCopyLink();
+    }
+  };
+
+  const handleInstagramShare = async () => {
+    const { url, title } = getProductShareData();
+    const makerName = selectedProduct?.creatorName || 'independent artisan';
+    const caption = `Discovered this handmade piece "${title}" by ${makerName} on Curowit! ✨\nCheck it out: ${url}\n#Curowit #HandmadeArtisan #HomeOfCreatives`;
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(caption);
+      }
+    } catch {}
+
+    showToast(
+      'Ready for Instagram!',
+      'Caption & product link copied to clipboard. Opening Instagram...'
+    );
+
+    // Try Instagram app URI scheme on mobile or web on desktop
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobile) {
+      window.location.href = 'instagram://app';
+      setTimeout(() => {
+        window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer');
+      }, 700);
+    } else {
+      window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -1084,31 +1113,44 @@ export const ProductDetailPage: React.FC = () => {
               <span className="font-bold text-[#07545A] block mb-2 text-[11px]">
                 Share Directly To
               </span>
-              <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="grid grid-cols-5 gap-2 text-center">
                 {/* WhatsApp */}
                 <a
                   href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${getProductShareData().text} ${getProductShareData().url}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors group cursor-pointer"
+                  className="flex flex-col items-center justify-center p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors group cursor-pointer"
                 >
                   <span className="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center mb-1 group-hover:scale-110 transition-transform font-bold text-xs">
                     WA
                   </span>
-                  <span className="text-[10px] font-bold text-emerald-900">WhatsApp</span>
+                  <span className="text-[10px] font-bold text-emerald-900 truncate w-full">WhatsApp</span>
                 </a>
+
+                {/* Instagram */}
+                <button
+                  type="button"
+                  onClick={handleInstagramShare}
+                  className="flex flex-col items-center justify-center p-2 rounded-xl bg-gradient-to-tr from-pink-50 via-rose-50 to-amber-50 hover:from-pink-100 hover:to-amber-100 border border-pink-200/80 transition-all group cursor-pointer active:scale-95"
+                  title="Share to Instagram Story or Feed"
+                >
+                  <span className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white flex items-center justify-center mb-1 group-hover:scale-110 transition-transform shadow-2xs">
+                    <Instagram className="w-3.5 h-3.5 text-white" />
+                  </span>
+                  <span className="text-[10px] font-bold text-pink-950 truncate w-full">Instagram</span>
+                </button>
 
                 {/* Twitter / X */}
                 <a
                   href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(getProductShareData().text)}&url=${encodeURIComponent(getProductShareData().url)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 border border-stone-300 transition-colors group cursor-pointer"
+                  className="flex flex-col items-center justify-center p-2 rounded-xl bg-stone-100 hover:bg-stone-200 border border-stone-300 transition-colors group cursor-pointer"
                 >
                   <span className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center mb-1 group-hover:scale-110 transition-transform font-bold text-xs">
                     𝕏
                   </span>
-                  <span className="text-[10px] font-bold text-stone-900">X (Twitter)</span>
+                  <span className="text-[10px] font-bold text-stone-900 truncate w-full">X (Twitter)</span>
                 </a>
 
                 {/* Facebook */}
@@ -1116,23 +1158,23 @@ export const ProductDetailPage: React.FC = () => {
                   href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(getProductShareData().url)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors group cursor-pointer"
+                  className="flex flex-col items-center justify-center p-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors group cursor-pointer"
                 >
                   <span className="w-7 h-7 rounded-full bg-[#1877F2] text-white flex items-center justify-center mb-1 group-hover:scale-110 transition-transform font-bold text-xs">
                     f
                   </span>
-                  <span className="text-[10px] font-bold text-blue-900">Facebook</span>
+                  <span className="text-[10px] font-bold text-blue-900 truncate w-full">Facebook</span>
                 </a>
 
                 {/* Email */}
                 <a
                   href={`mailto:?subject=${encodeURIComponent(getProductShareData().title)}&body=${encodeURIComponent(`${getProductShareData().text}\n\n${getProductShareData().url}`)}`}
-                  className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors group cursor-pointer"
+                  className="flex flex-col items-center justify-center p-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors group cursor-pointer"
                 >
                   <div className="w-7 h-7 rounded-full bg-amber-600 text-white flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
                     <Mail className="w-3.5 h-3.5" />
                   </div>
-                  <span className="text-[10px] font-bold text-amber-900">Email</span>
+                  <span className="text-[10px] font-bold text-amber-900 truncate w-full">Email</span>
                 </a>
               </div>
             </div>

@@ -288,11 +288,18 @@ const MainContent: React.FC = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [setActiveView]);
 
-  // Synchronize browser URL bar with active view (e.g., /admincurowit and products)
+  // Synchronize browser URL bar with active view (e.g., /foundingcreator, /admincurowit, and storefront)
   useEffect(() => {
     try {
       const pathname = window.location.pathname;
-      if (activeView === 'admin') {
+      if (activeView === 'foundingcreator' || activeView.startsWith('foundingcreator')) {
+        if (!pathname.startsWith('/foundingcreator')) {
+          window.history.pushState(null, '', '/foundingcreator');
+        }
+      } else if (pathname.startsWith('/foundingcreator')) {
+        // Exiting or returning from founding creator panel to storefront cleanly restores URL to /
+        window.history.pushState(null, '', '/');
+      } else if (activeView === 'admin') {
         if (pathname !== '/admincurowit') {
           window.history.pushState(null, '', '/admincurowit');
         }
