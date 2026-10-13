@@ -307,27 +307,25 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
   return (
     <div className="min-h-screen bg-[#FFFDF7] text-[#173B3D] selection:bg-[#07545A] selection:text-[#FFF8EA]">
       {/* =========================================================================
+      {/* =========================================================================
           1. COHORT ADMISSION LIVE NOTIFICATION STRIP
           ========================================================================= */}
-      <div className="bg-[#07545A] text-[#FFF8EA] text-xs py-2 px-4 border-b border-[#063F45]">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-center sm:text-left">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-            <span className="font-medium">
-              Founding Creator Cohort 2026 Admissions Active:
-            </span>
-            <span className="text-[#F2A900] font-bold">
-              118 of 150 Master Artisan Seats Claimed
+      <div className="bg-[#07545A] text-[#FFF8EA] py-1.5 sm:py-2 px-3 sm:px-4 border-b border-[#063F45]">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 text-[11px] sm:text-xs">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <span className="font-medium text-[11px] sm:text-xs truncate">
+              Founding Creator Cohort 2026 Admissions Active
             </span>
           </div>
 
-          <div className="flex items-center gap-4 text-[11px]">
-            <span className="hidden md:inline text-[#FFF8EA]/70">
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="hidden md:inline text-[#FFF8EA]/70 text-[11px]">
               Avg. Review Turnaround: 28 hrs · 7-Day Settlement SLA
             </span>
             <button
               onClick={() => onNavigate('foundingcreator-apply')}
-              className="text-[#F2A900] font-bold underline hover:text-white transition-colors cursor-pointer"
+              className="text-[#F2A900] font-bold underline hover:text-white transition-colors cursor-pointer text-[10.5px] sm:text-[11px] whitespace-nowrap"
             >
               Apply in 5 mins →
             </button>
@@ -339,36 +337,38 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
           2. PROGRAM HEADER (STANDALONE CLEAN PORTAL BRANDING)
           ========================================================================= */}
       <header className="border-b border-[#07545A]/10 bg-[#FFFDF7]/95 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <button
               onClick={() => onNavigate('home')}
               className="cursor-pointer hover:opacity-85 transition-opacity"
               title="Return to Curowit Storefront"
             >
-              <CurowitLogo variant="horizontal" size="md" responsiveTagline />
+              <CurowitLogo variant="horizontal" size="sm" responsiveTagline />
             </button>
-            <span className="hidden sm:inline-block text-[#07545A]/30">·</span>
-            <span className="hidden sm:inline-block text-xs font-bold text-[#07545A] tracking-wide uppercase">
+            <span className="hidden md:inline-block text-[#07545A]/30">·</span>
+            <span className="hidden md:inline-block text-xs font-bold text-[#07545A] tracking-wide uppercase">
               Founding Creator Portal
             </span>
-            <button
-              onClick={() => onNavigate('home')}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#07545A] bg-[#07545A]/10 hover:bg-[#07545A]/15 border border-[#07545A]/20 px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ml-1"
-              title="Return to Curowit Storefront"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Store</span>
-            </button>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            <button
+              onClick={() => onNavigate('home')}
+              className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-[#07545A] bg-[#07545A]/10 hover:bg-[#07545A]/15 border border-[#07545A]/20 px-2 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 whitespace-nowrap"
+              title="Return to Curowit Storefront"
+            >
+              <ArrowLeft className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span className="hidden sm:inline">Back to Store</span>
+              <span className="sm:hidden">Store</span>
+            </button>
+
             <button
               onClick={() => {
                 const element = document.getElementById('status-tracker-section');
                 element?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="text-xs font-bold text-[#173B3D]/70 hover:text-[#07545A] transition-colors cursor-pointer hidden md:inline-flex items-center gap-1.5 px-3 py-2"
+              className="text-xs font-bold text-[#173B3D]/70 hover:text-[#07545A] transition-colors cursor-pointer hidden lg:inline-flex items-center gap-1.5 px-3 py-2"
             >
               <Search className="w-3.5 h-3.5" />
               <span>Track Application</span>
@@ -376,17 +376,17 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
 
             <button
               onClick={() => onNavigate('foundingcreator-login')}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-[#07545A] border border-[#07545A]/20 hover:bg-[#07545A]/5 transition-colors cursor-pointer"
+              className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold text-[#07545A] border border-[#07545A]/20 hover:bg-[#07545A]/5 transition-colors cursor-pointer whitespace-nowrap"
             >
-              Artisan Login
+              <span className="hidden sm:inline">Artisan </span>Login
             </button>
 
             <button
               onClick={() => onNavigate('foundingcreator-apply')}
-              className="px-4 sm:px-5 py-2.5 rounded-xl bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-xs font-bold shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+              className="px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-xl bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-[11px] sm:text-xs font-bold shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center gap-1 sm:gap-1.5 whitespace-nowrap"
             >
-              <span>Apply for Cohort</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span>Apply<span className="hidden sm:inline"> for Cohort</span></span>
+              <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             </button>
           </div>
         </div>
@@ -395,38 +395,36 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       {/* =========================================================================
           3. HERO EDITORIAL SHOWCASE (WARM, AUTHENTIC, IMPACTFUL)
           ========================================================================= */}
-      <section className="relative overflow-hidden pt-10 pb-14 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-24 border-b border-[#07545A]/10 bg-gradient-to-b from-[#FFF8EA]/50 via-[#FFFDF7] to-[#FFFDF7]">
+      <section className="relative overflow-hidden pt-8 pb-12 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-24 border-b border-[#07545A]/10 bg-gradient-to-b from-[#FFF8EA]/50 via-[#FFFDF7] to-[#FFFDF7]">
         {/* Soft, warm luxury ambient glow without drafting matrix */}
         <div className="pointer-events-none absolute top-0 right-1/4 w-96 h-96 rounded-full bg-[#F2A900]/10 blur-3xl" aria-hidden="true" />
         <div className="pointer-events-none absolute bottom-0 left-10 w-80 h-80 rounded-full bg-[#07545A]/5 blur-3xl" aria-hidden="true" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Left Headline Column */}
-            <div className="lg:col-span-7 space-y-6">
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#07545A]">
-                <span>Artisan Atelier Cohort 2026</span>
-                <span aria-hidden="true">·</span>
-                <span>Handmade Independence</span>
-                <span aria-hidden="true">·</span>
-                <span>Guaranteed 70/30 Model</span>
+            <div className="lg:col-span-7 space-y-4 sm:space-y-6">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10.5px] sm:text-xs font-semibold text-[#07545A]">
+                <span className="bg-[#07545A]/10 px-2.5 py-0.5 rounded-full whitespace-nowrap">Artisan Cohort 2026</span>
+                <span className="bg-[#07545A]/10 px-2.5 py-0.5 rounded-full whitespace-nowrap">Handmade Independence</span>
+                <span className="bg-[#F2A900]/25 text-[#07545A] px-2.5 py-0.5 rounded-full whitespace-nowrap font-bold">70/30 Model</span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#07545A] font-display tracking-tight leading-[1.12]">
+              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-[#07545A] font-display tracking-tight leading-snug sm:leading-[1.12]">
                 Your Craft Deserves True Patrons, Not Algorithmic Advertising Taxes.
               </h1>
 
-              <p className="text-base sm:text-lg text-[#173B3D]/80 leading-relaxed max-w-2xl">
+              <p className="text-xs sm:text-base lg:text-lg text-[#173B3D]/80 leading-relaxed max-w-2xl">
                 Join India’s premier slow-craft atelier marketplace. You retain 100% design ownership,
                 receive a dedicated brand storefront, and earn a transparent 70% direct share with automated
                 7-day settlements post delivery.
               </p>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-2">
                 <button
                   onClick={() => onNavigate('foundingcreator-apply')}
-                  className="px-7 py-3.5 rounded-2xl bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer group"
+                  className="px-5 sm:px-7 py-3 sm:py-3.5 rounded-2xl bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer group"
                 >
                   <span>Apply for Founding Creator Cohort</span>
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -437,7 +435,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                     const el = document.getElementById('calculator-section');
                     el?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="px-6 py-3.5 rounded-2xl bg-white hover:bg-[#FFF8EA] text-[#07545A] border-2 border-[#07545A]/20 font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="px-5 sm:px-6 py-3 sm:py-3.5 rounded-2xl bg-white hover:bg-[#FFF8EA] text-[#07545A] border-2 border-[#07545A]/20 font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Sliders className="w-4 h-4 text-[#07545A]" />
                   <span>Simulate 70% Earnings</span>
@@ -445,18 +443,18 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
               </div>
 
               {/* Live Program Guarantees */}
-              <div className="pt-4 flex flex-wrap items-center gap-4 text-xs text-[#173B3D]/70 border-t border-[#07545A]/10">
+              <div className="pt-3 sm:pt-4 flex flex-wrap items-center gap-2.5 sm:gap-4 text-[11px] sm:text-xs text-[#173B3D]/70 border-t border-[#07545A]/10">
                 <div className="flex items-center gap-1.5 font-semibold text-[#07545A]">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>Zero Upfront Listing Fees</span>
+                  <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 shrink-0" />
+                  <span>Zero Upfront Fees</span>
                 </div>
                 <div className="flex items-center gap-1.5 font-semibold text-[#07545A]">
-                  <CreditCard className="w-4 h-4 text-[#07545A]" />
+                  <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#07545A] shrink-0" />
                   <span>7-Day Payout SLA</span>
                 </div>
                 <div className="flex items-center gap-1.5 font-semibold text-[#07545A]">
-                  <Truck className="w-4 h-4 text-[#E97868]" />
-                  <span>Plastic-Free Eco Packaging</span>
+                  <Truck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#E97868] shrink-0" />
+                  <span>Plastic-Free Transit</span>
                 </div>
               </div>
             </div>
@@ -684,7 +682,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                 onClick={() => onNavigate('foundingcreator-apply')}
                 className="w-full py-3.5 px-4 rounded-xl bg-[#F2A900] hover:bg-[#E69A16] text-[#173B3D] text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
               >
-                <span>Apply to Lock-in 70% Commercial Split</span>
+                <span>Apply & Lock-in 70% Share</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
