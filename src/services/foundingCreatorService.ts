@@ -1,5 +1,4 @@
 import { supabase } from '../supabase';
-import { storage } from '../firebase';
 import {
   foundingCreatorSyncService,
   uploadFileToStorageOrBase64,

@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
+import { generateSitemapEntries, buildSitemapXml, getSitemapStats } from './src/services/sitemapGenerator';
 
 dotenv.config();
 
@@ -17,7 +18,213 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  app.use(express.json({ limit: '25mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '25mb' }));
+
+  // ==============================================================================
+  // SEARCH ENGINE SITEMAP & DISCOVERABILITY ENDPOINTS
+  // ==============================================================================
+  app.get('/sitemap.xml', (req, res) => {
+    try {
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+      const host = req.get('host') || 'curowit.in';
+      const baseUrl = `${protocol}://${host}`;
+
+      const entries = generateSitemapEntries({ baseUrl });
+      const xml = buildSitemapXml(entries);
+
+      res.header('Content-Type', 'application/xml; charset=utf-8');
+      res.header('Cache-Control', 'public, max-age=3600, s-maxage=14400');
+      res.send(xml);
+    } catch (err: any) {
+      console.error('[Sitemap Server Error]', err);
+      res.status(500).send('<?xml version="1.0" encoding="UTF-8"?><error>Failed to generate sitemap</error>');
+    }
+  });
+
+  app.get('/robots.txt', (req, res) => {
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    const host = req.get('host') || 'curowit.in';
+    const baseUrl = `${protocol}://${host}`;
+
+    const robotsTxt = [
+      '# Curowit — Home of Creatives robots.txt',
+      'User-agent: *',
+      'Allow: /',
+      'Disallow: /admincurowit',
+      'Disallow: /admin',
+      'Disallow: /api/',
+      '',
+      `Sitemap: ${baseUrl}/sitemap.xml`,
+    ].join('\n');
+
+    res.header('Content-Type', 'text/plain; charset=utf-8');
+    res.send(robotsTxt);
+  });
+
+  app.get('/api/sitemap/stats', (req, res) => {
+    try {
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+      const host = req.get('host') || 'curowit.in';
+      const baseUrl = `${protocol}://${host}`;
+
+      const entries = generateSitemapEntries({ baseUrl });
+      const stats = getSitemapStats(entries);
+      res.json({
+        success: true,
+        stats,
+        sitemapUrl: `${baseUrl}/sitemap.xml`,
+        robotsUrl: `${baseUrl}/robots.txt`,
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: 'Failed to compute sitemap stats' });
+    }
+  });
+
+  // ==============================================================================
+  // CLOUDINARY MEDIA SERVICE CONFIG & ENDPOINTS
+  // ==============================================================================
+  let runtimeCloudinaryConfig = {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME || process.env.VITE_CLOUDINARY_CLOUD_NAME || 'dehmbsgqo',
+    apiKey: process.env.CLOUDINARY_API_KEY || process.env.VITE_CLOUDINARY_API_KEY || '242583393382769',
+    apiSecret: process.env.CLOUDINARY_API_SECRET || 'fWp-RcWGOCpO9sZY3MEvu43Pi3Q',
+    uploadPreset: process.env.CLOUDINARY_UPLOAD_PRESET || process.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'ml_default',
+  };
+
+  app.get('/api/cloudinary/config', (_req, res) => {
+    res.json({
+      cloudName: runtimeCloudinaryConfig.cloudName,
+      hasApiKey: Boolean(runtimeCloudinaryConfig.apiKey),
+      hasApiSecret: Boolean(runtimeCloudinaryConfig.apiSecret),
+      uploadPreset: runtimeCloudinaryConfig.uploadPreset,
+      isConfigured: Boolean(
+        runtimeCloudinaryConfig.cloudName &&
+          ((runtimeCloudinaryConfig.apiKey && runtimeCloudinaryConfig.apiSecret) || runtimeCloudinaryConfig.uploadPreset)
+      ),
+    });
+  });
+
+  app.post('/api/cloudinary/config', (req, res) => {
+    const { cloudName, apiKey, apiSecret, uploadPreset } = req.body || {};
+    if (cloudName) runtimeCloudinaryConfig.cloudName = String(cloudName).trim();
+    if (apiKey) runtimeCloudinaryConfig.apiKey = String(apiKey).trim();
+    if (apiSecret) runtimeCloudinaryConfig.apiSecret = String(apiSecret).trim();
+    if (uploadPreset) runtimeCloudinaryConfig.uploadPreset = String(uploadPreset).trim();
+    console.log(`[Cloudinary Config] Updated for cloudName: ${runtimeCloudinaryConfig.cloudName || '(empty)'}, hasKey: ${Boolean(runtimeCloudinaryConfig.apiKey)}`);
+    res.json({
+      success: true,
+      cloudName: runtimeCloudinaryConfig.cloudName,
+      hasApiKey: Boolean(runtimeCloudinaryConfig.apiKey),
+      hasApiSecret: Boolean(runtimeCloudinaryConfig.apiSecret),
+      uploadPreset: runtimeCloudinaryConfig.uploadPreset,
+      isConfigured: Boolean(
+        runtimeCloudinaryConfig.cloudName &&
+          ((runtimeCloudinaryConfig.apiKey && runtimeCloudinaryConfig.apiSecret) || runtimeCloudinaryConfig.uploadPreset)
+      ),
+    });
+  });
+
+  app.post('/api/cloudinary/upload', async (req, res) => {
+    try {
+      const {
+        file,
+        folder = 'curowit',
+        tags = [],
+        publicId,
+        cloudName: reqCloudName,
+        apiKey: reqApiKey,
+        apiSecret: reqApiSecret,
+        uploadPreset: reqPreset,
+      } = req.body || {};
+
+      if (!file) {
+        res.status(400).json({ error: 'Missing file content' });
+        return;
+      }
+
+      const cloudName = reqCloudName || runtimeCloudinaryConfig.cloudName;
+      const apiKey = reqApiKey || runtimeCloudinaryConfig.apiKey;
+      const apiSecret = reqApiSecret || runtimeCloudinaryConfig.apiSecret;
+      const uploadPreset = reqPreset || runtimeCloudinaryConfig.uploadPreset;
+
+      if (!cloudName) {
+        res.status(400).json({ error: 'Cloudinary Cloud Name is not configured.' });
+        return;
+      }
+
+      const timestamp = Math.round(Date.now() / 1000);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('timestamp', String(timestamp));
+
+      const paramsToSign: Record<string, string> = {
+        timestamp: String(timestamp),
+      };
+
+      if (folder) {
+        formData.append('folder', folder);
+        paramsToSign['folder'] = folder;
+      }
+
+      if (publicId) {
+        formData.append('public_id', publicId);
+        paramsToSign['public_id'] = publicId;
+      }
+
+      if (tags && (Array.isArray(tags) ? tags.length > 0 : Boolean(tags))) {
+        const tagStr = Array.isArray(tags) ? tags.join(',') : String(tags);
+        formData.append('tags', tagStr);
+        paramsToSign['tags'] = tagStr;
+      }
+
+      // If API key and Secret are provided, sign the payload using HMAC/SHA1
+      if (apiKey && apiSecret) {
+        formData.append('api_key', apiKey);
+        const sortedKeys = Object.keys(paramsToSign).sort();
+        const stringToSign = sortedKeys.map((k) => `${k}=${paramsToSign[k]}`).join('&');
+        const signature = crypto.createHash('sha1').update(stringToSign + apiSecret).digest('hex');
+        formData.append('signature', signature);
+      } else if (uploadPreset) {
+        formData.append('upload_preset', uploadPreset);
+      } else {
+        res.status(400).json({
+          error: 'Cloudinary credentials missing: please supply API Key & Secret or an Upload Preset',
+        });
+        return;
+      }
+
+      const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/image/upload`;
+      const response = await fetch(cloudinaryUrl, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('[Cloudinary Upload Error]', data);
+        res.status(response.status || 500).json({
+          error: data.error?.message || 'Cloudinary upload failed',
+          details: data,
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        url: data.secure_url || data.url,
+        secureUrl: data.secure_url || data.url,
+        publicId: data.public_id,
+        format: data.format,
+        width: data.width,
+        height: data.height,
+        bytes: data.bytes,
+      });
+    } catch (error: any) {
+      console.error('[Cloudinary Server Error]', error);
+      res.status(500).json({ error: error.message || 'Server error during Cloudinary upload' });
+    }
+  });
 
   // Health & public key config endpoint
   app.get('/api/razorpay/config', (_req, res) => {

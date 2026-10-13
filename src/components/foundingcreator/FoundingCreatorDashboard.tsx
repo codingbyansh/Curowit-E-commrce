@@ -28,6 +28,7 @@ import {
   Check,
   Edit2,
 } from 'lucide-react';
+import { useCloudinaryUpload } from '../../hooks/useCloudinaryUpload';
 import { foundingCreatorService } from '../../services/foundingCreatorService';
 import {
   foundingCreatorSyncService,
@@ -183,20 +184,22 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
     showToast('Document removed.');
   };
 
+  const { uploadFile: uploadCloudinaryAsset, isConfigured: isCloudinaryConfigured } = useCloudinaryUpload();
+
   const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0 || !creator) return;
 
     setIsUploadingProductImage(true);
     try {
       for (const file of Array.from(files)) {
-        const url = await foundingCreatorService.uploadProductImage(
-          file,
-          creator.id,
-          `temp-${Date.now()}`
-        );
+        const uploadResult = await uploadCloudinaryAsset(file, {
+          folder: `creator-products/${creator.id}`,
+        });
+        const url = uploadResult.secureUrl || uploadResult.url;
         setProductImages((prev) => [...prev, url]);
       }
+      showToast('Product photo uploaded via Cloudinary storage');
     } catch {
       showToast('Error uploading image');
     } finally {
@@ -995,9 +998,15 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
 
                 {/* Product Images Upload */}
                 <div className="space-y-2 pt-2 border-t border-[#07545A]/10">
-                  <label className="text-xs font-bold text-[#07545A] block">
-                    Product Imagery (High-Resolution Visuals)
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[#07545A] block">
+                      Product Imagery (High-Resolution Visuals)
+                    </label>
+                    <span className="text-[10px] font-bold text-sky-800 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200 flex items-center gap-1">
+                      <Sparkles className="w-2.5 h-2.5 text-sky-600" />
+                      Cloudinary Media Active
+                    </span>
+                  </div>
                   <div className="flex items-center gap-3 flex-wrap">
                     <input
                       type="file"
@@ -1708,8 +1717,9 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
                       <Upload className="w-4 h-4" />
                       <span>{isUploadingDoc ? 'Uploading...' : 'Upload Document'}</span>
                     </label>
-                    <span className="text-[11px] text-[#173B3D]/60">
-                      Secured with end-to-end cloud storage encryption
+                    <span className="text-[11px] text-[#173B3D]/70 flex items-center gap-1.5 font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
+                      Secured with Cloudinary Media Storage & CDN
                     </span>
                   </div>
                 </div>

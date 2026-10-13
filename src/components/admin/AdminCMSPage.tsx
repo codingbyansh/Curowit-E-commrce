@@ -96,9 +96,14 @@ import {
   Download,
   Mail,
   Phone,
+  Cloud,
+  FileCode,
 } from 'lucide-react';
 import { OrderManagement } from './OrderManagement';
 import { FoundingCreatorsAdminSection } from './FoundingCreatorsAdminSection';
+import { CloudinarySettingsCard } from './CloudinarySettingsCard';
+import { SitemapGeneratorCard } from './SitemapGeneratorCard';
+import { cloudinaryService } from '../../services/cloudinaryService';
 
 export { OrderManagement };
 
@@ -141,7 +146,7 @@ export const AdminCMSPage: React.FC = () => {
 
   // Tab State
   const [activeTab, setActiveTab] = useState<
-    'products' | 'orders' | 'creators' | 'founding-creators' | 'workshops' | 'stories' | 'banners'
+    'products' | 'orders' | 'creators' | 'founding-creators' | 'workshops' | 'stories' | 'banners' | 'cloudinary' | 'sitemap'
   >('products');
 
   // Search & Filter State
@@ -404,6 +409,30 @@ export const AdminCMSPage: React.FC = () => {
           >
             <ImageIcon className="w-4 h-4" />
             <span>Hero & Announcements</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('cloudinary')}
+            className={`py-3 px-3.5 text-xs font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'cloudinary'
+                ? 'border-[#F2A900] text-[#F2A900] bg-white/5'
+                : 'border-transparent text-[#FFF8EA]/75 hover:text-white'
+            }`}
+          >
+            <Cloud className="w-4 h-4 text-sky-400" />
+            <span>Cloudinary Media CDN</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('sitemap')}
+            className={`py-3 px-3.5 text-xs font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'sitemap'
+                ? 'border-[#F2A900] text-[#F2A900] bg-white/5'
+                : 'border-transparent text-[#FFF8EA]/75 hover:text-white'
+            }`}
+          >
+            <FileCode className="w-4 h-4 text-emerald-400" />
+            <span>SEO & Sitemap ({products.length + workshops.length + creators.length + stories.length + 7})</span>
           </button>
         </div>
       </header>
@@ -931,11 +960,12 @@ export const AdminCMSPage: React.FC = () => {
                               e.target.value = '';
                               if (file) {
                                 try {
-                                  const optimizedBase64 = await compressUploadedImage(file, 1600, 900);
+                                  const res = await cloudinaryService.uploadFile(file, { folder: 'curowit-banners' });
+                                  const uploadedUrl = res.secureUrl || res.url;
                                   const next = [...heroSlides];
-                                  next[idx] = { ...slide, image: optimizedBase64 };
+                                  next[idx] = { ...slide, image: uploadedUrl };
                                   updateHeroSlides(next);
-                                  showToast('Image Uploaded', `Slide ${idx + 1} updated`);
+                                  showToast('Banner Uploaded', `Slide ${idx + 1} updated via Cloudinary`);
                                 } catch {
                                   showToast('Upload Failed', 'Please select a valid image file', 'error');
                                 }
@@ -949,7 +979,7 @@ export const AdminCMSPage: React.FC = () => {
                       <div>
                         <label className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-[#07545A] hover:bg-[#064247] text-[#FFF8EA] text-xs font-bold rounded-xl cursor-pointer shadow-2xs transition-colors">
                           <Upload className="w-3.5 h-3.5 text-[#F2A900]" />
-                          <span>Upload Image from Device</span>
+                          <span>Upload Image via Cloudinary</span>
                           <input
                             type="file"
                             accept="image/*"
@@ -959,11 +989,12 @@ export const AdminCMSPage: React.FC = () => {
                               e.target.value = '';
                               if (file) {
                                 try {
-                                  const optimizedBase64 = await compressUploadedImage(file, 1600, 900);
+                                  const res = await cloudinaryService.uploadFile(file, { folder: 'curowit-banners' });
+                                  const uploadedUrl = res.secureUrl || res.url;
                                   const next = [...heroSlides];
-                                  next[idx] = { ...slide, image: optimizedBase64 };
+                                  next[idx] = { ...slide, image: uploadedUrl };
                                   updateHeroSlides(next);
-                                  showToast('Image Uploaded', `Slide ${idx + 1} updated`);
+                                  showToast('Banner Uploaded', `Slide ${idx + 1} updated via Cloudinary`);
                                 } catch {
                                   showToast('Upload Failed', 'Please select a valid image file', 'error');
                                 }
@@ -1096,6 +1127,20 @@ export const AdminCMSPage: React.FC = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* ========================================================
+            TAB 7: CLOUDINARY MEDIA CDN & CREDENTIALS
+            ======================================================== */}
+        {activeTab === 'cloudinary' && (
+          <CloudinarySettingsCard onToast={showToast} />
+        )}
+
+        {/* ========================================================
+            TAB 8: AUTOMATIC XML SITEMAP & SEO DISCOVERABILITY
+            ======================================================== */}
+        {activeTab === 'sitemap' && (
+          <SitemapGeneratorCard onToast={showToast} />
         )}
       </main>
 
@@ -1346,7 +1391,7 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
               <label className="font-bold text-[#07545A]">Product Image</label>
               <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#07545A] hover:text-[#064247] cursor-pointer bg-[#07545A]/5 px-2 py-0.5 rounded-lg border border-[#07545A]/15">
                 <Upload className="w-3 h-3 text-[#F2A900]" />
-                <span>Upload from Device</span>
+                <span>Upload to Cloudinary</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -1356,8 +1401,8 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
                     e.target.value = '';
                     if (file) {
                       try {
-                        const optimizedBase64 = await compressUploadedImage(file, 1200, 1200);
-                        setImage(optimizedBase64);
+                        const res = await cloudinaryService.uploadFile(file, { folder: 'curowit-products' });
+                        setImage(res.secureUrl || res.url);
                       } catch {}
                     }
                   }}
@@ -1581,7 +1626,28 @@ const CreatorEditModal: React.FC<CreatorEditModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="font-bold text-[#07545A] block mb-1">Avatar Photo URL</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="font-bold text-[#07545A]">Avatar Photo</label>
+              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#07545A] hover:text-[#064247] cursor-pointer bg-[#07545A]/5 px-2 py-0.5 rounded-lg border border-[#07545A]/15">
+                <Upload className="w-3 h-3 text-[#F2A900]" />
+                <span>Upload to Cloudinary</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (file) {
+                      try {
+                        const res = await cloudinaryService.uploadFile(file, { folder: 'curowit-creators' });
+                        setAvatar(res.secureUrl || res.url);
+                      } catch {}
+                    }
+                  }}
+                />
+              </label>
+            </div>
             <div className="flex gap-3 items-center">
               <img
                 src={avatar}
@@ -2480,7 +2546,28 @@ const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="font-bold text-[#07545A] block mb-1">Cover Image URL</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="font-bold text-[#07545A]">Cover Image</label>
+              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#07545A] hover:text-[#064247] cursor-pointer bg-[#07545A]/5 px-2 py-0.5 rounded-lg border border-[#07545A]/15">
+                <Upload className="w-3 h-3 text-[#F2A900]" />
+                <span>Upload to Cloudinary</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (file) {
+                      try {
+                        const res = await cloudinaryService.uploadFile(file, { folder: 'curowit-workshops' });
+                        setImage(res.secureUrl || res.url);
+                      } catch {}
+                    }
+                  }}
+                />
+              </label>
+            </div>
             <div className="flex gap-3 items-center">
               <img
                 src={image}
@@ -2715,7 +2802,28 @@ const StoryEditModal: React.FC<StoryEditModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="font-bold text-[#07545A] block mb-1">Cover Image URL</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="font-bold text-[#07545A]">Cover Image</label>
+              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#07545A] hover:text-[#064247] cursor-pointer bg-[#07545A]/5 px-2 py-0.5 rounded-lg border border-[#07545A]/15">
+                <Upload className="w-3 h-3 text-[#F2A900]" />
+                <span>Upload to Cloudinary</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (file) {
+                      try {
+                        const res = await cloudinaryService.uploadFile(file, { folder: 'curowit-stories' });
+                        setImage(res.secureUrl || res.url);
+                      } catch {}
+                    }
+                  }}
+                />
+              </label>
+            </div>
             <div className="flex gap-3 items-center">
               <img
                 src={image}

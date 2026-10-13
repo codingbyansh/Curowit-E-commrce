@@ -184,18 +184,18 @@ export const CreatorsListPage: React.FC = () => {
       theme="warm-paper"
       className="min-h-[calc(100vh-64px)] py-6 sm:py-10 pb-28 md:pb-16 select-none flex flex-col items-center justify-center overflow-hidden"
     >
-      {/* Top Drafting Matrix Header Banner */}
+      {/* Top Header Banner */}
       <div className="max-w-6xl w-full px-4 sm:px-6 lg:px-8 mb-6 sm:mb-8 text-center sm:text-left flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#07545A]/10 text-[#07545A] text-xs font-bold mb-2">
             <Sparkles className="w-3.5 h-3.5 text-[#F2A900]" />
-            <span className="font-mono uppercase tracking-wider text-[11px]">Craft Drafting Matrix · Verified Ateliers</span>
+            <span className="font-mono uppercase tracking-wider text-[11px]">Artisan Discovery · Verified Ateliers</span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-extrabold text-[#07545A] font-display tracking-tight">
             Meet Independent Creators
           </h1>
           <p className="text-xs sm:text-sm text-[#173B3D]/75 max-w-xl mt-1">
-            Click on cards to flip and inspect full artisan dossiers, studio tools, and handcrafted collections filling the drafting space.
+            Click on cards to flip and inspect full artisan dossiers, studio tools, and handcrafted collections.
           </p>
         </div>
 

@@ -1,6 +1,5 @@
 import { supabase } from '../supabase';
-import { storage } from '../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { cloudinaryService } from '../services/cloudinaryService';
 import {
   CreatorProfile,
   CreatorApplication,
@@ -120,26 +119,24 @@ class CreatorSyncEventEmitter {
 export const syncEventBus = new CreatorSyncEventEmitter();
 
 /**
- * Resilient file upload helper: Attempts Firebase Storage first, and seamlessly
- * falls back to a persistent Base64 Data URL so user files and images never expire or break.
+ * Reusable Cloudinary file upload helper: Uploads to Cloudinary (signed server API or direct REST),
+ * and seamlessly preserves the file if key config is pending or offline so user flows never break.
  */
 export async function uploadFileToStorageOrBase64(
   file: File,
   storagePath: string
 ): Promise<string> {
-  // 1. First attempt Firebase Storage
+  // 1. Attempt Cloudinary upload
   try {
-    const fileRef = ref(storage, storagePath);
-    const metadata = {
-      contentType: file.type || 'application/octet-stream',
-    };
-    const snapshot = await uploadBytes(fileRef, file, metadata);
-    const downloadUrl = await getDownloadURL(snapshot.ref);
-    if (downloadUrl && downloadUrl.startsWith('http')) {
-      return downloadUrl;
+    const cleanFolder = storagePath.split('/')[0] || 'curowit-creator';
+    const uploadRes = await cloudinaryService.uploadFile(file, {
+      folder: cleanFolder,
+    });
+    if (uploadRes && (uploadRes.secureUrl || uploadRes.url)) {
+      return uploadRes.secureUrl || uploadRes.url;
     }
-  } catch (storageErr) {
-    console.warn('Storage upload fallback to persistent Data URL:', storageErr);
+  } catch (cloudinaryErr) {
+    console.warn('Cloudinary upload fallback to persistent Data URL:', cloudinaryErr);
   }
 
   // 2. Resilient Base64 Data URL fallback: guaranteed to persist across refreshes, database sync, and sessions

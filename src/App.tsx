@@ -138,6 +138,20 @@ const DynamicMetadataManager: React.FC = () => {
         if (selectedCreator) {
           title = `${selectedCreator.name} - Curowit`;
           description = `Explore original handmade creations by ${selectedCreator.name} (${selectedCreator.specialty}) from ${selectedCreator.location} on Curowit.`;
+          jsonLd = {
+            '@context': 'https://schema.org',
+            '@type': 'Person',
+            name: selectedCreator.name,
+            description: selectedCreator.story || selectedCreator.bio,
+            jobTitle: selectedCreator.specialty,
+            image: selectedCreator.avatar.startsWith('http')
+              ? selectedCreator.avatar
+              : `${window.location.origin}${selectedCreator.avatar}`,
+            address: {
+              '@type': 'PostalAddress',
+              addressLocality: selectedCreator.location,
+            },
+          };
         } else {
           title = 'Maker Studio - Curowit';
           description = 'Discover independent artisan studios and their handmade collections on Curowit.';
@@ -148,12 +162,24 @@ const DynamicMetadataManager: React.FC = () => {
         title = 'Creators - Curowit';
         description =
           'Meet the verified independent makers, potters, fiber artists, and botanical chandlers behind every handmade piece on Curowit.';
+        jsonLd = {
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          name: 'Independent Creators & Ateliers',
+          description,
+        };
         break;
       }
       case 'workshops': {
         title = 'Workshops - Curowit';
         description =
           'Join interactive live online and studio craft workshops led by master Indian artisans. Learn crochet, botanical candle pouring, watercolor, and pottery.';
+        jsonLd = {
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          name: 'Master Artisan Craft Workshops',
+          description,
+        };
         break;
       }
       case 'stories': {
@@ -233,15 +259,25 @@ const DynamicMetadataManager: React.FC = () => {
 };
 
 const MainContent: React.FC = () => {
-  const { activeView, openAdminModal, navigateToProduct, setActiveView, selectedProduct } = useStore();
+  const {
+    activeView,
+    openAdminModal,
+    navigateToProduct,
+    navigateToCreator,
+    setActiveView,
+    setSelectedCategory,
+    selectedProduct,
+  } = useStore();
 
-  // Deep linking: parse ?product=..., ?workshop=..., ?view=..., and routes on mount
+  // Deep linking: parse ?product=..., ?creator=..., ?workshop=..., ?category=..., ?view=..., and routes on mount
   useEffect(() => {
     try {
       const pathname = window.location.pathname;
       const params = new URLSearchParams(window.location.search);
       const prodParam = params.get('product');
+      const creatorParam = params.get('creator');
       const wsParam = params.get('workshop');
+      const catParam = params.get('category');
       const viewParam = params.get('view');
 
       if (pathname.startsWith('/admincurowit')) {
@@ -256,8 +292,13 @@ const MainContent: React.FC = () => {
         setActiveView('track-order');
       } else if (prodParam) {
         navigateToProduct(prodParam);
+      } else if (creatorParam) {
+        navigateToCreator(creatorParam);
       } else if (wsParam) {
         setActiveView('workshops');
+      } else if (catParam) {
+        setSelectedCategory(catParam);
+        setActiveView('shop');
       } else if (viewParam === 'admin' || viewParam === 'admincurowit') {
         window.history.replaceState(null, '', '/admincurowit');
         setActiveView('admin');

@@ -14,6 +14,7 @@ import {
   Building2,
 } from 'lucide-react';
 import { foundingCreatorService } from '../../services/foundingCreatorService';
+import { useCloudinaryUpload } from '../../hooks/useCloudinaryUpload';
 import { CreatorType } from '../../types/foundingCreator';
 
 interface FoundingCreatorApplyProps {
@@ -94,6 +95,8 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
     }
   };
 
+  const { uploadFile: uploadCloudinaryFile } = useCloudinaryUpload();
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -109,13 +112,16 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
           continue;
         }
 
-        const url = await foundingCreatorService.uploadPortfolioFile(file, `draft-${Date.now()}`);
+        const res = await uploadCloudinaryFile(file, {
+          folder: 'creator-portfolios/applications',
+        });
+        const url = res.secureUrl || res.url;
         setUploadedFiles((prev) => [
           ...prev,
           {
             name: file.name,
             url,
-            size: file.size,
+            size: res.bytes || file.size,
             type: file.type,
           },
         ]);
@@ -715,13 +721,19 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
               {/* STEP 3: Portfolio & File Uploads */}
               {currentStep === 3 && (
                 <div className="space-y-5">
-                  <div>
-                    <h3 className="text-base font-bold text-[#07545A] font-display">
-                      Section C: Portfolio & Craft Verification
-                    </h3>
-                    <p className="text-xs text-[#173B3D]/70 mt-0.5">
-                      Upload high-resolution images of your finished pieces for atelier review.
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-bold text-[#07545A] font-display">
+                        Section C: Portfolio & Craft Verification
+                      </h3>
+                      <p className="text-xs text-[#173B3D]/70 mt-0.5">
+                        Upload high-resolution images of your finished pieces for atelier review.
+                      </p>
+                    </div>
+                    <span className="hidden sm:inline-flex text-[10px] font-bold text-sky-800 bg-sky-50 px-2.5 py-1 rounded-full border border-sky-200 items-center gap-1">
+                      <Sparkles className="w-2.5 h-2.5 text-sky-600" />
+                      Cloudinary Media Active
+                    </span>
                   </div>
 
                   {/* Upload Box */}
