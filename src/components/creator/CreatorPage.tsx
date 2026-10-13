@@ -53,8 +53,16 @@ export const CreatorPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Creator Banner & Bio Box */}
+        {/* Creator Banner & Bio Box with Architectural Craft Stitch Borders */}
         <div className="relative bg-[#FFF8EA]/95 backdrop-blur-xs rounded-3xl p-6 sm:p-8 border border-[#07545A]/20 shadow-sm mb-10 overflow-hidden">
+          {/* Decorative Corner Blueprint Markers */}
+          <div className="absolute top-2 left-2 text-[9px] font-mono text-[#173B3D]/30 select-none pointer-events-none">
+            + SPEC-01 · STUDIO VERIFIED
+          </div>
+          <div className="absolute top-2 right-2 text-[9px] font-mono text-[#173B3D]/30 select-none pointer-events-none">
+            70% ARTISAN SHARE
+          </div>
+
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-[#07545A]/15">
             <div className="flex items-center gap-4 sm:gap-6">
               <div className="relative">
@@ -120,19 +128,19 @@ export const CreatorPage: React.FC = () => {
                 {creator.story}
               </p>
 
-              {/* Artisan Highlights */}
-              <div className="mt-4 pt-3 border-t border-[#173B3D]/10 grid grid-cols-2 sm:grid-cols-3 gap-3 text-[11px] text-[#173B3D]/75">
-                <div className="bg-[#FFFDF7] p-2.5 rounded-xl border border-[#07545A]/10">
-                  <span className="text-[#687778] block text-[10px] uppercase font-bold">Craft Technique</span>
+              {/* Artisan Blueprint Details */}
+              <div className="mt-4 pt-3 border-t border-dashed border-[#173B3D]/20 grid grid-cols-2 sm:grid-cols-3 gap-3 text-[11px] text-[#173B3D]/75 font-mono">
+                <div>
+                  <span className="text-[#687778] block text-[10px]">CRAFT TECHNIQUE:</span>
                   <span className="font-semibold text-[#07545A]">Slow-Hand Crafted</span>
                 </div>
-                <div className="bg-[#FFFDF7] p-2.5 rounded-xl border border-[#07545A]/10">
-                  <span className="text-[#687778] block text-[10px] uppercase font-bold">Packaging</span>
+                <div>
+                  <span className="text-[#687778] block text-[10px]">PACKAGING:</span>
                   <span className="font-semibold text-[#3F704B]">100% Plastic-Free</span>
                 </div>
-                <div className="bg-[#FFFDF7] p-2.5 rounded-xl border border-[#07545A]/10">
-                  <span className="text-[#687778] block text-[10px] uppercase font-bold">Verification</span>
-                  <span className="font-semibold text-[#173B3D]">Verified Artisan</span>
+                <div>
+                  <span className="text-[#687778] block text-[10px]">VERIFICATION:</span>
+                  <span className="font-semibold text-[#173B3D]">Curowit Master Tier</span>
                 </div>
               </div>
             </div>

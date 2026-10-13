@@ -1,5 +1,6 @@
 import { supabase } from '../supabase';
-import { cloudinaryService } from '../services/cloudinaryService';
+import { storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
   CreatorProfile,
   CreatorApplication,
@@ -117,44 +118,6 @@ class CreatorSyncEventEmitter {
 }
 
 export const syncEventBus = new CreatorSyncEventEmitter();
-
-/**
- * Reusable Cloudinary file upload helper: Uploads to Cloudinary (signed server API or direct REST),
- * and seamlessly preserves the file if key config is pending or offline so user flows never break.
- */
-export async function uploadFileToStorageOrBase64(
-  file: File,
-  storagePath: string
-): Promise<string> {
-  // 1. Attempt Cloudinary upload
-  try {
-    const cleanFolder = storagePath.split('/')[0] || 'curowit-creator';
-    const uploadRes = await cloudinaryService.uploadFile(file, {
-      folder: cleanFolder,
-    });
-    if (uploadRes && (uploadRes.secureUrl || uploadRes.url)) {
-      return uploadRes.secureUrl || uploadRes.url;
-    }
-  } catch (cloudinaryErr) {
-    console.warn('Cloudinary upload fallback to persistent Data URL:', cloudinaryErr);
-  }
-
-  // 2. Resilient Base64 Data URL fallback: guaranteed to persist across refreshes, database sync, and sessions
-  return new Promise<string>((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === 'string') {
-        resolve(reader.result);
-      } else {
-        resolve(URL.createObjectURL(file));
-      }
-    };
-    reader.onerror = () => {
-      resolve(URL.createObjectURL(file));
-    };
-    reader.readAsDataURL(file);
-  });
-}
 
 // ==============================================================================
 // SERVICE LAYER: SUPABASE PERSISTENCE & REACTIVE SYNCHRONIZATION
@@ -564,6 +527,38 @@ class FoundingCreatorSyncService {
     return local || null;
   }
 
+  public async fetchAllApplications(): Promise<CreatorApplication[]> {
+    try {
+      const { data, error } = await supabase
+        .from('creator_applications')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && Array.isArray(data)) {
+        return data.map((row) => this.mapSupabaseRowToApplication(row));
+      }
+    } catch (err) {
+      console.warn('Supabase fetchAllApplications notice:', err);
+    }
+    return [];
+  }
+
+  public async fetchAllProfiles(): Promise<CreatorProfile[]> {
+    try {
+      const { data, error } = await supabase
+        .from('creator_profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && Array.isArray(data)) {
+        return data.map((row) => this.mapSupabaseRowToProfile(row));
+      }
+    } catch (err) {
+      console.warn('Supabase fetchAllProfiles notice:', err);
+    }
+    return [];
+  }
+
   public async updateApplicationStatus(
     applicationId: string,
     newStatus: ApplicationStatus,
@@ -747,7 +742,7 @@ class FoundingCreatorSyncService {
   // ============================================================================
 
   /**
-   * Upload file to Storage (Firebase with persistent Base64 fallback) & persist in database
+   * Upload file to Firebase Storage & persist metadata record in Supabase 'store_documents'
    */
   public async uploadAndPersistStoreDocument(
     creatorId: string,
@@ -756,11 +751,19 @@ class FoundingCreatorSyncService {
     metadata?: { applicationId?: string; notes?: string }
   ): Promise<StoreDocument> {
     const now = new Date().toISOString();
-    const sanitized = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const storagePath = `creator-store-documents/${creatorId}/${Date.now()}_${sanitized}`;
+    let downloadUrl = '';
 
-    // 1. Upload or persistent Base64 Data URL
-    const downloadUrl = await uploadFileToStorageOrBase64(file, storagePath);
+    // 1. Upload file binary
+    try {
+      const sanitized = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const storagePath = `creator-store-documents/${creatorId}/${Date.now()}_${sanitized}`;
+      const fileRef = ref(storage, storagePath);
+      const snapshot = await uploadBytes(fileRef, file);
+      downloadUrl = await getDownloadURL(snapshot.ref);
+    } catch (storageErr) {
+      console.warn('Storage upload fallback to object URL:', storageErr);
+      downloadUrl = URL.createObjectURL(file);
+    }
 
     // 2. Build StoreDocument model
     const docRecord: StoreDocument = {
@@ -796,76 +799,48 @@ class FoundingCreatorSyncService {
     // Notify listeners
     syncEventBus.notify('DOCUMENTS_UPDATED', doc);
 
-    // Sync to Supabase: support both 'creator_documents' and 'store_documents'
+    // Sync to Supabase 'store_documents'
     try {
-      const creatorDocPayload = {
+      const payload = {
         id: doc.id,
         creator_id: doc.creatorId,
+        application_id: doc.applicationId || null,
         document_type: doc.documentType,
-        title: doc.fileName || 'Artisan Document',
-        file_url: doc.fileUrl,
         file_name: doc.fileName,
+        file_url: doc.fileUrl,
         file_size: doc.fileSize || 0,
         mime_type: doc.mimeType || 'application/octet-stream',
-        verification_status: doc.verificationStatus === 'pending' ? 'pending_verification' : doc.verificationStatus,
+        verification_status: doc.verificationStatus,
+        rejection_reason: doc.rejectionReason || null,
         notes: doc.notes || null,
         uploaded_at: doc.uploadedAt,
+        updated_at: doc.updatedAt,
       };
 
-      const { error: creatorErr } = await supabase
-        .from('creator_documents')
-        .upsert(creatorDocPayload, { onConflict: 'id' });
+      const { error } = await supabase
+        .from('store_documents')
+        .upsert(payload, { onConflict: 'id' });
 
-      if (creatorErr) {
-        // Fallback to store_documents
-        await supabase
-          .from('store_documents')
-          .upsert(
-            {
-              id: doc.id,
-              creator_id: doc.creatorId,
-              application_id: doc.applicationId || null,
-              document_type: doc.documentType,
-              file_name: doc.fileName,
-              file_url: doc.fileUrl,
-              file_size: doc.fileSize || 0,
-              mime_type: doc.mimeType || 'application/octet-stream',
-              verification_status: doc.verificationStatus,
-              notes: doc.notes || null,
-              uploaded_at: doc.uploadedAt,
-              updated_at: doc.updatedAt,
-            },
-            { onConflict: 'id' }
-          );
+      if (error) {
+        console.warn('Supabase store_documents sync notice:', error.message);
       }
     } catch (err) {
-      console.warn('Document storage persistence notice:', err);
+      console.warn('Supabase store_documents exception:', err);
     }
 
     return doc;
   }
 
   public async fetchStoreDocuments(creatorId: string): Promise<StoreDocument[]> {
-    // Try Supabase fetch from creator_documents or store_documents
+    // Try Supabase fetch
     try {
-      let { data, error } = await supabase
-        .from('creator_documents')
+      const { data, error } = await supabase
+        .from('store_documents')
         .select('*')
         .eq('creator_id', creatorId)
         .order('uploaded_at', { ascending: false });
 
-      if (error || !data || data.length === 0) {
-        const fallback = await supabase
-          .from('store_documents')
-          .select('*')
-          .eq('creator_id', creatorId);
-        if (!fallback.error && fallback.data && fallback.data.length > 0) {
-          data = fallback.data;
-          error = null;
-        }
-      }
-
-      if (!error && Array.isArray(data) && data.length > 0) {
+      if (!error && Array.isArray(data)) {
         const mapped = data.map((row) => this.mapSupabaseRowToDocument(row));
         // Merge into local cache
         const local = this.getLocalDocuments().filter((d) => d.creatorId !== creatorId);
@@ -873,7 +848,7 @@ class FoundingCreatorSyncService {
         return mapped;
       }
     } catch (err) {
-      console.warn('Store documents fetch notice:', err);
+      console.warn('Supabase store_documents fetch notice:', err);
     }
 
     // Local fallback
@@ -887,10 +862,9 @@ class FoundingCreatorSyncService {
     syncEventBus.notify('DOCUMENTS_UPDATED', { deletedId: docId, creatorId });
 
     try {
-      await supabase.from('creator_documents').delete().eq('id', docId);
       await supabase.from('store_documents').delete().eq('id', docId);
     } catch (err) {
-      console.warn('Store documents delete notice:', err);
+      console.warn('Supabase store_documents delete notice:', err);
     }
 
     return true;
@@ -1040,7 +1014,7 @@ class FoundingCreatorSyncService {
       const [profilesRes, appsRes, docsRes, prodsRes] = await Promise.allSettled([
         supabase.from('creator_profiles').select('*').limit(100),
         supabase.from('creator_applications').select('*').limit(100),
-        supabase.from('creator_documents').select('*').limit(200),
+        supabase.from('store_documents').select('*').limit(200),
         supabase.from('creator_products').select('*').limit(200),
       ]);
 

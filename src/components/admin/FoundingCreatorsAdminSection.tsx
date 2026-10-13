@@ -19,8 +19,10 @@ import {
   Send,
   Download,
   Filter,
+  RefreshCw,
 } from 'lucide-react';
 import { foundingCreatorService } from '../../services/foundingCreatorService';
+import { syncEventBus } from '../../lib/foundingCreatorSync';
 import {
   CreatorProfile,
   CreatorApplication,
@@ -46,6 +48,10 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
   const [orders, setOrders] = useState<CreatorOrderItem[]>([]);
   const [payouts, setPayouts] = useState<CreatorPayout[]>([]);
 
+  // Syncing state
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncedTime, setLastSyncedTime] = useState<string>('');
+
   // Search & filter states
   const [appSearch, setAppSearch] = useState('');
   const [appFilter, setAppFilter] = useState('all');
@@ -66,16 +72,50 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
   // Selected Creator Profile Modal
   const [viewingCreator, setViewingCreator] = useState<CreatorProfile | null>(null);
 
-  const loadData = () => {
-    setApplications(foundingCreatorService.getAllApplications());
-    setProfiles(foundingCreatorService.getAllProfiles());
-    setProducts(foundingCreatorService.getAllProducts());
-    setOrders(foundingCreatorService.getAllOrderItems());
-    setPayouts(foundingCreatorService.getAllPayouts());
+  const loadData = async (manualToast = false) => {
+    try {
+      setIsSyncing(true);
+      const [syncedApps, syncedProfiles] = await Promise.all([
+        foundingCreatorService.fetchAllApplicationsAsync(),
+        foundingCreatorService.fetchAllProfilesAsync(),
+      ]);
+      setApplications(syncedApps);
+      setProfiles(syncedProfiles);
+      setProducts(foundingCreatorService.getAllProducts());
+      setOrders(foundingCreatorService.getAllOrderItems());
+      setPayouts(foundingCreatorService.getAllPayouts());
+      setLastSyncedTime(new Date().toLocaleTimeString());
+      if (manualToast) {
+        showToast('Database Synchronized', `Fetched ${syncedApps.length} applications from central database.`, 'success');
+      }
+    } catch (err) {
+      console.warn('Sync notice:', err);
+      setApplications(foundingCreatorService.getAllApplications());
+      setProfiles(foundingCreatorService.getAllProfiles());
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   useEffect(() => {
     loadData();
+
+    // Auto-poll database every 4 seconds so submissions in any tab/device appear immediately
+    const pollInterval = setInterval(() => {
+      loadData();
+    }, 4000);
+
+    // Also listen to reactive sync event bus
+    const unsubscribe = syncEventBus.subscribe((event) => {
+      if (event === 'APPLICATION_UPDATED' || event === 'PROFILE_UPDATED') {
+        loadData();
+      }
+    });
+
+    return () => {
+      clearInterval(pollInterval);
+      unsubscribe();
+    };
   }, []);
 
   // Filtered applications
@@ -93,29 +133,29 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
   });
 
   // Action handlers
-  const handleApproveApp = (appId: string) => {
+  const handleApproveApp = async (appId: string) => {
     const success = foundingCreatorService.approveApplication(appId, 'Curowit Admin', 'Approved via Admin CRM.');
     if (success) {
-      loadData();
+      await loadData();
       setSelectedApp(null);
       showToast('Creator Approved!', `Application ${appId} approved and creator account activated.`, 'success');
     }
   };
 
-  const handleConfirmReject = () => {
+  const handleConfirmReject = async () => {
     if (!rejectingAppId || !rejectionReason.trim()) return;
     foundingCreatorService.rejectApplication(rejectingAppId, rejectionReason.trim(), 'Curowit Admin');
-    loadData();
+    await loadData();
     setRejectingAppId(null);
     setRejectionReason('');
     setSelectedApp(null);
     showToast('Application Rejected', 'Applicant updated and rejection notice recorded.', 'info');
   };
 
-  const handleConfirmRequestInfo = () => {
+  const handleConfirmRequestInfo = async () => {
     if (!requestingInfoAppId || !infoRequestText.trim()) return;
     foundingCreatorService.requestMoreInformation(requestingInfoAppId, infoRequestText.trim());
-    loadData();
+    await loadData();
     setRequestingInfoAppId(null);
     setInfoRequestText('');
     setSelectedApp(null);
@@ -242,6 +282,18 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
           >
             Creator Orders ({orders.length})
           </button>
+
+          {/* Sync Button */}
+          <button
+            type="button"
+            onClick={() => loadData(true)}
+            disabled={isSyncing}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#07545A]/10 hover:bg-[#07545A]/20 text-[#07545A] transition-all cursor-pointer flex items-center gap-1.5 border border-[#07545A]/20"
+            title={lastSyncedTime ? `Last synced at ${lastSyncedTime}` : 'Sync with database and server'}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-emerald-700' : ''}`} />
+            <span>{isSyncing ? 'Syncing...' : 'Sync DB'}</span>
+          </button>
         </div>
       </div>
 
@@ -309,33 +361,42 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
               </div>
 
               <div className="divide-y divide-[#07545A]/10 text-xs">
-                {applications.slice(0, 3).map((app) => (
-                  <div key={app.id} className="py-2.5 flex items-center justify-between gap-3">
-                    <div>
-                      <span className="font-bold text-[#07545A] block">{app.applicantName}</span>
-                      <span className="text-[10px] text-[#687778]">
-                        {app.brandName ? `${app.brandName} · ` : ''}{app.city}, {app.state}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                        app.applicationStatus === 'approved'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : app.applicationStatus === 'pending_review'
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-stone-100 text-stone-700'
-                      }`}>
-                        {app.applicationStatus.replace('_', ' ')}
-                      </span>
-                      <button
-                        onClick={() => setSelectedApp(app)}
-                        className="px-2 py-1 bg-white text-[#07545A] rounded-lg border border-[#07545A]/20 font-bold hover:bg-[#07545A]/10"
-                      >
-                        Inspect
-                      </button>
-                    </div>
+                {applications.length === 0 ? (
+                  <div className="py-6 text-center text-[#173B3D]/70 space-y-1">
+                    <p className="font-semibold text-xs text-[#07545A]">No Applications in Queue</p>
+                    <p className="text-[11px] text-[#687778]">
+                      Default mock creators removed. Submissions via the Founding Creator form sync here automatically for review.
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  applications.slice(0, 3).map((app) => (
+                    <div key={app.id} className="py-2.5 flex items-center justify-between gap-3">
+                      <div>
+                        <span className="font-bold text-[#07545A] block">{app.applicantName}</span>
+                        <span className="text-[10px] text-[#687778]">
+                          {app.brandName ? `${app.brandName} · ` : ''}{app.city}, {app.state}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                          app.applicationStatus === 'approved'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : app.applicationStatus === 'pending_review'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-stone-100 text-stone-700'
+                        }`}>
+                          {app.applicationStatus.replace('_', ' ')}
+                        </span>
+                        <button
+                          onClick={() => setSelectedApp(app)}
+                          className="px-2 py-1 bg-white text-[#07545A] rounded-lg border border-[#07545A]/20 font-bold hover:bg-[#07545A]/10 cursor-pointer"
+                        >
+                          Inspect
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -430,56 +491,74 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#07545A]/10 bg-white">
-                {filteredApps.map((a) => (
-                  <tr key={a.id} className="hover:bg-[#FFF8EA]/30 transition-colors">
-                    <td className="p-3 font-mono font-bold text-[#07545A]">{a.applicationId}</td>
-                    <td className="p-3">
-                      <span className="font-bold text-[#173B3D] block">{a.applicantName}</span>
-                      {a.brandName && (
-                        <span className="text-[10px] text-[#687778]">{a.brandName}</span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      <span className="block text-[#173B3D]">{a.applicantEmail}</span>
-                      <span className="text-[10px] text-[#687778]">{a.city}, {a.state}</span>
-                    </td>
-                    <td className="p-3">
-                      <span className="text-[11px] font-medium">{a.categories.join(', ')}</span>
-                    </td>
-                    <td className="p-3">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                        a.applicationStatus === 'approved'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : a.applicationStatus === 'pending_review'
-                          ? 'bg-amber-100 text-amber-800'
-                          : a.applicationStatus === 'rejected'
-                          ? 'bg-rose-100 text-rose-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {a.applicationStatus.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="p-3 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => setSelectedApp(a)}
-                          className="px-2.5 py-1 bg-[#FFF8EA] text-[#07545A] hover:bg-[#07545A]/10 border border-[#07545A]/20 rounded-lg font-bold text-xs cursor-pointer"
-                        >
-                          Review Dossier
-                        </button>
-                        {a.applicationStatus !== 'approved' && (
-                          <button
-                            onClick={() => handleApproveApp(a.applicationId)}
-                            className="p-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg cursor-pointer"
-                            title="Approve Creator"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                {filteredApps.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-10 text-center text-[#173B3D]/70 bg-[#FFFDF7]">
+                      <div className="max-w-md mx-auto space-y-2">
+                        <Users className="w-8 h-8 text-[#07545A]/30 mx-auto" />
+                        <h4 className="font-bold text-sm text-[#07545A] font-display">
+                          {applications.length === 0 ? 'No Creator Applications Yet' : 'No Applications Match Filter'}
+                        </h4>
+                        <p className="text-xs text-[#173B3D]/70">
+                          {applications.length === 0
+                            ? 'Default demo creators have been removed. When an artisan fills out the Founding Creator form, their application will automatically sync here for approval.'
+                            : 'Try adjusting your search keywords or status filter.'}
+                        </p>
                       </div>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredApps.map((a) => (
+                    <tr key={a.id} className="hover:bg-[#FFF8EA]/30 transition-colors">
+                      <td className="p-3 font-mono font-bold text-[#07545A]">{a.applicationId}</td>
+                      <td className="p-3">
+                        <span className="font-bold text-[#173B3D] block">{a.applicantName}</span>
+                        {a.brandName && (
+                          <span className="text-[10px] text-[#687778]">{a.brandName}</span>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <span className="block text-[#173B3D]">{a.applicantEmail}</span>
+                        <span className="text-[10px] text-[#687778]">{a.city}, {a.state}</span>
+                      </td>
+                      <td className="p-3">
+                        <span className="text-[11px] font-medium">{a.categories.join(', ')}</span>
+                      </td>
+                      <td className="p-3">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                          a.applicationStatus === 'approved'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : a.applicationStatus === 'pending_review'
+                            ? 'bg-amber-100 text-amber-800'
+                            : a.applicationStatus === 'rejected'
+                            ? 'bg-rose-100 text-rose-800'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {a.applicationStatus.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="p-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => setSelectedApp(a)}
+                            className="px-2.5 py-1 bg-[#FFF8EA] text-[#07545A] hover:bg-[#07545A]/10 border border-[#07545A]/20 rounded-lg font-bold text-xs cursor-pointer"
+                          >
+                            Review Dossier
+                          </button>
+                          {a.applicationStatus !== 'approved' && (
+                            <button
+                              onClick={() => handleApproveApp(a.applicationId)}
+                              className="p-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg cursor-pointer"
+                              title="Approve Creator"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -489,7 +568,15 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
       {/* SUB-TAB 3: CREATOR DIRECTORY */}
       {subTab === 'directory' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {profiles.map((p) => (
+          {profiles.length === 0 ? (
+            <div className="col-span-full bg-[#FFF8EA] p-10 rounded-3xl border border-[#07545A]/15 text-center space-y-2">
+              <Users className="w-10 h-10 text-[#07545A]/30 mx-auto" />
+              <h4 className="font-bold text-[#07545A] text-sm font-display">No Approved Founding Creators Yet</h4>
+              <p className="text-xs text-[#173B3D]/70 max-w-md mx-auto">
+                Default creators removed. When you approve an applicant from the Applications queue, their creator profile will appear here in the directory.
+              </p>
+            </div>
+          ) : profiles.map((p) => (
             <div
               key={p.id}
               className="bg-[#FFF8EA] rounded-3xl border border-[#07545A]/15 p-5 shadow-2xs space-y-3 flex flex-col justify-between"
@@ -730,6 +817,46 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+              {/* Creator Type & Contact Card */}
+              <div className="p-3 bg-white border border-[#07545A]/15 rounded-2xl grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                <div>
+                  <span className="text-[10px] text-[#687778] uppercase font-bold block">Type</span>
+                  <span className="font-bold text-[#07545A]">{selectedApp.creatorType || 'Individual'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#687778] uppercase font-bold block">Pincode</span>
+                  <span className="font-bold text-[#07545A]">{selectedApp.pincode}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#687778] uppercase font-bold block">Craft Method</span>
+                  <span className="font-bold text-[#07545A] capitalize">{selectedApp.craftMethod || 'Handmade'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#687778] uppercase font-bold block">Lead Time</span>
+                  <span className="font-bold text-[#07545A]">{selectedApp.leadTime || '3-5 days'}</span>
+                </div>
+              </div>
+
+              {/* Craft Specifications Grid */}
+              <div className="p-3 bg-[#FFF8EA] border border-[#07545A]/15 rounded-2xl grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                <div>
+                  <span className="text-[10px] text-[#687778] uppercase font-bold block">Experience</span>
+                  <span className="font-bold text-[#173B3D]">{selectedApp.yearsExperience || 'Not specified'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#687778] uppercase font-bold block">Monthly Capacity</span>
+                  <span className="font-bold text-[#173B3D]">{selectedApp.monthlyCapacity || 'Not specified'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#687778] uppercase font-bold block">Custom Orders?</span>
+                  <span className="font-bold text-emerald-800">{selectedApp.acceptsCustomOrders ? 'Accepted ✓' : 'No'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#687778] uppercase font-bold block">Sells Elsewhere</span>
+                  <span className="font-bold text-[#173B3D] truncate">{selectedApp.sellsElsewhere || 'None'}</span>
+                </div>
+              </div>
+
               <div>
                 <span className="font-bold text-[#07545A] block mb-1">Craft Categories:</span>
                 <div className="flex flex-wrap gap-1.5">
@@ -742,18 +869,39 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
               </div>
 
               <div>
-                <span className="font-bold text-[#07545A] block mb-1">Artisan Bio:</span>
-                <p className="p-3 bg-white border rounded-xl text-[#173B3D]/80 leading-relaxed">
-                  {selectedApp.intro}
+                <span className="font-bold text-[#07545A] block mb-1">Artisan Bio / Introduction:</span>
+                <p className="p-3 bg-white border rounded-xl text-[#173B3D]/80 leading-relaxed whitespace-pre-wrap">
+                  {selectedApp.intro || 'No introduction provided.'}
                 </p>
               </div>
 
               <div>
-                <span className="font-bold text-[#07545A] block mb-1">Craft Work & Technique:</span>
-                <p className="p-3 bg-white border rounded-xl text-[#173B3D]/80 leading-relaxed">
+                <span className="font-bold text-[#07545A] block mb-1">Craft Work & Technique Description:</span>
+                <p className="p-3 bg-white border rounded-xl text-[#173B3D]/80 leading-relaxed whitespace-pre-wrap">
                   {selectedApp.craftDescription}
                 </p>
               </div>
+
+              {/* Social and Portfolio Web Links */}
+              {((selectedApp.portfolioLinks && selectedApp.portfolioLinks.length > 0)) && (
+                <div>
+                  <span className="font-bold text-[#07545A] block mb-1">Online Portfolios & Links:</span>
+                  <div className="space-y-1">
+                    {selectedApp.portfolioLinks.map((link, idx) => (
+                      <a
+                        key={idx}
+                        href={link.startsWith('http') ? link : `https://${link}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-[#07545A] hover:underline flex items-center gap-1 font-semibold"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>{link}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Portfolio Images preview */}
               {selectedApp.portfolioFiles.length > 0 && (
@@ -768,7 +916,8 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
                         href={f.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="rounded-xl overflow-hidden border h-24 block relative group"
+                        className="rounded-xl overflow-hidden border h-24 block relative group bg-stone-100"
+                        title={f.name}
                       >
                         <img src={f.url} alt={f.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                       </a>

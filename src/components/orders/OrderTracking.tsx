@@ -32,13 +32,6 @@ import {
   User,
   Phone,
   Home,
-  PackageCheck,
-  Palette,
-  Send,
-  Boxes,
-  FileCheck,
-  Navigation,
-  Compass,
 } from 'lucide-react';
 
 interface LogisticsMilestone {
@@ -151,7 +144,7 @@ export const OrderTracking: React.FC = () => {
           if (isMounted) {
             setSupabaseMilestones(fresh);
             setLastRefreshedAt(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-            showToast('Tracking Updated', `Live milestones refreshed for Order #${activeOrder.id}`);
+            showToast('Tracking Updated', `New milestone synced from Supabase for Order #${activeOrder.id}`);
           }
         }
       )
@@ -200,7 +193,7 @@ export const OrderTracking: React.FC = () => {
     if (found) {
       setActiveOrder(found);
       setTrackingOrderId(found.id);
-      showToast('Order Found', `Tracking Order #${found.id} status`);
+      showToast('Order Found', `Tracking Order #${found.id} from Supabase database`);
     } else {
       showToast(
         'Order Not Found',
@@ -224,12 +217,8 @@ export const OrderTracking: React.FC = () => {
         return 1;
       case 'Dispatched':
         return 2;
-      case 'In Transit':
-        return 3;
-      case 'Out for Delivery':
-        return 4;
       case 'Delivered':
-        return 5;
+        return 3;
       case 'Cancelled':
         return -1;
       default:
@@ -237,17 +226,7 @@ export const OrderTracking: React.FC = () => {
     }
   };
 
-  const rawStageIndex = getStageIndex(activeOrder?.status);
-  // When activeOrder has Dispatched status and tracking shows transit or dispatch, compute effective index
-  const stageIndex =
-    rawStageIndex === 2
-      ? supabaseMilestones.some((m) => m.status?.toLowerCase().includes('transit'))
-        ? 3
-        : 2
-      : rawStageIndex;
-
-  // Selected milestone for interactive timeline inspector
-  const [selectedMilestoneStep, setSelectedMilestoneStep] = useState<number | null>(null);
+  const stageIndex = getStageIndex(activeOrder?.status);
 
   // Logistics carrier & AWB
   const carrier = activeOrder?.courierPartner || 'Delhivery Eco Surface Logistics';
@@ -304,34 +283,25 @@ export const OrderTracking: React.FC = () => {
         description: 'Piece individually shaped, cured, and checked. Plastic-free eco kraft box & handwritten maker note prepared.',
       },
       {
-        title: `Consignment Dispatched — ${carrier}`,
+        title: `Handed to Courier — ${carrier}`,
         location: `Regional Logistics Hub, ${originCity}`,
-        date: stageIndex >= 2 ? 'Dispatched' : 'Pending',
+        date: stageIndex >= 2 ? 'In Transit' : 'Upcoming',
         time: stageIndex >= 2 ? '07:30 PM' : 'Est. Next 24 hrs',
         isCompleted: stageIndex >= 2,
         isCurrent: stageIndex === 2,
-        description: `Consignment manifest sealed with tamper-evident paper tape under AWB #${awbNumber}. Handed over to logistics carrier.`,
-      },
-      {
-        title: `In Highway & Hub Transit — Linehaul Route`,
-        location: `Central Sorting Facility, National Corridor`,
-        date: stageIndex >= 3 ? 'In Transit' : 'Upcoming',
-        time: stageIndex >= 3 ? '04:15 AM' : 'Est. Next 48 hrs',
-        isCompleted: stageIndex >= 3,
-        isCurrent: stageIndex === 3,
-        description: `Package departed gateway hub and traveling through surface transit network towards ${destCity}.`,
+        description: `Consignment manifest sealed with tamper-evident paper tape under AWB #${awbNumber}. In transit to ${destCity}.`,
       },
       {
         title: 'Out for Delivery & Doorstep Handover',
         location: `Local Delivery Facility, ${destCity}`,
-        date: stageIndex >= 4 ? (stageIndex >= 5 ? 'Delivered' : 'Today') : estimatedDelivery,
-        time: stageIndex >= 4 ? '02:18 PM' : '9:00 AM - 6:00 PM',
-        isCompleted: stageIndex >= 5,
-        isCurrent: stageIndex === 4,
+        date: stageIndex >= 3 ? 'Delivered' : estimatedDelivery,
+        time: stageIndex >= 3 ? '02:18 PM' : '9:00 AM - 6:00 PM',
+        isCompleted: stageIndex >= 3,
+        isCurrent: stageIndex === 3,
         description:
-          stageIndex >= 5
+          stageIndex >= 3
             ? `Successfully delivered to ${activeOrder.shippingAddress.fullName} with contactless verification.`
-            : `Package assigned to local delivery associate for safe doorstep handover.`,
+            : `Package will be assigned to a local delivery associate for safe doorstep delivery.`,
       },
     ];
   })();
@@ -350,14 +320,14 @@ export const OrderTracking: React.FC = () => {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#07545A]/10 text-[#07545A] text-xs font-bold mb-3">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <Truck className="w-3.5 h-3.5 text-[#F2A900]" />
-              <span>Real-Time Artisan Order Tracking</span>
+              <span>Supabase Real-Time Order Tracking</span>
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-extrabold text-[#07545A] font-display tracking-tight mb-2">
               Track Your Handcrafted Order
             </h1>
             <p className="text-xs sm:text-sm text-[#173B3D]/75 leading-relaxed mb-6">
-              Enter your Order ID to track every slow-crafted milestone in real-time. Includes live courier movement, artisan studio notes, and instant status updates.
+              Enter your Order ID to track every slow-crafted milestone synced in real-time from our Supabase database. Includes live courier movement, artisan studio notes, and instant status updates.
             </p>
 
             {/* Order Lookup Search Form */}
@@ -487,10 +457,10 @@ export const OrderTracking: React.FC = () => {
                       <span>{activeOrder.status}</span>
                     </span>
 
-                    {/* Live status badge */}
+                    {/* Supabase live badge */}
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                       <Radio className="w-2.5 h-2.5 text-emerald-600 animate-pulse" />
-                      <span>Live Status Active</span>
+                      <span>Supabase Synced</span>
                     </span>
                   </div>
 
@@ -523,158 +493,46 @@ export const OrderTracking: React.FC = () => {
                 </div>
               </div>
 
-              {/* ========================================================
-                  3-PILLAR LOGISTICS STATUS STRIP (DISPATCH, TRANSIT, DELIVERY)
-                  ======================================================== */}
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* 1. DISPATCH STATUS CARD */}
-                <div
-                  className={`p-4 rounded-2xl border transition-all ${
-                    stageIndex >= 2
-                      ? 'bg-blue-50/70 border-blue-200 text-blue-900 shadow-2xs'
-                      : stageIndex === 1
-                      ? 'bg-amber-50/70 border-amber-200 text-amber-900 shadow-2xs'
-                      : 'bg-white border-[#07545A]/10 text-[#173B3D]'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#687778] flex items-center gap-1.5">
-                      <PackageCheck className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Dispatch Status</span>
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide ${
-                        stageIndex >= 2
-                          ? 'bg-blue-600 text-white'
-                          : stageIndex === 1
-                          ? 'bg-amber-500 text-white'
-                          : 'bg-[#07545A]/15 text-[#07545A]'
-                      }`}
-                    >
-                      {stageIndex >= 2 ? 'Dispatched' : stageIndex === 1 ? 'In Crafting' : 'Confirmed'}
-                    </span>
-                  </div>
-
-                  <div className="text-xs space-y-1">
-                    <p className="font-bold text-[#07545A]">
-                      {stageIndex >= 2 ? 'Dispatched from Atelier Hub' : 'Artisan Crafting at Bench'}
-                    </p>
-                    <p className="text-[#687778] text-[11px] leading-relaxed">
-                      AWB #{awbNumber} · Tamper-evident kraft seal
-                    </p>
-                    <div className="pt-1 flex items-center gap-1 text-[11px] text-blue-700 font-semibold">
-                      <Boxes className="w-3 h-3" />
-                      <span>Biodegradable Eco Packaging</span>
-                    </div>
+              {/* Courier Partner & AWB Info Strip */}
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-2xl bg-white border border-[#07545A]/10 text-xs">
+                <div>
+                  <span className="text-[#687778] block text-[11px] mb-0.5">Courier Partner</span>
+                  <div className="font-bold text-[#07545A] flex items-center gap-1.5">
+                    <Truck className="w-3.5 h-3.5 text-[#F2A900]" />
+                    <span>{carrier}</span>
                   </div>
                 </div>
 
-                {/* 2. TRANSIT STATUS CARD */}
-                <div
-                  className={`p-4 rounded-2xl border transition-all ${
-                    stageIndex >= 3
-                      ? 'bg-teal-50/80 border-teal-200 text-teal-900 shadow-2xs'
-                      : stageIndex === 2
-                      ? 'bg-blue-50/60 border-blue-200 text-blue-900 shadow-2xs'
-                      : 'bg-white border-[#07545A]/10 text-[#173B3D]'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#687778] flex items-center gap-1.5">
-                      <Truck className="w-3.5 h-3.5 text-teal-600" />
-                      <span>Transit Status</span>
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide ${
-                        stageIndex >= 3
-                          ? 'bg-teal-600 text-white animate-pulse'
-                          : stageIndex === 2
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-[#07545A]/15 text-[#07545A]'
-                      }`}
+                <div>
+                  <span className="text-[#687778] block text-[11px] mb-0.5">Tracking AWB</span>
+                  <div className="font-mono font-bold text-[#173B3D] flex items-center gap-2">
+                    <span>{awbNumber}</span>
+                    <button
+                      onClick={() => handleCopy(awbNumber, 'Tracking AWB')}
+                      className="p-1 text-[#07545A]/50 hover:text-[#07545A] cursor-pointer"
+                      title="Copy AWB"
                     >
-                      {stageIndex >= 3 ? 'In Transit' : stageIndex === 2 ? 'Courier Handover' : 'Pending'}
-                    </span>
-                  </div>
-
-                  <div className="text-xs space-y-1">
-                    <p className="font-bold text-[#07545A]">
-                      {carrier}
-                    </p>
-                    <p className="text-[#687778] text-[11px] leading-relaxed">
-                      Linehaul surface transit towards {activeOrder.shippingAddress.city}
-                    </p>
-                    <div className="pt-1 flex items-center gap-1 text-[11px] text-teal-700 font-semibold">
-                      <Navigation className="w-3 h-3" />
-                      <span>Live Hub Routing Synced</span>
-                    </div>
+                      <Copy className="w-3 h-3" />
+                    </button>
                   </div>
                 </div>
 
-                {/* 3. DELIVERY STATUS CARD */}
-                <div
-                  className={`p-4 rounded-2xl border transition-all ${
-                    stageIndex >= 5
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900 shadow-2xs'
-                      : stageIndex === 4
-                      ? 'bg-amber-50 border-amber-200 text-amber-900 shadow-2xs'
-                      : 'bg-white border-[#07545A]/10 text-[#173B3D]'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#687778] flex items-center gap-1.5">
-                      <BadgeCheck className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Delivery Status</span>
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide ${
-                        stageIndex >= 5
-                          ? 'bg-emerald-600 text-white'
-                          : stageIndex === 4
-                          ? 'bg-amber-600 text-white animate-pulse'
-                          : 'bg-[#07545A]/15 text-[#07545A]'
-                      }`}
-                    >
-                      {stageIndex >= 5 ? 'Delivered' : stageIndex === 4 ? 'Out for Delivery' : 'Estimated'}
-                    </span>
-                  </div>
-
-                  <div className="text-xs space-y-1">
-                    <p className="font-bold text-[#07545A]">
-                      {stageIndex >= 5 ? 'Doorstep Handover Complete' : `ETA: ${estimatedDelivery}`}
-                    </p>
-                    <p className="text-[#687778] text-[11px] leading-relaxed truncate">
-                      To: {activeOrder.shippingAddress.fullName} ({activeOrder.shippingAddress.city})
-                    </p>
-                    <div className="pt-1 flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
-                      <Home className="w-3 h-3" />
-                      <span>Contactless Verification Protocol</span>
-                    </div>
+                <div>
+                  <span className="text-[#687778] block text-[11px] mb-0.5">Estimated Delivery</span>
+                  <div className="font-bold text-[#173B3D] flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-[#E97868]" />
+                    <span>{estimatedDelivery}</span>
                   </div>
                 </div>
               </div>
 
               {/* ========================================================
-                  ENHANCED VISUAL PROGRESS TIMELINE (STEP-BASED MILESTONES)
+                  STEPPER PROGRESS BAR
                   ======================================================== */}
               <div className="mt-8 pt-6 border-t border-[#07545A]/10">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
-                  <div>
-                    <h3 className="text-xs sm:text-sm font-black text-[#07545A] uppercase tracking-wider flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-[#F2A900]" />
-                      <span>Visual Progress Timeline · Step-Based Milestones</span>
-                    </h3>
-                    <p className="text-[11px] text-[#687778] mt-0.5">
-                      Click any milestone to inspect technical dispatch, courier transit, or doorstep delivery details
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="font-mono text-[11px] text-[#07545A] bg-[#07545A]/10 px-2.5 py-1 rounded-lg font-bold">
-                      Progress: {stageIndex >= 5 ? '100%' : `${Math.round((Math.max(0, stageIndex) / 5) * 100)}%`}
-                    </span>
-                  </div>
-                </div>
+                <h3 className="text-xs font-bold text-[#687778] uppercase tracking-wider mb-6">
+                  Artisan & Delivery Progress
+                </h3>
 
                 {activeOrder.status === 'Cancelled' ? (
                   <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-800 flex items-center gap-3">
@@ -685,216 +543,61 @@ export const OrderTracking: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <div>
-                    {/* Visual Milestones Track */}
-                    <div className="relative py-2">
-                      {/* Background Connector Track */}
-                      <div className="hidden lg:block absolute top-[28px] left-[5%] right-[5%] h-1.5 bg-[#07545A]/15 rounded-full z-0" />
+                  <div className="relative">
+                    {/* Stepper Line */}
+                    <div className="hidden sm:block absolute top-1/2 -translate-y-1/2 left-8 right-8 h-1 bg-[#07545A]/15 z-0" />
+                    <div
+                      className="hidden sm:block absolute top-1/2 -translate-y-1/2 left-8 h-1 bg-[#07545A] transition-all duration-700 z-0"
+                      style={{
+                        width: `${Math.max(0, Math.min(100, (stageIndex / 3) * 100))}%`,
+                      }}
+                    />
 
-                      {/* Animated Progress Fill Track */}
-                      <div
-                        className="hidden lg:block absolute top-[28px] left-[5%] h-1.5 bg-gradient-to-r from-[#07545A] via-[#0E7A85] to-[#F2A900] rounded-full transition-all duration-700 z-0"
-                        style={{
-                          width: `${Math.max(
-                            0,
-                            Math.min(90, (Math.max(0, stageIndex) / 5) * 90)
-                          )}%`,
-                        }}
-                      />
+                    {/* 4 Stages */}
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 relative z-10">
+                      {[
+                        { title: 'Confirmed', desc: 'Atelier Assigned', icon: CheckCircle2, idx: 0 },
+                        { title: 'Crafting', desc: 'Maker at Bench', icon: Clock, idx: 1 },
+                        { title: 'Dispatched', desc: 'In Courier Transit', icon: Truck, idx: 2 },
+                        { title: 'Delivered', desc: 'At Your Door', icon: BadgeCheck, idx: 3 },
+                      ].map((stg) => {
+                        const Icon = stg.icon;
+                        const isDone = stageIndex >= stg.idx;
+                        const isCurrent = stageIndex === stg.idx;
 
-                      {/* 6 Step-Based Milestones */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 relative z-10">
-                        {[
-                          {
-                            step: 1,
-                            title: 'Order Confirmed',
-                            category: 'Atelier Assigned',
-                            desc: 'Specifications queued',
-                            icon: FileCheck,
-                            idx: 0,
-                            phaseType: 'order',
-                          },
-                          {
-                            step: 2,
-                            title: 'Slow Crafting',
-                            category: 'Maker Bench',
-                            desc: 'Hand-shaped & cured',
-                            icon: Palette,
-                            idx: 1,
-                            phaseType: 'craft',
-                          },
-                          {
-                            step: 3,
-                            title: 'Dispatched',
-                            category: 'Dispatch Milestone',
-                            desc: `Sealed under AWB`,
-                            icon: PackageCheck,
-                            idx: 2,
-                            phaseType: 'dispatch',
-                          },
-                          {
-                            step: 4,
-                            title: 'In Transit',
-                            category: 'Transit Milestone',
-                            desc: 'Linehaul corridor',
-                            icon: Truck,
-                            idx: 3,
-                            phaseType: 'transit',
-                          },
-                          {
-                            step: 5,
-                            title: 'Out for Delivery',
-                            category: 'Local Courier',
-                            desc: 'Assigned to courier',
-                            icon: Send,
-                            idx: 4,
-                            phaseType: 'delivery',
-                          },
-                          {
-                            step: 6,
-                            title: 'Delivered',
-                            category: 'Delivery Milestone',
-                            desc: 'Doorstep handover',
-                            icon: BadgeCheck,
-                            idx: 5,
-                            phaseType: 'delivered',
-                          },
-                        ].map((milestone) => {
-                          const Icon = milestone.icon;
-                          const isDone = stageIndex >= milestone.idx;
-                          const isCurrent = stageIndex === milestone.idx;
-                          const isSelected = selectedMilestoneStep === milestone.step;
-
-                          return (
+                        return (
+                          <div
+                            key={stg.title}
+                            className={`flex sm:flex-col items-center sm:text-center gap-3 sm:gap-2 p-3 sm:p-0 rounded-2xl sm:rounded-none ${
+                              isCurrent ? 'bg-[#07545A]/5 sm:bg-transparent' : ''
+                            }`}
+                          >
                             <div
-                              key={milestone.title}
-                              onClick={() =>
-                                setSelectedMilestoneStep(
-                                  selectedMilestoneStep === milestone.step ? null : milestone.step
-                                )
-                              }
-                              className={`flex flex-col items-center text-center p-3 sm:p-3.5 rounded-2xl cursor-pointer transition-all border ${
-                                isSelected
-                                  ? 'bg-[#07545A]/10 border-[#07545A] shadow-md scale-102'
-                                  : isCurrent
-                                  ? 'bg-[#F2A900]/10 border-[#F2A900] shadow-xs'
-                                  : isDone
-                                  ? 'bg-white/80 border-[#07545A]/20 hover:bg-white'
-                                  : 'bg-white/40 border-[#07545A]/10 hover:bg-white/70'
-                              }`}
+                              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs transition-all shadow-xs shrink-0 ${
+                                isDone
+                                  ? 'bg-[#07545A] text-[#FFF8EA]'
+                                  : 'bg-white text-[#07545A]/40 border-2 border-[#07545A]/20'
+                              } ${isCurrent ? 'ring-4 ring-[#F2A900]/40 animate-pulse' : ''}`}
                             >
-                              {/* Milestone Node Icon Badge */}
-                              <div className="relative mb-2.5">
-                                <div
-                                  className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-xs transition-all shadow-sm ${
-                                    isCurrent
-                                      ? 'bg-gradient-to-tr from-[#07545A] to-[#0A6B74] text-[#F2A900] ring-4 ring-[#F2A900]/50 animate-pulse'
-                                      : isDone
-                                      ? 'bg-[#07545A] text-[#FFF8EA]'
-                                      : 'bg-white text-[#07545A]/40 border-2 border-[#07545A]/20'
-                                  }`}
-                                >
-                                  <Icon className="w-6 h-6" />
-                                </div>
+                              <Icon className="w-5 h-5" />
+                            </div>
 
-                                {/* Step Number Pill */}
-                                <span
-                                  className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black border ${
-                                    isDone
-                                      ? 'bg-[#F2A900] text-[#173B3D] border-white shadow-2xs'
-                                      : 'bg-[#07545A]/20 text-[#07545A] border-white'
-                                  }`}
-                                >
-                                  {milestone.step}
-                                </span>
-                              </div>
-
-                              {/* Title & Category */}
+                            <div className="text-left sm:text-center">
                               <span
-                                className={`block text-xs font-black leading-tight ${
+                                className={`block text-xs font-bold ${
                                   isDone ? 'text-[#07545A]' : 'text-[#687778]'
                                 }`}
                               >
-                                {milestone.title}
+                                {stg.title}
                               </span>
-
-                              <span
-                                className={`text-[10px] font-bold uppercase tracking-wider mt-1 px-1.5 py-0.5 rounded-md ${
-                                  milestone.phaseType === 'dispatch'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : milestone.phaseType === 'transit'
-                                    ? 'bg-teal-100 text-teal-800'
-                                    : milestone.phaseType === 'delivery' || milestone.phaseType === 'delivered'
-                                    ? 'bg-emerald-100 text-emerald-800'
-                                    : 'bg-[#07545A]/10 text-[#07545A]'
-                                }`}
-                              >
-                                {milestone.category}
+                              <span className="text-[10px] text-[#687778] block">
+                                {stg.desc}
                               </span>
-
-                              <span className="text-[10px] text-[#687778] mt-1 line-clamp-1">
-                                {milestone.desc}
-                              </span>
-
-                              {/* Status Tag */}
-                              <div className="mt-2">
-                                {isCurrent ? (
-                                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-[#F2A900] bg-[#07545A] px-2 py-0.5 rounded-full">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-[#F2A900] animate-ping" />
-                                    <span>Active</span>
-                                  </span>
-                                ) : isDone ? (
-                                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
-                                    <CheckCircle2 className="w-2.5 h-2.5" />
-                                    <span>Done</span>
-                                  </span>
-                                ) : (
-                                  <span className="text-[9px] font-medium text-[#687778]/70">
-                                    Upcoming
-                                  </span>
-                                )}
-                              </div>
                             </div>
-                          );
-                        })}
-                      </div>
+                          </div>
+                        );
+                      })}
                     </div>
-
-                    {/* Interactive Milestone Inspector Drawer (Shows when a step is clicked) */}
-                    {selectedMilestoneStep && (
-                      <div className="mt-4 p-4 rounded-2xl bg-white border border-[#07545A]/20 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fadeIn">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-[#07545A] text-[#F2A900] flex items-center justify-center font-black">
-                            #{selectedMilestoneStep}
-                          </div>
-                          <div>
-                            <h4 className="text-xs sm:text-sm font-bold text-[#07545A]">
-                              {selectedMilestoneStep === 1 && 'Step 1: Order Confirmed & Craft Allocation'}
-                              {selectedMilestoneStep === 2 && 'Step 2: Slow Handcrafting & Studio Bench'}
-                              {selectedMilestoneStep === 3 && 'Step 3: Dispatched & Consignment Sealed under AWB'}
-                              {selectedMilestoneStep === 4 && 'Step 4: Surface Courier Transit via National Corridor'}
-                              {selectedMilestoneStep === 5 && 'Step 5: Assigned to Local Delivery Hub & Out for Delivery'}
-                              {selectedMilestoneStep === 6 && 'Step 6: Verified Doorstep Delivery Completed'}
-                            </h4>
-                            <p className="text-[11px] text-[#687778]">
-                              {selectedMilestoneStep === 1 && `Order registered at Atelier with payment confirmed. Materials prepared.`}
-                              {selectedMilestoneStep === 2 && `Master artisan individually hand-crafting piece according to slow-craft standards.`}
-                              {selectedMilestoneStep === 3 && `Packed in plastic-free kraft box, sealed under AWB #${awbNumber}, handed to ${carrier}.`}
-                              {selectedMilestoneStep === 4 && `Surface linehaul movement between logistics hubs. Real-time GPS stream active.`}
-                              {selectedMilestoneStep === 5 && `Arrived at destination city (${activeOrder.shippingAddress.city}). Local dispatch associate scheduled.`}
-                              {selectedMilestoneStep === 6 && `Contactless handover with signature verification at destination address.`}
-                            </p>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => setSelectedMilestoneStep(null)}
-                          className="text-xs font-bold text-[#07545A] hover:underline cursor-pointer shrink-0"
-                        >
-                          Close Details
-                        </button>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -913,14 +616,14 @@ export const OrderTracking: React.FC = () => {
                         Detailed Activity Timeline
                       </h2>
                       <span className="text-[11px] text-[#687778]">
-                        Verified milestones updated continuously from artisan studio to delivery
+                        Data streamed directly from Supabase <code className="bg-[#07545A]/10 px-1.5 py-0.5 rounded text-[10px] text-[#07545A]">order_tracking</code> table
                       </span>
                     </div>
 
                     <div className="text-right">
                       {isLoadingTracking && (
                         <span className="text-[11px] text-[#07545A] font-bold animate-pulse">
-                          Updating...
+                          Syncing...
                         </span>
                       )}
                       {lastRefreshedAt && !isLoadingTracking && (
@@ -931,82 +634,40 @@ export const OrderTracking: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Milestones list with Lucide Icons and Status Category Badges */}
-                  <div className="space-y-6 relative before:absolute before:left-4 before:top-4 before:bottom-4 before:w-0.5 before:bg-[#07545A]/15">
-                    {displayMilestones.map((evt, idx) => {
-                      const lowerTitle = (evt.title || '').toLowerCase();
-                      const isDispatchEvt = lowerTitle.includes('dispatch') || lowerTitle.includes('handed');
-                      const isTransitEvt = lowerTitle.includes('transit') || lowerTitle.includes('highway') || lowerTitle.includes('corridor');
-                      const isDeliveryEvt = lowerTitle.includes('delivery') || lowerTitle.includes('doorstep');
-                      const isCraftEvt = lowerTitle.includes('craft') || lowerTitle.includes('atelier');
+                  {/* Milestones list */}
+                  <div className="space-y-6 relative before:absolute before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-[#07545A]/15">
+                    {displayMilestones.map((evt, idx) => (
+                      <div key={evt.id || idx} className="relative pl-9 flex flex-col gap-1">
+                        {/* Dot */}
+                        <div
+                          className={`absolute left-1.5 top-1 -translate-x-1/2 w-4 h-4 rounded-full border-2 transition-all ${
+                            evt.isCurrent
+                              ? 'bg-[#F2A900] border-[#07545A] ring-4 ring-[#F2A900]/30 animate-pulse'
+                              : evt.isCompleted
+                              ? 'bg-[#07545A] border-white'
+                              : 'bg-white border-[#07545A]/30'
+                          }`}
+                        />
 
-                      const MilestoneIcon = isDispatchEvt
-                        ? PackageCheck
-                        : isTransitEvt
-                        ? Truck
-                        : isDeliveryEvt
-                        ? BadgeCheck
-                        : isCraftEvt
-                        ? Palette
-                        : FileCheck;
-
-                      return (
-                        <div key={evt.id || idx} className="relative pl-11 flex flex-col gap-1">
-                          {/* Lucide Icon Node */}
-                          <div
-                            className={`absolute left-0 top-0.5 w-8 h-8 rounded-xl flex items-center justify-center border transition-all ${
-                              evt.isCurrent
-                                ? 'bg-[#07545A] text-[#F2A900] border-[#07545A] ring-4 ring-[#F2A900]/30 shadow-xs'
-                                : evt.isCompleted
-                                ? 'bg-white text-[#07545A] border-[#07545A]/30 shadow-2xs'
-                                : 'bg-white/60 text-[#687778]/50 border-gray-200'
-                            }`}
-                          >
-                            <MilestoneIcon className="w-4 h-4" />
-                          </div>
-
-                          <div className="flex flex-wrap items-baseline justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-xs sm:text-sm font-bold text-[#07545A]">
-                                {evt.title}
-                              </h4>
-                              <span
-                                className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
-                                  isDispatchEvt
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : isTransitEvt
-                                    ? 'bg-teal-100 text-teal-800'
-                                    : isDeliveryEvt
-                                    ? 'bg-emerald-100 text-emerald-800'
-                                    : 'bg-[#07545A]/10 text-[#07545A]'
-                                }`}
-                              >
-                                {isDispatchEvt
-                                  ? 'Dispatch'
-                                  : isTransitEvt
-                                  ? 'Transit'
-                                  : isDeliveryEvt
-                                  ? 'Delivery'
-                                  : 'Milestone'}
-                              </span>
-                            </div>
-
-                            <span className="text-[11px] text-[#687778] tabular-nums font-mono">
-                              {evt.date} · {evt.time}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 text-[11px] text-[#687778]">
-                            <MapPin className="w-3 h-3 text-[#07545A]/60 shrink-0" />
-                            <span>{evt.location}</span>
-                          </div>
-
-                          <p className="text-xs text-[#173B3D]/80 leading-relaxed mt-1 bg-white/70 p-3 rounded-xl border border-[#07545A]/8">
-                            {evt.description}
-                          </p>
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <h4 className="text-xs sm:text-sm font-bold text-[#07545A]">
+                            {evt.title}
+                          </h4>
+                          <span className="text-[11px] text-[#687778] tabular-nums">
+                            {evt.date} · {evt.time}
+                          </span>
                         </div>
-                      );
-                    })}
+
+                        <div className="flex items-center gap-1.5 text-[11px] text-[#687778]">
+                          <MapPin className="w-3 h-3 text-[#07545A]/60 shrink-0" />
+                          <span>{evt.location}</span>
+                        </div>
+
+                        <p className="text-xs text-[#173B3D]/80 leading-relaxed mt-1 bg-white/70 p-3 rounded-xl border border-[#07545A]/8">
+                          {evt.description}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </div>
 

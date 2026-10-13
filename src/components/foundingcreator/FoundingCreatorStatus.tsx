@@ -165,7 +165,7 @@ export const FoundingCreatorStatus: React.FC<FoundingCreatorStatusProps> = ({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="APP-FC-XXXXX or your email..."
-                className="w-full pl-9 pr-3 py-2.5 text-base sm:text-xs bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl outline-none focus:border-[#07545A]"
+                className="w-full pl-9 pr-3 py-2.5 text-xs bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl outline-none focus:border-[#07545A]"
               />
             </div>
             <button

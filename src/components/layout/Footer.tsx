@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useStore } from '../../context/StoreContext';
 import { CurowitLogo } from '../common/CurowitLogo';
-import { SitemapModal } from '../common/SitemapModal';
 import {
   ShieldCheck,
   Truck,
@@ -10,11 +9,11 @@ import {
   Instagram,
   Youtube,
   Twitter,
+  Lock,
 } from 'lucide-react';
 
 export const Footer: React.FC = () => {
-  const { setActiveView, setSelectedCategory, showToast } = useStore();
-  const [isSitemapModalOpen, setIsSitemapModalOpen] = useState(false);
+  const { setActiveView, setSelectedCategory, showToast, openAdminModal } = useStore();
 
   const handleNavClick = (view: any) => {
     setActiveView(view);
@@ -268,17 +267,6 @@ export const Footer: React.FC = () => {
                   Privacy & Terms
                 </button>
               </li>
-              <li>
-                <button
-                  onClick={() => setIsSitemapModalOpen(true)}
-                  className="hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
-                >
-                  <span>Sitemap & Index</span>
-                  <span className="text-[9px] bg-[#F2A900] text-[#07545A] font-extrabold px-1.5 py-0.2 rounded font-mono">
-                    XML
-                  </span>
-                </button>
-              </li>
             </ul>
           </div>
         </div>
@@ -286,37 +274,35 @@ export const Footer: React.FC = () => {
         {/* Bottom Copyright Strip with Full Visibility Clearance */}
         <div className="pt-6 mt-4 border-t border-[#FFF8EA]/15 flex flex-col sm:flex-row items-center justify-between text-xs text-[#FFF8EA] gap-3">
           <div className="text-center sm:text-left flex flex-col">
-            <div className="flex items-center justify-center sm:justify-start">
+            <div className="flex items-center justify-center sm:justify-start gap-2">
               <span className="font-bold text-sm text-[#FFF8EA] tracking-wide">
                 © {new Date().getFullYear()} CUROWIT · Home of Creatives. All rights reserved.
               </span>
+              {/* Hidden Admin Passkey Trigger on Footer */}
+              <button
+                onClick={() => {
+                  window.history.pushState(null, '', '/admincurowit');
+                  setActiveView('admin');
+                }}
+                className="opacity-25 hover:opacity-100 p-1 text-[#FFF8EA] hover:text-[#F2A900] transition-opacity cursor-pointer inline-flex items-center"
+                title="Owner CMS Access (/admincurowit)"
+                aria-label="Staff Passkey Portal"
+              >
+                <Lock className="w-3.5 h-3.5" />
+              </button>
             </div>
             <span className="text-[11px] text-[#F7EBD7]/70 mt-0.5 block">
               Empowering independent handmade artisans across India.
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsSitemapModalOpen(true)}
-              className="text-xs text-[#F7EBD7]/80 hover:text-white underline cursor-pointer mr-2"
-            >
-              HTML Directory
-            </button>
-            <div className="flex items-center gap-1.5 text-xs text-[#F7EBD7] bg-[#053A3F] px-4 py-1.5 rounded-full border border-[#FFF8EA]/15 shadow-2xs">
-              <span>Crafted with</span>
-              <Heart className="w-3.5 h-3.5 fill-[#E97868] text-[#E97868]" />
-              <span>for mindful homes everywhere</span>
-            </div>
+          <div className="flex items-center gap-1.5 text-xs text-[#F7EBD7] bg-[#053A3F] px-4 py-1.5 rounded-full border border-[#FFF8EA]/15 shadow-2xs">
+            <span>Crafted with</span>
+            <Heart className="w-3.5 h-3.5 fill-[#E97868] text-[#E97868]" />
+            <span>for mindful homes everywhere</span>
           </div>
         </div>
       </div>
-
-      {/* Visual Storefront Sitemap Modal */}
-      <SitemapModal
-        isOpen={isSitemapModalOpen}
-        onClose={() => setIsSitemapModalOpen(false)}
-      />
     </footer>
   );
 };

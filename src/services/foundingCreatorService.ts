@@ -1,10 +1,7 @@
 import { supabase } from '../supabase';
-import {
-  foundingCreatorSyncService,
-  uploadFileToStorageOrBase64,
-  StoreDocument,
-  StoreDocumentType,
-} from '../lib/foundingCreatorSync';
+import { storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { foundingCreatorSyncService, StoreDocument, StoreDocumentType } from '../lib/foundingCreatorSync';
 import {
   CreatorProfile,
   CreatorApplication,
@@ -31,430 +28,92 @@ const STORAGE_KEYS = {
   EARNINGS_LEDGER: 'curowit_fc_earnings_ledger_v1',
 };
 
-// Seed initial realistic Founding Creators and data if not present
-function initializeSeedData() {
+// Sets of demo IDs to ensure admin panel shows only real submitted creators
+const DEMO_APPLICATION_IDS = new Set([
+  'app-meera-sharma',
+  'app-aarav-patel',
+  'APP-FC-98421',
+  'APP-FC-10543',
+]);
+const DEMO_CREATOR_IDS = new Set([
+  'cr-meera-sharma',
+  'cr-aarav-patel',
+  'CR-FC-98421',
+  'CR-FC-10543',
+]);
+
+export function isDemoApplication(app: Partial<CreatorApplication>): boolean {
+  if (!app) return false;
+  if (app.id && DEMO_APPLICATION_IDS.has(app.id)) return true;
+  if (app.applicationId && DEMO_APPLICATION_IDS.has(app.applicationId)) return true;
+  if (app.creatorId && DEMO_CREATOR_IDS.has(app.creatorId)) return true;
+  if (
+    app.applicantEmail === 'meera@studiodhaga.in' ||
+    app.applicantEmail === 'aarav@mittifire.in'
+  ) {
+    return true;
+  }
+  return false;
+}
+
+export function isDemoCreator(creator: Partial<CreatorProfile>): boolean {
+  if (!creator) return false;
+  if (creator.id && DEMO_CREATOR_IDS.has(creator.id)) return true;
+  if (creator.creatorId && DEMO_CREATOR_IDS.has(creator.creatorId)) return true;
+  if (
+    creator.email === 'meera@studiodhaga.in' ||
+    creator.email === 'aarav@mittifire.in'
+  ) {
+    return true;
+  }
+  return false;
+}
+
+// Purge any preexisting default demo data from localStorage on load
+function purgePreexistingDemoData() {
   if (typeof window === 'undefined') return;
+  try {
+    const rawApps = localStorage.getItem(STORAGE_KEYS.APPLICATIONS);
+    if (rawApps) {
+      const parsed: CreatorApplication[] = JSON.parse(rawApps);
+      const filtered = parsed.filter((a) => !isDemoApplication(a));
+      localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(filtered));
+    }
 
-  const existingProfiles = localStorage.getItem(STORAGE_KEYS.PROFILES);
-  if (!existingProfiles) {
-    const defaultCreator: CreatorProfile = {
-      id: 'cr-meera-sharma',
-      userId: 'usr_meera_01',
-      creatorId: 'CR-FC-98421',
-      fullName: 'Meera Sharma',
-      displayName: 'Meera Sharma (Studio Dhaga)',
-      email: 'meera@studiodhaga.in',
-      phone: '+91 98201 44521',
-      city: 'Jaipur',
-      state: 'Rajasthan',
-      pincode: '302001',
-      country: 'India',
-      brandName: 'Studio Dhaga',
-      bio: 'Slow craft textile artisan specializing in vegetable-dyed crochet heirloom pieces and miniature botanical plushies.',
-      creatorType: 'Small Business',
-      avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
-      socialLinks: {
-        instagram: 'https://instagram.com/studiodhaga',
-        portfolio: 'https://studiodhaga.in',
-      },
-      categories: ['Crochet & yarn crafts', 'Bags & accessories', 'Personalized gifts'],
-      accountStatus: 'approved',
-      isVerified: true,
-      commissionPercentage: 30,
-      creatorSharePercentage: 70,
-      createdAt: '2026-09-01T10:00:00Z',
-      updatedAt: '2026-10-10T12:00:00Z',
-    };
+    const rawProfiles = localStorage.getItem(STORAGE_KEYS.PROFILES);
+    if (rawProfiles) {
+      const parsed: CreatorProfile[] = JSON.parse(rawProfiles);
+      const filtered = parsed.filter((p) => !isDemoCreator(p));
+      localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(filtered));
+    }
 
-    const pendingCreator: CreatorProfile = {
-      id: 'cr-aarav-patel',
-      userId: 'usr_aarav_02',
-      creatorId: 'CR-FC-10543',
-      fullName: 'Aarav Patel',
-      displayName: 'Aarav Patel (Mitti & Fire)',
-      email: 'aarav@mittifire.in',
-      phone: '+91 97234 88123',
-      city: 'Ahmedabad',
-      state: 'Gujarat',
-      pincode: '380015',
-      country: 'India',
-      brandName: 'Mitti & Fire Studio',
-      bio: 'Third-generation studio potter crafting reduction-fired stoneware teaware and textured terracotta planters.',
-      creatorType: 'Individual',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-      socialLinks: {
-        instagram: 'https://instagram.com/mittifire_ceramics',
-      },
-      categories: ['Paintings & artwork', 'Candles & home decor', 'DIY kits & creative supplies'],
-      accountStatus: 'pending',
-      isVerified: false,
-      commissionPercentage: 30,
-      creatorSharePercentage: 70,
-      createdAt: '2026-10-11T08:30:00Z',
-      updatedAt: '2026-10-11T08:30:00Z',
-    };
+    const rawProducts = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+    if (rawProducts) {
+      const parsed: CreatorProduct[] = JSON.parse(rawProducts);
+      const filtered = parsed.filter((p) => !DEMO_CREATOR_IDS.has(p.creatorId));
+      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(filtered));
+    }
 
-    localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify([defaultCreator, pendingCreator]));
+    const rawOrders = localStorage.getItem(STORAGE_KEYS.ORDER_ITEMS);
+    if (rawOrders) {
+      const parsed: CreatorOrderItem[] = JSON.parse(rawOrders);
+      const filtered = parsed.filter((o) => !DEMO_CREATOR_IDS.has(o.creatorId));
+      localStorage.setItem(STORAGE_KEYS.ORDER_ITEMS, JSON.stringify(filtered));
+    }
 
-    // Seed applications
-    const app1: CreatorApplication = {
-      id: 'app-meera-sharma',
-      applicationId: 'APP-FC-98421',
-      creatorId: 'cr-meera-sharma',
-      applicantName: 'Meera Sharma',
-      applicantEmail: 'meera@studiodhaga.in',
-      applicantPhone: '+91 98201 44521',
-      brandName: 'Studio Dhaga',
-      creatorType: 'Small Business',
-      city: 'Jaipur',
-      state: 'Rajasthan',
-      pincode: '302001',
-      categories: ['Crochet & yarn crafts', 'Bags & accessories'],
-      intro: 'Handmade textile atelier empowering 6 rural women crafters in Rajasthan.',
-      craftDescription: 'Organic unbleached cotton and vegetable-dyed wool crochet pieces made without synthetic acrylics.',
-      yearsExperience: '5+ years',
-      monthlyCapacity: '120-150 pieces',
-      craftMethod: 'handmade',
-      leadTime: '3-5 business days',
-      acceptsCustomOrders: true,
-      sellsElsewhere: 'Instagram DM boutique & Dastkar Craft Mela',
-      portfolioLinks: ['https://instagram.com/studiodhaga'],
-      portfolioFiles: [
-        {
-          name: 'crochet_heirloom_collection.jpg',
-          url: 'https://images.unsplash.com/photo-1607344645866-009c320b5ab8?auto=format&fit=crop&w=800&q=80',
-        },
-      ],
-      agreementAccepted: true,
-      termsVersion: 'v1.0-founding',
-      acceptedAt: '2026-09-01T10:00:00Z',
-      applicationStatus: 'approved',
-      reviewNotes: 'Exceptional craft pedigree. Verified natural dye sourcing. Approved under Founding Creator 70/30 terms.',
-      submittedAt: '2026-09-01T10:00:00Z',
-      reviewedAt: '2026-09-02T14:20:00Z',
-      reviewedBy: 'Curowit Curation Lead',
-      createdAt: '2026-09-01T10:00:00Z',
-      updatedAt: '2026-09-02T14:20:00Z',
-    };
-
-    const app2: CreatorApplication = {
-      id: 'app-aarav-patel',
-      applicationId: 'APP-FC-10543',
-      creatorId: 'cr-aarav-patel',
-      applicantName: 'Aarav Patel',
-      applicantEmail: 'aarav@mittifire.in',
-      applicantPhone: '+91 97234 88123',
-      brandName: 'Mitti & Fire Studio',
-      creatorType: 'Individual',
-      city: 'Ahmedabad',
-      state: 'Gujarat',
-      pincode: '380015',
-      categories: ['Candles & home decor', 'Paintings & artwork'],
-      intro: 'Wheel-thrown artisanal ceramics glazed with ash and iron oxides.',
-      craftDescription: 'High-fire stoneware fired to 1250°C. Food-safe, microwave-safe, dishwasher-safe.',
-      yearsExperience: '3 years',
-      monthlyCapacity: '40-60 pieces',
-      craftMethod: 'handmade',
-      leadTime: '5-7 business days',
-      acceptsCustomOrders: true,
-      sellsElsewhere: 'Local Sunday pop-up stalls',
-      portfolioLinks: ['https://instagram.com/mittifire_ceramics'],
-      portfolioFiles: [
-        {
-          name: 'stoneware_tea_set.jpg',
-          url: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80',
-        },
-      ],
-      agreementAccepted: true,
-      termsVersion: 'v1.0-founding',
-      acceptedAt: '2026-10-11T08:30:00Z',
-      applicationStatus: 'pending_review',
-      reviewNotes: 'Pending studio video review and packaging test sample.',
-      submittedAt: '2026-10-11T08:30:00Z',
-      createdAt: '2026-10-11T08:30:00Z',
-      updatedAt: '2026-10-11T08:30:00Z',
-    };
-
-    localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify([app1, app2]));
-
-    // Seed products
-    const prod1: CreatorProduct = {
-      id: 'cp-heirloom-bunny',
-      creatorId: 'cr-meera-sharma',
-      creatorName: 'Meera Sharma',
-      creatorBrand: 'Studio Dhaga',
-      productId: 'prod-fc-crochet-bunny',
-      title: 'Heirloom Organic Cotton Crochet Sleepy Bunny',
-      description:
-        'Lovingly handcrafted using 100% GOTS certified unbleached organic cotton yarn. Embroidered eyes with zero plastic beads, making it completely safe for newborns. Stuffed with hypoallergenic organic kapok fibers.',
-      category: 'Crochet & yarn crafts',
-      subcategory: 'Plushies & Toys',
-      price: 1850,
-      compareAtPrice: 2200,
-      inventoryQuantity: 8,
-      sku: 'DHG-BNY-01',
-      dimensions: '28 cm height x 12 cm width',
-      materials: 'GOTS Organic Cotton Yarn, Kapok Fiber Stuffing',
-      isHandmade: true,
-      isCustomizable: true,
-      customizationOptions: 'Embroidered baby name initials on bunny ear (+₹200)',
-      preparationDays: 3,
-      shippingWeightGrams: 280,
-      returnPolicy: '7-day replacement for transit damage',
-      careInstructions: 'Gentle hand wash in lukewarm water with mild liquid soap. Air dry flat.',
-      images: [
-        {
-          id: 'img-bunny-1',
-          productId: 'prod-fc-crochet-bunny',
-          storagePath: 'creator-products/cr-meera-sharma/prod-fc-crochet-bunny/front.jpg',
-          publicUrl: 'https://images.unsplash.com/photo-1607344645866-009c320b5ab8?auto=format&fit=crop&w=800&q=80',
-          sortOrder: 0,
-          isPrimary: true,
-        },
-      ],
-      status: 'published',
-      submittedAt: '2026-09-05T12:00:00Z',
-      approvedAt: '2026-09-06T15:00:00Z',
-      publishedAt: '2026-09-06T15:00:00Z',
-      createdAt: '2026-09-05T12:00:00Z',
-      updatedAt: '2026-09-06T15:00:00Z',
-    };
-
-    const prod2: CreatorProduct = {
-      id: 'cp-macrame-tote',
-      creatorId: 'cr-meera-sharma',
-      creatorName: 'Meera Sharma',
-      creatorBrand: 'Studio Dhaga',
-      productId: 'prod-fc-macrame-tote',
-      title: 'Botanical Plant-Dyed Macrame Market Tote',
-      description:
-        'Sturdy knot-work market tote dyed with indigo and marigold petals. Reinforced wooden handle with inner natural canvas liner and brass magnetic closure.',
-      category: 'Bags & accessories',
-      subcategory: 'Handbags & Totes',
-      price: 2450,
-      compareAtPrice: 2900,
-      inventoryQuantity: 5,
-      sku: 'DHG-BAG-02',
-      dimensions: '38 cm x 34 cm x 10 cm',
-      materials: 'Natural Cotton Cord, Mango Wood, Brass Snaps',
-      isHandmade: true,
-      isCustomizable: false,
-      preparationDays: 4,
-      shippingWeightGrams: 450,
-      returnPolicy: '7-day replacement for transit damage',
-      careInstructions: 'Spot clean with damp cloth.',
-      images: [
-        {
-          id: 'img-tote-1',
-          productId: 'prod-fc-macrame-tote',
-          storagePath: 'creator-products/cr-meera-sharma/prod-fc-macrame-tote/front.jpg',
-          publicUrl: 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80',
-          sortOrder: 0,
-          isPrimary: true,
-        },
-      ],
-      status: 'published',
-      submittedAt: '2026-09-10T09:00:00Z',
-      approvedAt: '2026-09-11T11:00:00Z',
-      publishedAt: '2026-09-11T11:00:00Z',
-      createdAt: '2026-09-10T09:00:00Z',
-      updatedAt: '2026-09-11T11:00:00Z',
-    };
-
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify([prod1, prod2]));
-
-    // Seed Order Items
-    const orderItem1: CreatorOrderItem = {
-      id: 'coi-1001',
-      orderId: 'ORD-9421',
-      orderItemId: 'item-01',
-      creatorId: 'cr-meera-sharma',
-      productId: 'prod-fc-crochet-bunny',
-      productTitle: 'Heirloom Organic Cotton Crochet Sleepy Bunny',
-      productImage: 'https://images.unsplash.com/photo-1607344645866-009c320b5ab8?auto=format&fit=crop&w=800&q=80',
-      quantity: 1,
-      itemPrice: 1850,
-      itemSubtotal: 1850,
-      commissionableBase: 1850,
-      creatorShare: 1295, // 70% of 1850
-      platformCommission: 555, // 30% of 1850
-      fulfilmentStatus: 'Delivered',
-      dispatchDeadline: '2026-09-24T18:00:00Z',
-      customerCity: 'Bengaluru',
-      customerPincode: '560038',
-      deliveredAt: '2026-09-27T14:30:00Z',
-      payoutEligibleAt: '2026-10-04T14:30:00Z', // 7 days after delivery
-      payoutStatus: 'paid',
-      payoutId: 'PAY-FC-00192',
-      trackingNumber: 'DLV-9421-KA',
-      courierPartner: 'Delhivery Surface Express',
-      createdAt: '2026-09-20T10:15:00Z',
-      updatedAt: '2026-10-05T16:00:00Z',
-    };
-
-    const orderItem2: CreatorOrderItem = {
-      id: 'coi-1002',
-      orderId: 'ORD-9856',
-      orderItemId: 'item-02',
-      creatorId: 'cr-meera-sharma',
-      productId: 'prod-fc-macrame-tote',
-      productTitle: 'Botanical Plant-Dyed Macrame Market Tote',
-      productImage: 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80',
-      quantity: 1,
-      itemPrice: 2450,
-      itemSubtotal: 2450,
-      commissionableBase: 2450,
-      creatorShare: 1715, // 70% of 2450
-      platformCommission: 735, // 30% of 2450
-      fulfilmentStatus: 'Delivered',
-      dispatchDeadline: '2026-10-02T18:00:00Z',
-      customerCity: 'Mumbai',
-      customerPincode: '400050',
-      deliveredAt: '2026-10-04T16:00:00Z',
-      payoutEligibleAt: '2026-10-11T16:00:00Z', // 7 days after delivery -> ELIGIBLE NOW!
-      payoutStatus: 'eligible',
-      trackingNumber: 'DLV-9856-MH',
-      courierPartner: 'Delhivery Surface Express',
-      createdAt: '2026-09-29T11:45:00Z',
-      updatedAt: '2026-10-11T16:00:00Z',
-    };
-
-    const orderItem3: CreatorOrderItem = {
-      id: 'coi-1003',
-      orderId: 'ORD-10142',
-      orderItemId: 'item-03',
-      creatorId: 'cr-meera-sharma',
-      productId: 'prod-fc-crochet-bunny',
-      productTitle: 'Heirloom Organic Cotton Crochet Sleepy Bunny',
-      productImage: 'https://images.unsplash.com/photo-1607344645866-009c320b5ab8?auto=format&fit=crop&w=800&q=80',
-      quantity: 2,
-      itemPrice: 1850,
-      itemSubtotal: 3700,
-      commissionableBase: 3700,
-      creatorShare: 2590, // 70% of 3700
-      platformCommission: 1110, // 30% of 3700
-      fulfilmentStatus: 'In Transit',
-      dispatchDeadline: '2026-10-12T18:00:00Z',
-      customerCity: 'Pune',
-      customerPincode: '411004',
-      payoutStatus: 'pending',
-      trackingNumber: 'DLV-10142-PN',
-      courierPartner: 'Delhivery Surface Express',
-      createdAt: '2026-10-09T09:20:00Z',
-      updatedAt: '2026-10-11T10:00:00Z',
-    };
-
-    localStorage.setItem(STORAGE_KEYS.ORDER_ITEMS, JSON.stringify([orderItem1, orderItem2, orderItem3]));
-
-    // Seed Payouts
-    const payout1: CreatorPayout = {
-      id: 'pay-001',
-      payoutId: 'PAY-FC-00192',
-      creatorId: 'cr-meera-sharma',
-      creatorName: 'Meera Sharma',
-      payoutAmount: 1295,
-      currency: 'INR',
-      payoutMethodType: 'UPI',
-      payoutDestination: 'UPI: meera@okhdfcbank',
-      payoutStatus: 'paid',
-      adminId: 'admin-lead-curowit',
-      transactionReference: 'UTR-HDFC-9948210385',
-      requestedAt: '2026-10-04T15:00:00Z',
-      approvedAt: '2026-10-05T10:00:00Z',
-      paidAt: '2026-10-05T14:30:00Z',
-      createdAt: '2026-10-04T15:00:00Z',
-      updatedAt: '2026-10-05T14:30:00Z',
-    };
-
-    localStorage.setItem(STORAGE_KEYS.PAYOUTS, JSON.stringify([payout1]));
-
-    // Seed Payment Methods
-    const paymentMethod: CreatorPaymentMethod = {
-      id: 'pm-meera-01',
-      creatorId: 'cr-meera-sharma',
-      methodType: 'UPI',
-      upiId: 'meera@okhdfcbank',
-      accountHolderName: 'Meera Sharma',
-      bankName: 'HDFC Bank Ltd',
-      maskedAccountNumber: '•••• •••• 4821',
-      ifscCode: 'HDFC0001234',
-      verificationStatus: 'verified',
-      isDefault: true,
-      createdAt: '2026-09-02T10:00:00Z',
-      updatedAt: '2026-09-02T10:00:00Z',
-    };
-
-    localStorage.setItem(STORAGE_KEYS.PAYMENT_METHODS, JSON.stringify([paymentMethod]));
-
-    // Seed Notifications
-    const notifs: CreatorNotification[] = [
-      {
-        id: 'notif-1',
-        creatorId: 'cr-meera-sharma',
-        type: 'payout_eligible',
-        title: 'Payout Balance Ready: ₹1,715',
-        message: 'Order #ORD-9856 has surpassed the 7-day post-delivery inspection window and is now eligible for withdrawal.',
-        isRead: false,
-        createdAt: '2026-10-11T16:00:00Z',
-      },
-      {
-        id: 'notif-2',
-        creatorId: 'cr-meera-sharma',
-        type: 'order_assigned',
-        title: 'New Order Received: #ORD-10142',
-        message: '2x Heirloom Organic Cotton Crochet Sleepy Bunny ordered. Please prepare eco-packaging by dispatch deadline.',
-        isRead: true,
-        createdAt: '2026-10-09T09:20:00Z',
-      },
-      {
-        id: 'notif-3',
-        creatorId: 'cr-meera-sharma',
-        type: 'payout_paid',
-        title: 'Payout Transferred: ₹1,295',
-        message: 'Settlement for #ORD-9421 transferred via UPI to meera@okhdfcbank (Ref: UTR-HDFC-9948210385).',
-        isRead: true,
-        createdAt: '2026-10-05T14:30:00Z',
-      },
-    ];
-
-    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifs));
-
-    // Seed Support Tickets
-    const ticket1: CreatorSupportTicket = {
-      id: 'tick-01',
-      ticketId: 'TKT-FC-771',
-      creatorId: 'cr-meera-sharma',
-      subject: 'Custom packaging paper tape replenishment',
-      category: 'shipping',
-      priority: 'medium',
-      status: 'resolved',
-      description: 'We are running low on the branded water-activated craft paper tape for our next 20 boxes.',
-      messages: [
-        {
-          id: 'msg-1',
-          senderType: 'creator',
-          senderName: 'Meera Sharma',
-          message: 'Can the Curowit atelier courier an additional bundle of 50m paper tape to our Jaipur studio?',
-          createdAt: '2026-10-01T11:00:00Z',
-        },
-        {
-          id: 'msg-2',
-          senderType: 'admin',
-          senderName: 'Curowit Logistics Support',
-          message: 'Shipped via Bluedart tracking BD-8821. Will arrive tomorrow before noon.',
-          createdAt: '2026-10-01T15:30:00Z',
-        },
-      ],
-      createdAt: '2026-10-01T11:00:00Z',
-      updatedAt: '2026-10-02T10:00:00Z',
-    };
-
-    localStorage.setItem(STORAGE_KEYS.SUPPORT_TICKETS, JSON.stringify([ticket1]));
+    const rawPayouts = localStorage.getItem(STORAGE_KEYS.PAYOUTS);
+    if (rawPayouts) {
+      const parsed: CreatorPayout[] = JSON.parse(rawPayouts);
+      const filtered = parsed.filter((p) => !DEMO_CREATOR_IDS.has(p.creatorId));
+      localStorage.setItem(STORAGE_KEYS.PAYOUTS, JSON.stringify(filtered));
+    }
+  } catch (err) {
+    console.warn('Purge notice:', err);
   }
 }
 
-// Call seed once on load
-initializeSeedData();
+// Run purge once on startup
+purgePreexistingDemoData();
 
 // ==============================================================================
 // SERVICE IMPLEMENTATION WITH SUPABASE & LOCAL RESILIENCE
@@ -579,7 +238,45 @@ export const foundingCreatorService = {
     apps.unshift(newApplication);
     localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
 
-    // Synchronize to Supabase database & reactive event bus via service layer
+    // 1. Synchronize to Central Server Storage (ensures any device or browser sees it in Admin CMS)
+    try {
+      await fetch('/api/founding-creator/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newApplication,
+          ...newCreator,
+          fullName: newApplication.applicantName,
+          displayName: newCreator.displayName,
+          email: newApplication.applicantEmail,
+          phone: newApplication.applicantPhone,
+          city: newApplication.city,
+          state: newApplication.state,
+          pincode: newApplication.pincode,
+          creatorType: newApplication.creatorType,
+          brandName: newApplication.brandName,
+          categories: newApplication.categories,
+          intro: newApplication.intro,
+          craftDescription: newApplication.craftDescription,
+          yearsExperience: newApplication.yearsExperience,
+          monthlyCapacity: newApplication.monthlyCapacity,
+          craftMethod: newApplication.craftMethod,
+          leadTime: newApplication.leadTime,
+          acceptsCustomOrders: newApplication.acceptsCustomOrders,
+          sellsElsewhere: newApplication.sellsElsewhere,
+          socialLinks: newCreator.socialLinks,
+          portfolioFiles: newApplication.portfolioFiles,
+          portfolioLinks: newApplication.portfolioLinks,
+          applicationId: newApplication.applicationId,
+          creatorId: newCreator.id,
+          id: newApplication.id,
+        }),
+      });
+    } catch (err) {
+      console.warn('Notice: Background sync to server API endpoint notice:', err);
+    }
+
+    // 2. Synchronize to Supabase database & reactive event bus via service layer
     try {
       await foundingCreatorSyncService.persistCreatorApplication(newApplication, newCreator);
     } catch (err) {
@@ -593,17 +290,33 @@ export const foundingCreatorService = {
     };
   },
 
-  // 3. FILE UPLOADS (STORAGE WITH RESILIENT BASE64 PERSISTENCE)
+  // 3. FILE UPLOADS TO FIREBASE STORAGE
   async uploadPortfolioFile(file: File, creatorId: string): Promise<string> {
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const storagePath = `creator-portfolios/${creatorId}/${Date.now()}_${sanitizedName}`;
-    return await uploadFileToStorageOrBase64(file, storagePath);
+    try {
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const storagePath = `creator-portfolios/${creatorId}/${Date.now()}_${sanitizedName}`;
+      const fileRef = ref(storage, storagePath);
+      const snapshot = await uploadBytes(fileRef, file);
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+      return downloadUrl;
+    } catch (err) {
+      console.warn('Firebase Storage upload notice, falling back to local object preview:', err);
+      return URL.createObjectURL(file);
+    }
   },
 
   async uploadProductImage(file: File, creatorId: string, productId: string): Promise<string> {
-    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const storagePath = `creator-products/${creatorId}/${productId}/${Date.now()}_${sanitizedName}`;
-    return await uploadFileToStorageOrBase64(file, storagePath);
+    try {
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const storagePath = `creator-products/${creatorId}/${productId}/${Date.now()}_${sanitizedName}`;
+      const fileRef = ref(storage, storagePath);
+      const snapshot = await uploadBytes(fileRef, file);
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+      return downloadUrl;
+    } catch (err) {
+      console.warn('Firebase Storage product image upload notice, fallback used:', err);
+      return URL.createObjectURL(file);
+    }
   },
 
   // 4. APPLICATION STATUS QUERY
@@ -653,11 +366,12 @@ export const foundingCreatorService = {
     };
   },
 
-  // 6. PROFILES AND APPLICATIONS ACCESS
+  // 6. PROFILES AND APPLICATIONS ACCESS (DEMO PURGED & CACHED)
   getAllProfiles(): CreatorProfile[] {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.PROFILES);
-      return data ? JSON.parse(data) : [];
+      const list: CreatorProfile[] = data ? JSON.parse(data) : [];
+      return list.filter((p) => !isDemoCreator(p));
     } catch {
       return [];
     }
@@ -666,10 +380,116 @@ export const foundingCreatorService = {
   getAllApplications(): CreatorApplication[] {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.APPLICATIONS);
-      return data ? JSON.parse(data) : [];
+      const list: CreatorApplication[] = data ? JSON.parse(data) : [];
+      return list.filter((a) => !isDemoApplication(a));
     } catch {
       return [];
     }
+  },
+
+  // Asynchronous central fetch syncing Server + Supabase + Local Storage
+  async fetchAllApplicationsAsync(): Promise<CreatorApplication[]> {
+    let serverApps: CreatorApplication[] = [];
+    try {
+      const res = await fetch('/api/founding-creator/applications');
+      if (res.ok) {
+        const body = await res.json();
+        if (body?.applications && Array.isArray(body.applications)) {
+          serverApps = body.applications;
+        }
+      }
+    } catch (err) {
+      console.warn('Server applications query notice:', err);
+    }
+
+    let supabaseApps: CreatorApplication[] = [];
+    try {
+      supabaseApps = await foundingCreatorSyncService.fetchAllApplications();
+    } catch (err) {
+      console.warn('Supabase applications query notice:', err);
+    }
+
+    const localApps = this.getAllApplications();
+
+    const map = new Map<string, CreatorApplication>();
+    // 1. Local storage
+    localApps.forEach((a) => {
+      if (!isDemoApplication(a)) {
+        map.set(a.applicationId || a.id, a);
+      }
+    });
+
+    // 2. Supabase
+    supabaseApps.forEach((a) => {
+      if (!isDemoApplication(a)) {
+        const key = a.applicationId || a.id;
+        const existing = map.get(key);
+        map.set(key, existing ? { ...existing, ...a } : a);
+      }
+    });
+
+    // 3. Server in-memory
+    serverApps.forEach((a) => {
+      if (!isDemoApplication(a)) {
+        const key = a.applicationId || a.id;
+        const existing = map.get(key);
+        map.set(key, existing ? { ...existing, ...a } : a);
+      }
+    });
+
+    const merged = Array.from(map.values()).sort(
+      (a, b) =>
+        new Date(b.createdAt || b.submittedAt || 0).getTime() -
+        new Date(a.createdAt || a.submittedAt || 0).getTime()
+    );
+
+    localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(merged));
+    return merged;
+  },
+
+  async fetchAllProfilesAsync(): Promise<CreatorProfile[]> {
+    let serverProfiles: CreatorProfile[] = [];
+    try {
+      const res = await fetch('/api/founding-creator/profiles');
+      if (res.ok) {
+        const body = await res.json();
+        if (body?.profiles && Array.isArray(body.profiles)) {
+          serverProfiles = body.profiles;
+        }
+      }
+    } catch (err) {
+      console.warn('Server profiles query notice:', err);
+    }
+
+    let supabaseProfiles: CreatorProfile[] = [];
+    try {
+      supabaseProfiles = await foundingCreatorSyncService.fetchAllProfiles();
+    } catch (err) {
+      console.warn('Supabase profiles query notice:', err);
+    }
+
+    const localProfiles = this.getAllProfiles();
+
+    const map = new Map<string, CreatorProfile>();
+    localProfiles.forEach((p) => {
+      if (!isDemoCreator(p)) map.set(p.id, p);
+    });
+    supabaseProfiles.forEach((p) => {
+      if (!isDemoCreator(p)) {
+        const existing = map.get(p.id);
+        map.set(p.id, existing ? { ...existing, ...p } : p);
+      }
+    });
+    serverProfiles.forEach((p) => {
+      if (!isDemoCreator(p)) {
+        const existing = map.get(p.id);
+        map.set(p.id, existing ? { ...existing, ...p } : p);
+      }
+    });
+
+    const merged = Array.from(map.values());
+    localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(merged));
+    return merged;
   },
 
   // 7. ADMIN ACTIONS: APPLICATION REVIEW
@@ -706,6 +526,18 @@ export const foundingCreatorService = {
       isRead: false,
     });
 
+    // Synchronize to Server endpoint
+    fetch('/api/founding-creator/review-application', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        applicationId: app.applicationId,
+        action: 'approve',
+        reviewer: reviewerName,
+        notes,
+      }),
+    }).catch(() => {});
+
     // Synchronize to Supabase via service layer
     foundingCreatorSyncService
       .updateApplicationStatus(app.applicationId, 'approved', {
@@ -723,9 +555,10 @@ export const foundingCreatorService = {
     if (appIndex === -1) return false;
 
     const app = apps[appIndex];
+    const now = new Date().toISOString();
     app.applicationStatus = 'rejected';
     app.rejectionReason = reason;
-    app.reviewedAt = new Date().toISOString();
+    app.reviewedAt = now;
     app.reviewedBy = reviewerName;
     apps[appIndex] = app;
     localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
@@ -734,8 +567,21 @@ export const foundingCreatorService = {
     const profIndex = profiles.findIndex((p) => p.id === app.creatorId);
     if (profIndex !== -1) {
       profiles[profIndex].accountStatus = 'rejected';
+      profiles[profIndex].updatedAt = now;
       localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
     }
+
+    // Server sync
+    fetch('/api/founding-creator/review-application', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        applicationId: app.applicationId,
+        action: 'reject',
+        reviewer: reviewerName,
+        reason,
+      }),
+    }).catch(() => {});
 
     foundingCreatorSyncService
       .updateApplicationStatus(app.applicationId, 'rejected', {
@@ -747,16 +593,31 @@ export const foundingCreatorService = {
     return true;
   },
 
-  requestMoreInformation(applicationId: string, requestedInfo: string) {
+  requestMoreInformation(applicationId: string, requestedInfo: string, reviewerName: string = 'Curowit Admin') {
     const apps = this.getAllApplications();
     const appIndex = apps.findIndex((a) => a.applicationId === applicationId || a.id === applicationId);
     if (appIndex === -1) return false;
 
     const app = apps[appIndex];
+    const now = new Date().toISOString();
     app.applicationStatus = 'additional_info_required';
     app.requestedInfo = requestedInfo;
+    app.reviewedAt = now;
+    app.reviewedBy = reviewerName;
     apps[appIndex] = app;
     localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
+
+    // Server sync
+    fetch('/api/founding-creator/review-application', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        applicationId: app.applicationId,
+        action: 'request_info',
+        reviewer: reviewerName,
+        notes: requestedInfo,
+      }),
+    }).catch(() => {});
 
     foundingCreatorSyncService
       .updateApplicationStatus(app.applicationId, 'additional_info_required', {

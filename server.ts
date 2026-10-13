@@ -1,10 +1,10 @@
 import express from 'express';
 import crypto from 'crypto';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
-import { generateSitemapEntries, buildSitemapXml, getSitemapStats } from './src/services/sitemapGenerator';
 
 dotenv.config();
 
@@ -14,217 +14,69 @@ const __dirname = path.dirname(__filename);
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_TgyT0boqInIYsI';
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '2y01LBJDaAddjDShsyyawCCh';
 
+// Data persistence directory for zero data loss
+const DATA_DIR = path.join(__dirname, '.data');
+const DATA_FILE = path.join(DATA_DIR, 'founding-creators.json');
+
+const DEMO_EMAILS = new Set(['meera@studiodhaga.in', 'aarav@mittifire.in']);
+const DEMO_IDS = new Set(['app-meera-sharma', 'app-aarav-patel', 'cr-meera-sharma', 'cr-aarav-patel', 'APP-FC-98421', 'APP-FC-10543']);
+
+function isDemoRecord(record: any): boolean {
+  if (!record) return false;
+  if (record.id && DEMO_IDS.has(record.id)) return true;
+  if (record.applicationId && DEMO_IDS.has(record.applicationId)) return true;
+  if (record.creatorId && DEMO_IDS.has(record.creatorId)) return true;
+  const email = (record.applicantEmail || record.email || '').toLowerCase();
+  if (DEMO_EMAILS.has(email)) return true;
+  return false;
+}
+
+function ensureDataDir() {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+  } catch (err) {
+    console.warn('Notice ensuring .data directory:', err);
+  }
+}
+
+function loadPersistedCreatorData() {
+  ensureDataDir();
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+      const parsed = JSON.parse(raw);
+      const apps = Array.isArray(parsed.applications) ? parsed.applications.filter((a: any) => !isDemoRecord(a)) : [];
+      const profs = Array.isArray(parsed.profiles) ? parsed.profiles.filter((p: any) => !isDemoRecord(p)) : [];
+      return { applications: apps, profiles: profs };
+    }
+  } catch (err) {
+    console.warn('Notice loading persisted creator data:', err);
+  }
+  return { applications: [], profiles: [] };
+}
+
+function savePersistedCreatorData(applications: any[], profiles: any[]) {
+  ensureDataDir();
+  try {
+    const apps = applications.filter((a: any) => !isDemoRecord(a));
+    const profs = profiles.filter((p: any) => !isDemoRecord(p));
+    fs.writeFileSync(
+      DATA_FILE,
+      JSON.stringify({ applications: apps, profiles: profs }, null, 2),
+      'utf-8'
+    );
+  } catch (err) {
+    console.warn('Notice saving persisted creator data:', err);
+  }
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json({ limit: '25mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '25mb' }));
-
-  // ==============================================================================
-  // SEARCH ENGINE SITEMAP & DISCOVERABILITY ENDPOINTS
-  // ==============================================================================
-  app.get('/sitemap.xml', (req, res) => {
-    try {
-      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-      const host = req.get('host') || 'curowit.in';
-      const baseUrl = `${protocol}://${host}`;
-
-      const entries = generateSitemapEntries({ baseUrl });
-      const xml = buildSitemapXml(entries);
-
-      res.header('Content-Type', 'application/xml; charset=utf-8');
-      res.header('Cache-Control', 'public, max-age=3600, s-maxage=14400');
-      res.send(xml);
-    } catch (err: any) {
-      console.error('[Sitemap Server Error]', err);
-      res.status(500).send('<?xml version="1.0" encoding="UTF-8"?><error>Failed to generate sitemap</error>');
-    }
-  });
-
-  app.get('/robots.txt', (req, res) => {
-    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-    const host = req.get('host') || 'curowit.in';
-    const baseUrl = `${protocol}://${host}`;
-
-    const robotsTxt = [
-      '# Curowit — Home of Creatives robots.txt',
-      'User-agent: *',
-      'Allow: /',
-      'Disallow: /admincurowit',
-      'Disallow: /admin',
-      'Disallow: /api/',
-      '',
-      `Sitemap: ${baseUrl}/sitemap.xml`,
-    ].join('\n');
-
-    res.header('Content-Type', 'text/plain; charset=utf-8');
-    res.send(robotsTxt);
-  });
-
-  app.get('/api/sitemap/stats', (req, res) => {
-    try {
-      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-      const host = req.get('host') || 'curowit.in';
-      const baseUrl = `${protocol}://${host}`;
-
-      const entries = generateSitemapEntries({ baseUrl });
-      const stats = getSitemapStats(entries);
-      res.json({
-        success: true,
-        stats,
-        sitemapUrl: `${baseUrl}/sitemap.xml`,
-        robotsUrl: `${baseUrl}/robots.txt`,
-      });
-    } catch (err: any) {
-      res.status(500).json({ error: 'Failed to compute sitemap stats' });
-    }
-  });
-
-  // ==============================================================================
-  // CLOUDINARY MEDIA SERVICE CONFIG & ENDPOINTS
-  // ==============================================================================
-  let runtimeCloudinaryConfig = {
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME || process.env.VITE_CLOUDINARY_CLOUD_NAME || 'dehmbsgqo',
-    apiKey: process.env.CLOUDINARY_API_KEY || process.env.VITE_CLOUDINARY_API_KEY || '242583393382769',
-    apiSecret: process.env.CLOUDINARY_API_SECRET || 'fWp-RcWGOCpO9sZY3MEvu43Pi3Q',
-    uploadPreset: process.env.CLOUDINARY_UPLOAD_PRESET || process.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'ml_default',
-  };
-
-  app.get('/api/cloudinary/config', (_req, res) => {
-    res.json({
-      cloudName: runtimeCloudinaryConfig.cloudName,
-      hasApiKey: Boolean(runtimeCloudinaryConfig.apiKey),
-      hasApiSecret: Boolean(runtimeCloudinaryConfig.apiSecret),
-      uploadPreset: runtimeCloudinaryConfig.uploadPreset,
-      isConfigured: Boolean(
-        runtimeCloudinaryConfig.cloudName &&
-          ((runtimeCloudinaryConfig.apiKey && runtimeCloudinaryConfig.apiSecret) || runtimeCloudinaryConfig.uploadPreset)
-      ),
-    });
-  });
-
-  app.post('/api/cloudinary/config', (req, res) => {
-    const { cloudName, apiKey, apiSecret, uploadPreset } = req.body || {};
-    if (cloudName) runtimeCloudinaryConfig.cloudName = String(cloudName).trim();
-    if (apiKey) runtimeCloudinaryConfig.apiKey = String(apiKey).trim();
-    if (apiSecret) runtimeCloudinaryConfig.apiSecret = String(apiSecret).trim();
-    if (uploadPreset) runtimeCloudinaryConfig.uploadPreset = String(uploadPreset).trim();
-    console.log(`[Cloudinary Config] Updated for cloudName: ${runtimeCloudinaryConfig.cloudName || '(empty)'}, hasKey: ${Boolean(runtimeCloudinaryConfig.apiKey)}`);
-    res.json({
-      success: true,
-      cloudName: runtimeCloudinaryConfig.cloudName,
-      hasApiKey: Boolean(runtimeCloudinaryConfig.apiKey),
-      hasApiSecret: Boolean(runtimeCloudinaryConfig.apiSecret),
-      uploadPreset: runtimeCloudinaryConfig.uploadPreset,
-      isConfigured: Boolean(
-        runtimeCloudinaryConfig.cloudName &&
-          ((runtimeCloudinaryConfig.apiKey && runtimeCloudinaryConfig.apiSecret) || runtimeCloudinaryConfig.uploadPreset)
-      ),
-    });
-  });
-
-  app.post('/api/cloudinary/upload', async (req, res) => {
-    try {
-      const {
-        file,
-        folder = 'curowit',
-        tags = [],
-        publicId,
-        cloudName: reqCloudName,
-        apiKey: reqApiKey,
-        apiSecret: reqApiSecret,
-        uploadPreset: reqPreset,
-      } = req.body || {};
-
-      if (!file) {
-        res.status(400).json({ error: 'Missing file content' });
-        return;
-      }
-
-      const cloudName = reqCloudName || runtimeCloudinaryConfig.cloudName;
-      const apiKey = reqApiKey || runtimeCloudinaryConfig.apiKey;
-      const apiSecret = reqApiSecret || runtimeCloudinaryConfig.apiSecret;
-      const uploadPreset = reqPreset || runtimeCloudinaryConfig.uploadPreset;
-
-      if (!cloudName) {
-        res.status(400).json({ error: 'Cloudinary Cloud Name is not configured.' });
-        return;
-      }
-
-      const timestamp = Math.round(Date.now() / 1000);
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('timestamp', String(timestamp));
-
-      const paramsToSign: Record<string, string> = {
-        timestamp: String(timestamp),
-      };
-
-      if (folder) {
-        formData.append('folder', folder);
-        paramsToSign['folder'] = folder;
-      }
-
-      if (publicId) {
-        formData.append('public_id', publicId);
-        paramsToSign['public_id'] = publicId;
-      }
-
-      if (tags && (Array.isArray(tags) ? tags.length > 0 : Boolean(tags))) {
-        const tagStr = Array.isArray(tags) ? tags.join(',') : String(tags);
-        formData.append('tags', tagStr);
-        paramsToSign['tags'] = tagStr;
-      }
-
-      // If API key and Secret are provided, sign the payload using HMAC/SHA1
-      if (apiKey && apiSecret) {
-        formData.append('api_key', apiKey);
-        const sortedKeys = Object.keys(paramsToSign).sort();
-        const stringToSign = sortedKeys.map((k) => `${k}=${paramsToSign[k]}`).join('&');
-        const signature = crypto.createHash('sha1').update(stringToSign + apiSecret).digest('hex');
-        formData.append('signature', signature);
-      } else if (uploadPreset) {
-        formData.append('upload_preset', uploadPreset);
-      } else {
-        res.status(400).json({
-          error: 'Cloudinary credentials missing: please supply API Key & Secret or an Upload Preset',
-        });
-        return;
-      }
-
-      const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/image/upload`;
-      const response = await fetch(cloudinaryUrl, {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error('[Cloudinary Upload Error]', data);
-        res.status(response.status || 500).json({
-          error: data.error?.message || 'Cloudinary upload failed',
-          details: data,
-        });
-        return;
-      }
-
-      res.json({
-        success: true,
-        url: data.secure_url || data.url,
-        secureUrl: data.secure_url || data.url,
-        publicId: data.public_id,
-        format: data.format,
-        width: data.width,
-        height: data.height,
-        bytes: data.bytes,
-      });
-    } catch (error: any) {
-      console.error('[Cloudinary Server Error]', error);
-      res.status(500).json({ error: error.message || 'Server error during Cloudinary upload' });
-    }
-  });
+  app.use(express.json());
 
   // Health & public key config endpoint
   app.get('/api/razorpay/config', (_req, res) => {
@@ -236,8 +88,12 @@ async function startServer() {
   });
 
   // ==============================================================================
-  // FOUNDING CREATOR PORTAL SERVER ENDPOINTS
+  // FOUNDING CREATOR PORTAL SERVER ENDPOINTS & PERSISTENT STORE
   // ==============================================================================
+  const initialData = loadPersistedCreatorData();
+  const serverCreatorApplications: any[] = initialData.applications;
+  const serverCreatorProfiles: any[] = initialData.profiles;
+
   app.get('/api/founding-creator/config', (_req, res) => {
     res.json({
       programName: 'Curowit Founding Creator Program',
@@ -265,39 +121,171 @@ async function startServer() {
     });
   });
 
-  // Creator application validation & server logging
+  // Get all submitted applications for Admin CMS Panel (Cleaned of any mock/demo entries)
+  app.get('/api/founding-creator/applications', (_req, res) => {
+    const cleanApps = serverCreatorApplications.filter((a) => !isDemoRecord(a));
+    res.json({
+      success: true,
+      applications: cleanApps,
+      total: cleanApps.length,
+    });
+  });
+
+  // Get all creator profiles (Cleaned of any mock/demo entries)
+  app.get('/api/founding-creator/profiles', (_req, res) => {
+    const cleanProfs = serverCreatorProfiles.filter((p) => !isDemoRecord(p));
+    res.json({
+      success: true,
+      profiles: cleanProfs,
+      total: cleanProfs.length,
+    });
+  });
+
+  // Creator application validation & server storage
   app.post('/api/founding-creator/apply', (req, res) => {
     try {
+      const body = req.body || {};
       const {
         fullName,
+        displayName,
         email,
         phone,
         city,
         state,
         pincode,
         creatorType,
+        brandName,
         categories,
+        intro,
         craftDescription,
-      } = req.body || {};
+        yearsExperience,
+        monthlyCapacity,
+        craftMethod,
+        leadTime,
+        acceptsCustomOrders,
+        sellsElsewhere,
+        socialLinks,
+        portfolioFiles,
+        portfolioLinks,
+        applicationId: existingAppId,
+        id: existingId,
+      } = body;
 
       if (!fullName || !email || !phone || !city || !state || !pincode || !craftDescription) {
         res.status(400).json({ error: 'Missing mandatory application fields' });
         return;
       }
 
+      const now = new Date().toISOString();
       const randomNum = Math.floor(10000 + Math.random() * 90000);
-      const applicationId = `APP-FC-${randomNum}`;
-      const creatorId = `CR-FC-${randomNum}`;
+      const applicationId = existingAppId || `APP-FC-${randomNum}`;
+      const creatorIdentifier = `CR-FC-${randomNum}`;
+      const appId = existingId || `app-${Date.now()}`;
+      const creatorId = body.creatorId || `cr-${Date.now()}`;
 
-      console.log(`[Founding Creator] New application received: ${applicationId} from ${fullName} (${email})`);
+      const applicationRecord = {
+        id: appId,
+        applicationId,
+        creatorId,
+        applicantName: fullName.trim(),
+        applicantEmail: email.toLowerCase().trim(),
+        applicantPhone: phone.trim(),
+        brandName: brandName?.trim() || undefined,
+        creatorType: creatorType || 'Individual',
+        city: city.trim(),
+        state: state.trim(),
+        pincode: pincode.trim(),
+        categories: Array.isArray(categories) ? categories : [categories].filter(Boolean),
+        intro: (intro || craftDescription || '').trim(),
+        craftDescription: craftDescription.trim(),
+        yearsExperience: yearsExperience || '1-3 years',
+        monthlyCapacity: monthlyCapacity || '20-50 pieces',
+        craftMethod: craftMethod || 'handmade',
+        leadTime: leadTime || '3-5 business days',
+        acceptsCustomOrders: acceptsCustomOrders ?? true,
+        sellsElsewhere: sellsElsewhere || undefined,
+        socialLinks: socialLinks || {},
+        portfolioLinks: Array.isArray(portfolioLinks) ? portfolioLinks : [],
+        portfolioFiles: Array.isArray(portfolioFiles) ? portfolioFiles : [],
+        agreementAccepted: true,
+        termsVersion: 'v1.0-founding',
+        acceptedAt: now,
+        applicationStatus: 'pending_review',
+        submittedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      const profileRecord = {
+        id: creatorId,
+        userId: `usr_${Date.now()}`,
+        creatorId: creatorIdentifier,
+        fullName: fullName.trim(),
+        displayName: (displayName || brandName || fullName).trim(),
+        email: email.toLowerCase().trim(),
+        phone: phone.trim(),
+        city: city.trim(),
+        state: state.trim(),
+        pincode: pincode.trim(),
+        country: 'India',
+        brandName: brandName?.trim() || undefined,
+        creatorType: creatorType || 'Individual',
+        socialLinks: socialLinks || {},
+        categories: Array.isArray(categories) ? categories : [],
+        accountStatus: 'pending',
+        isVerified: false,
+        commissionPercentage: 30,
+        creatorSharePercentage: 70,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      // Check if application already exists by email or ID
+      const existingIdx = serverCreatorApplications.findIndex(
+        (a) =>
+          a.applicationId === applicationId ||
+          a.id === appId ||
+          a.applicantEmail.toLowerCase() === email.toLowerCase().trim()
+      );
+
+      if (existingIdx !== -1) {
+        serverCreatorApplications[existingIdx] = {
+          ...serverCreatorApplications[existingIdx],
+          ...applicationRecord,
+          updatedAt: now,
+        };
+      } else {
+        serverCreatorApplications.unshift(applicationRecord);
+      }
+
+      // Profile record upsert
+      const profIdx = serverCreatorProfiles.findIndex(
+        (p) => p.email.toLowerCase() === email.toLowerCase().trim() || p.id === creatorId
+      );
+      if (profIdx !== -1) {
+        serverCreatorProfiles[profIdx] = {
+          ...serverCreatorProfiles[profIdx],
+          ...profileRecord,
+          updatedAt: now,
+        };
+      } else {
+        serverCreatorProfiles.unshift(profileRecord);
+      }
+
+      // Save changes to disk immediately
+      savePersistedCreatorData(serverCreatorApplications, serverCreatorProfiles);
+
+      console.log(`[Founding Creator] New application registered on server: ${applicationId} by ${fullName} (${email})`);
 
       res.json({
         success: true,
         applicationId,
         creatorId,
         status: 'pending_review',
-        submittedAt: new Date().toISOString(),
-        message: 'Application registered. Under curation team review.',
+        submittedAt: now,
+        application: applicationRecord,
+        creator: profileRecord,
+        message: 'Application registered and queued for Admin CMS approval.',
       });
     } catch (error) {
       console.error('[Founding Creator] Error processing application:', error);
@@ -314,13 +302,48 @@ async function startServer() {
         return;
       }
 
+      const now = new Date().toISOString();
+      const newStatus =
+        action === 'approve'
+          ? 'approved'
+          : action === 'reject'
+          ? 'rejected'
+          : 'additional_info_required';
+
+      const appIdx = serverCreatorApplications.findIndex(
+        (a) => a.applicationId === applicationId || a.id === applicationId
+      );
+
+      if (appIdx !== -1) {
+        serverCreatorApplications[appIdx].applicationStatus = newStatus;
+        serverCreatorApplications[appIdx].reviewedAt = now;
+        serverCreatorApplications[appIdx].reviewedBy = reviewer || 'Curowit Admin';
+        if (notes) serverCreatorApplications[appIdx].reviewNotes = notes;
+        if (reason) serverCreatorApplications[appIdx].rejectionReason = reason;
+        serverCreatorApplications[appIdx].updatedAt = now;
+
+        // Also update profile status
+        const creatorId = serverCreatorApplications[appIdx].creatorId;
+        const profIdx = serverCreatorProfiles.findIndex(
+          (p) => p.id === creatorId || p.email === serverCreatorApplications[appIdx].applicantEmail
+        );
+        if (profIdx !== -1) {
+          serverCreatorProfiles[profIdx].accountStatus = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'pending';
+          if (action === 'approve') serverCreatorProfiles[profIdx].isVerified = true;
+          serverCreatorProfiles[profIdx].updatedAt = now;
+        }
+
+        // Persist update to disk immediately
+        savePersistedCreatorData(serverCreatorApplications, serverCreatorProfiles);
+      }
+
       console.log(`[Founding Creator] Application ${applicationId} reviewed: ${action} by ${reviewer || 'Admin'}`);
       res.json({
         success: true,
         applicationId,
         action,
-        updatedStatus: action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'additional_info_required',
-        reviewedAt: new Date().toISOString(),
+        updatedStatus: newStatus,
+        reviewedAt: now,
       });
     } catch (error) {
       res.status(500).json({ error: 'Failed to process application review' });
@@ -468,7 +491,7 @@ async function startServer() {
   } else {
     const distPath = path.join(__dirname, 'dist');
     app.use(express.static(distPath));
-    app.get('*all', (_req, res) => {
+    app.get('*', (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

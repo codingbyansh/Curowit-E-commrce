@@ -28,7 +28,6 @@ import {
   Check,
   Edit2,
 } from 'lucide-react';
-import { useCloudinaryUpload } from '../../hooks/useCloudinaryUpload';
 import { foundingCreatorService } from '../../services/foundingCreatorService';
 import {
   foundingCreatorSyncService,
@@ -166,7 +165,7 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
           { notes: docNotes }
         );
       }
-      showToast('Store document uploaded successfully.');
+      showToast('Store document uploaded & synchronized to Supabase.');
       const updatedDocs = await foundingCreatorSyncService.fetchStoreDocuments(creator.id);
       setDocuments(updatedDocs);
       setDocNotes('');
@@ -184,22 +183,20 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
     showToast('Document removed.');
   };
 
-  const { uploadFile: uploadCloudinaryAsset, isConfigured: isCloudinaryConfigured } = useCloudinaryUpload();
-
   const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0 || !creator) return;
+    if (!files || files.length === 0) return;
 
     setIsUploadingProductImage(true);
     try {
       for (const file of Array.from(files)) {
-        const uploadResult = await uploadCloudinaryAsset(file, {
-          folder: `creator-products/${creator.id}`,
-        });
-        const url = uploadResult.secureUrl || uploadResult.url;
+        const url = await foundingCreatorService.uploadProductImage(
+          file,
+          creator.id,
+          `temp-${Date.now()}`
+        );
         setProductImages((prev) => [...prev, url]);
       }
-      showToast('Product photo uploaded via Cloudinary storage');
     } catch {
       showToast('Error uploading image');
     } finally {
@@ -353,32 +350,32 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
   };
 
   return (
-    <div className="min-h-screen bg-[#F4ECE1] text-[#173B3D] flex flex-col w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen bg-[#F4ECE1] text-[#173B3D] flex flex-col">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 bg-[#07545A] text-[#FFF8EA] px-4 py-2.5 rounded-2xl shadow-xl text-xs font-bold animate-in slide-in-from-top-3 flex items-center gap-2 border border-[#FFF8EA]/20 max-w-[90vw]">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span className="truncate">{toastMessage}</span>
+        <div className="fixed top-5 right-5 z-50 bg-[#07545A] text-[#FFF8EA] px-4 py-2.5 rounded-2xl shadow-xl text-xs font-bold animate-in slide-in-from-top-3 flex items-center gap-2 border border-[#FFF8EA]/20">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Top Bar */}
       <header className="bg-[#FFFDF7] border-b border-[#07545A]/15 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => onNavigate('home')}
-              className="cursor-pointer hover:opacity-85 transition-opacity shrink-0"
+              className="cursor-pointer hover:opacity-85 transition-opacity"
               title="Return to Curowit store"
             >
               <CurowitLogo variant="horizontal" size="sm" />
             </button>
-            <span className="text-[#07545A]/30 shrink-0">/</span>
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="font-bold text-xs text-[#07545A] truncate max-w-[110px] sm:max-w-[200px]">
+            <span className="text-[#07545A]/30">/</span>
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-xs text-[#07545A] truncate">
                 {creator.brandName || creator.displayName}
               </span>
-              <span className="hidden sm:inline-block text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">
+              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
                 Founding Creator
               </span>
             </div>
@@ -888,7 +885,7 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
                       value={newTitle}
                       onChange={(e) => setNewTitle(e.target.value)}
                       placeholder="e.g. Heirloom Organic Cotton Crochet Bunny"
-                      className="w-full px-3 py-2 bg-white border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
+                      className="w-full px-3 py-2 bg-white border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
                     />
                   </div>
 
@@ -920,7 +917,7 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
                     value={newDescription}
                     onChange={(e) => setNewDescription(e.target.value)}
                     placeholder="Describe how this piece is made, material choices, and care instructions..."
-                    className="w-full px-3 py-2 bg-white border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
+                    className="w-full px-3 py-2 bg-white border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
                   />
                 </div>
 
@@ -998,15 +995,9 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
 
                 {/* Product Images Upload */}
                 <div className="space-y-2 pt-2 border-t border-[#07545A]/10">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-[#07545A] block">
-                      Product Imagery (High-Resolution Visuals)
-                    </label>
-                    <span className="text-[10px] font-bold text-sky-800 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200 flex items-center gap-1">
-                      <Sparkles className="w-2.5 h-2.5 text-sky-600" />
-                      Cloudinary Media Active
-                    </span>
-                  </div>
+                  <label className="text-xs font-bold text-[#07545A] block">
+                    Product Imagery (Uploaded to Firebase Storage)
+                  </label>
                   <div className="flex items-center gap-3 flex-wrap">
                     <input
                       type="file"
@@ -1645,7 +1636,7 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
             </div>
           )}
 
-          {/* TAB: STORE DOCUMENTS */}
+          {/* TAB: STORE DOCUMENTS (SUPABASE & FIREBASE SYNC) */}
           {activeTab === 'documents' && (
             <div className="space-y-6">
               <div className="bg-[#FFFDF7] rounded-3xl border border-[#07545A]/15 p-6 shadow-2xs space-y-4">
@@ -1656,7 +1647,7 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
                       <span>Artisan Atelier & Store Documents</span>
                     </h3>
                     <p className="text-xs text-[#173B3D]/70">
-                      Upload portfolio proofs, studio registrations, bank statements, or craft certificates. Stored securely with real-time updates.
+                      Upload portfolio proofs, studio registrations, bank statements, or craft certificates. Persisted to Supabase with reactive synchronization.
                     </p>
                   </div>
                   <span className="text-xs font-bold text-[#07545A] bg-[#FFF8EA] px-3 py-1.5 rounded-full border border-[#07545A]/15 self-start sm:self-auto">
@@ -1695,7 +1686,7 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
                         value={docNotes}
                         onChange={(e) => setDocNotes(e.target.value)}
                         placeholder="e.g. Master Weaver certificate, Studio Jaipur"
-                        className="w-full px-3 py-2 bg-white border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
+                        className="w-full px-3 py-2 bg-white border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
                       />
                     </div>
                   </div>
@@ -1715,11 +1706,10 @@ export const FoundingCreatorDashboard: React.FC<FoundingCreatorDashboardProps> =
                       className="px-5 py-2.5 rounded-xl bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-2"
                     >
                       <Upload className="w-4 h-4" />
-                      <span>{isUploadingDoc ? 'Uploading...' : 'Upload Document'}</span>
+                      <span>{isUploadingDoc ? 'Uploading & Syncing...' : 'Upload & Synchronize Document'}</span>
                     </label>
-                    <span className="text-[11px] text-[#173B3D]/70 flex items-center gap-1.5 font-medium">
-                      <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
-                      Secured with Cloudinary Media Storage & CDN
+                    <span className="text-[11px] text-[#173B3D]/60">
+                      Real-time synchronized with Supabase store_documents
                     </span>
                   </div>
                 </div>

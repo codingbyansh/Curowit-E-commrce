@@ -96,14 +96,12 @@ import {
   Download,
   Mail,
   Phone,
-  Cloud,
-  FileCode,
+  Maximize2,
+  Minimize2,
+  Send,
 } from 'lucide-react';
 import { OrderManagement } from './OrderManagement';
 import { FoundingCreatorsAdminSection } from './FoundingCreatorsAdminSection';
-import { CloudinarySettingsCard } from './CloudinarySettingsCard';
-import { SitemapGeneratorCard } from './SitemapGeneratorCard';
-import { cloudinaryService } from '../../services/cloudinaryService';
 
 export { OrderManagement };
 
@@ -146,7 +144,7 @@ export const AdminCMSPage: React.FC = () => {
 
   // Tab State
   const [activeTab, setActiveTab] = useState<
-    'products' | 'orders' | 'creators' | 'founding-creators' | 'workshops' | 'stories' | 'banners' | 'cloudinary' | 'sitemap'
+    'products' | 'orders' | 'creators' | 'founding-creators' | 'workshops' | 'stories' | 'banners'
   >('products');
 
   // Search & Filter State
@@ -410,30 +408,6 @@ export const AdminCMSPage: React.FC = () => {
             <ImageIcon className="w-4 h-4" />
             <span>Hero & Announcements</span>
           </button>
-
-          <button
-            onClick={() => setActiveTab('cloudinary')}
-            className={`py-3 px-3.5 text-xs font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'cloudinary'
-                ? 'border-[#F2A900] text-[#F2A900] bg-white/5'
-                : 'border-transparent text-[#FFF8EA]/75 hover:text-white'
-            }`}
-          >
-            <Cloud className="w-4 h-4 text-sky-400" />
-            <span>Cloudinary Media CDN</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('sitemap')}
-            className={`py-3 px-3.5 text-xs font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'sitemap'
-                ? 'border-[#F2A900] text-[#F2A900] bg-white/5'
-                : 'border-transparent text-[#FFF8EA]/75 hover:text-white'
-            }`}
-          >
-            <FileCode className="w-4 h-4 text-emerald-400" />
-            <span>SEO & Sitemap ({products.length + workshops.length + creators.length + stories.length + 7})</span>
-          </button>
         </div>
       </header>
 
@@ -589,7 +563,7 @@ export const AdminCMSPage: React.FC = () => {
         )}
 
         {/* ========================================================
-            TAB 2: ORDERS MANAGER
+            TAB 2: ORDERS MANAGER (SUPABASE REALTIME SYNC)
             ======================================================== */}
         {activeTab === 'orders' && <OrderManagement />}
 
@@ -767,18 +741,65 @@ export const AdminCMSPage: React.FC = () => {
                           </span>
                         </div>
 
-                        {/* Workshop Details & Attendee Roster Button */}
+                        {/* Buyer Links Quick Actions Bar */}
+                        <div className="bg-[#FFFDF7] p-3 rounded-2xl border border-[#07545A]/15 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-extrabold uppercase text-[#07545A] block tracking-wider">
+                              Links For Buyers:
+                            </span>
+                            <span className="text-[10px] text-[#687778] font-mono">ID: {ws.id}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const publicUrl = `${window.location.origin}/?view=workshops&workshop=${ws.id}`;
+                                navigator.clipboard?.writeText(publicUrl);
+                                showToast('Buyer Booking Link Copied!', 'Share this URL with buyers to let them book spots: ' + publicUrl, 'success');
+                              }}
+                              className="px-2.5 py-2 bg-[#FFF8EA] hover:bg-[#07545A]/15 text-[#07545A] rounded-xl text-xs font-bold border border-[#07545A]/25 flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                              title="Copy public page link to share with buyers on WhatsApp/Email"
+                            >
+                              <Copy className="w-3.5 h-3.5 text-[#07545A]" />
+                              <span>Copy Buyer Link</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (ws.meetingLink?.trim()) {
+                                  navigator.clipboard?.writeText(ws.meetingLink.trim());
+                                  showToast('Live Meeting Link Copied!', ws.meetingLink.trim(), 'success');
+                                } else {
+                                  setDetailsWorkshop(ws);
+                                  showToast('No Meeting Link', 'Configure the master session link in the modal.', 'info');
+                                }
+                              }}
+                              className={`px-2.5 py-2 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs ${
+                                hasMeetingLink
+                                  ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-300'
+                                  : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'
+                              }`}
+                              title={hasMeetingLink ? 'Copy live meeting URL' : 'Click to set live meeting URL'}
+                            >
+                              <Video className="w-3.5 h-3.5" />
+                              <span>{hasMeetingLink ? 'Copy Meet Link' : 'Set Meet Link'}</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Workshop Full View & Linkediting Button */}
                         <button
                           onClick={() => setDetailsWorkshop(ws)}
-                          className="w-full py-2 px-3 bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-2xs transition-colors cursor-pointer group/btn"
+                          className="w-full py-2.5 px-3 bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-2xs transition-colors cursor-pointer group/btn"
                         >
-                          <Users className="w-3.5 h-3.5 text-[#F2A900] group-hover/btn:scale-110 transition-transform" />
-                          <span>Workshop Details & Roster</span>
+                          <Eye className="w-4 h-4 text-[#F2A900] group-hover/btn:scale-110 transition-transform" />
+                          <span>Full View & Linkediting</span>
                         </button>
 
                         <div className="flex items-center justify-between pt-1">
                           <span className="text-[10px] text-[#687778]">
-                            {hasMeetingLink ? 'Master link active' : 'Session link needed'}
+                            {hasMeetingLink ? 'Master session link set' : 'Meeting link required'}
                           </span>
                           <div className="flex items-center gap-1.5">
                             <button
@@ -960,12 +981,11 @@ export const AdminCMSPage: React.FC = () => {
                               e.target.value = '';
                               if (file) {
                                 try {
-                                  const res = await cloudinaryService.uploadFile(file, { folder: 'curowit-banners' });
-                                  const uploadedUrl = res.secureUrl || res.url;
+                                  const optimizedBase64 = await compressUploadedImage(file, 1600, 900);
                                   const next = [...heroSlides];
-                                  next[idx] = { ...slide, image: uploadedUrl };
+                                  next[idx] = { ...slide, image: optimizedBase64 };
                                   updateHeroSlides(next);
-                                  showToast('Banner Uploaded', `Slide ${idx + 1} updated via Cloudinary`);
+                                  showToast('Image Uploaded', `Slide ${idx + 1} updated`);
                                 } catch {
                                   showToast('Upload Failed', 'Please select a valid image file', 'error');
                                 }
@@ -979,7 +999,7 @@ export const AdminCMSPage: React.FC = () => {
                       <div>
                         <label className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-[#07545A] hover:bg-[#064247] text-[#FFF8EA] text-xs font-bold rounded-xl cursor-pointer shadow-2xs transition-colors">
                           <Upload className="w-3.5 h-3.5 text-[#F2A900]" />
-                          <span>Upload Image via Cloudinary</span>
+                          <span>Upload Image from Device</span>
                           <input
                             type="file"
                             accept="image/*"
@@ -989,12 +1009,11 @@ export const AdminCMSPage: React.FC = () => {
                               e.target.value = '';
                               if (file) {
                                 try {
-                                  const res = await cloudinaryService.uploadFile(file, { folder: 'curowit-banners' });
-                                  const uploadedUrl = res.secureUrl || res.url;
+                                  const optimizedBase64 = await compressUploadedImage(file, 1600, 900);
                                   const next = [...heroSlides];
-                                  next[idx] = { ...slide, image: uploadedUrl };
+                                  next[idx] = { ...slide, image: optimizedBase64 };
                                   updateHeroSlides(next);
-                                  showToast('Banner Uploaded', `Slide ${idx + 1} updated via Cloudinary`);
+                                  showToast('Image Uploaded', `Slide ${idx + 1} updated`);
                                 } catch {
                                   showToast('Upload Failed', 'Please select a valid image file', 'error');
                                 }
@@ -1127,20 +1146,6 @@ export const AdminCMSPage: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
-
-        {/* ========================================================
-            TAB 7: CLOUDINARY MEDIA CDN & CREDENTIALS
-            ======================================================== */}
-        {activeTab === 'cloudinary' && (
-          <CloudinarySettingsCard onToast={showToast} />
-        )}
-
-        {/* ========================================================
-            TAB 8: AUTOMATIC XML SITEMAP & SEO DISCOVERABILITY
-            ======================================================== */}
-        {activeTab === 'sitemap' && (
-          <SitemapGeneratorCard onToast={showToast} />
         )}
       </main>
 
@@ -1391,7 +1396,7 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
               <label className="font-bold text-[#07545A]">Product Image</label>
               <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#07545A] hover:text-[#064247] cursor-pointer bg-[#07545A]/5 px-2 py-0.5 rounded-lg border border-[#07545A]/15">
                 <Upload className="w-3 h-3 text-[#F2A900]" />
-                <span>Upload to Cloudinary</span>
+                <span>Upload from Device</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -1401,8 +1406,8 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
                     e.target.value = '';
                     if (file) {
                       try {
-                        const res = await cloudinaryService.uploadFile(file, { folder: 'curowit-products' });
-                        setImage(res.secureUrl || res.url);
+                        const optimizedBase64 = await compressUploadedImage(file, 1200, 1200);
+                        setImage(optimizedBase64);
                       } catch {}
                     }
                   }}
@@ -1626,28 +1631,7 @@ const CreatorEditModal: React.FC<CreatorEditModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="font-bold text-[#07545A]">Avatar Photo</label>
-              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#07545A] hover:text-[#064247] cursor-pointer bg-[#07545A]/5 px-2 py-0.5 rounded-lg border border-[#07545A]/15">
-                <Upload className="w-3 h-3 text-[#F2A900]" />
-                <span>Upload to Cloudinary</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    e.target.value = '';
-                    if (file) {
-                      try {
-                        const res = await cloudinaryService.uploadFile(file, { folder: 'curowit-creators' });
-                        setAvatar(res.secureUrl || res.url);
-                      } catch {}
-                    }
-                  }}
-                />
-              </label>
-            </div>
+            <label className="font-bold text-[#07545A] block mb-1">Avatar Photo URL</label>
             <div className="flex gap-3 items-center">
               <img
                 src={avatar}
@@ -1800,17 +1784,88 @@ const WorkshopDetailsModal: React.FC<WorkshopDetailsModalProps> = ({
   onAddTestBooking,
   showToast,
 }) => {
-  const [activeTab, setActiveTab] = useState<'roster' | 'meeting'>('roster');
+  const [activeTab, setActiveTab] = useState<'roster' | 'meeting' | 'overview'>('roster');
   const [meetingLink, setMeetingLink] = useState(workshop.meetingLink || '');
   const [meetingPlatform, setMeetingPlatform] = useState<'Google Meet' | 'Zoom'>(
     (workshop.meetingPlatform as 'Google Meet' | 'Zoom') || 'Google Meet'
   );
   const [meetingNotes, setMeetingNotes] = useState(workshop.meetingNotes || '');
   const [isCopiedLink, setIsCopiedLink] = useState(false);
+  const [isCopiedBuyerLink, setIsCopiedBuyerLink] = useState(false);
   const [isCopiedRoster, setIsCopiedRoster] = useState(false);
   const [isCopiedEmails, setIsCopiedEmails] = useState(false);
   const [attendeeSearch, setAttendeeSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Confirmed' | 'Completed' | 'Cancelled'>('all');
+
+  const buyerBookingUrl = `${window.location.origin}/?view=workshops&workshop=${workshop.id}`;
+
+  // Copy Direct Buyer Booking Link
+  const handleCopyBuyerLink = async () => {
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(buyerBookingUrl);
+      }
+      setIsCopiedBuyerLink(true);
+      setTimeout(() => setIsCopiedBuyerLink(false), 2500);
+      showToast('Buyer Booking Link Copied!', 'Give this link to prospective buyers: ' + buyerBookingUrl, 'success');
+    } catch {
+      showToast('Buyer Link Ready', buyerBookingUrl, 'info');
+    }
+  };
+
+  // Share Formatted Buyer Invite on WhatsApp / Social
+  const handleShareBuyerInvite = async () => {
+    const inviteText = `🎨 Reserve your spot for "${workshop.title}" hosted by ${workshop.creatorName} on Curowit!
+📅 Date & Time: ${workshop.date} at ${workshop.time} (${workshop.duration})
+🎟️ Ticket Fee: ₹${workshop.price} (${workshop.seatsLeft} seats left)
+🔗 Book Your Spot Online: ${buyerBookingUrl}
+
+Curowit — Home of Handcrafted Treasures`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Workshop: ${workshop.title}`,
+          text: inviteText,
+          url: buyerBookingUrl,
+        });
+        showToast('Shared successfully!');
+      } else {
+        await navigator.clipboard.writeText(inviteText);
+        showToast('Buyer Invite Copied!', 'Invitation text copied for WhatsApp/Email sharing.', 'success');
+      }
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        await navigator.clipboard.writeText(inviteText);
+        showToast('Buyer Invite Copied!');
+      }
+    }
+  };
+
+  // Email Meeting Link to all registered buyers
+  const handleEmailAttendeesMeetingLink = () => {
+    const emails = attendees.map((a) => a.userEmail?.trim()).filter(Boolean) as string[];
+    if (emails.length === 0) {
+      showToast('No Buyer Emails', 'No registered attendees with email addresses found.', 'info');
+      return;
+    }
+    const bccList = Array.from(new Set(emails)).join(',');
+    const subject = encodeURIComponent(`Live Workshop Access Link: ${workshop.title}`);
+    const body = encodeURIComponent(`Hello Artisan Learner,
+
+Thank you for booking "${workshop.title}" hosted by ${workshop.creatorName}!
+
+Here are your live session access details:
+📅 Date & Time: ${workshop.date} at ${workshop.time} (${workshop.duration})
+🔗 Master Session Link: ${meetingLink.trim() || workshop.meetingLink || 'Link will be active before session starts'}
+📝 Preparation & Notes: ${meetingNotes.trim() || workshop.meetingNotes || 'Please join 5 minutes early with your creative materials ready.'}
+
+Looking forward to creating together!
+Curowit Workshops Team
+${buyerBookingUrl}`);
+
+    window.open(`mailto:?bcc=${bccList}&subject=${subject}&body=${body}`, '_blank');
+  };
 
   const filteredAttendees = attendees.filter((a) => {
     const term = attendeeSearch.toLowerCase().trim();
@@ -2060,28 +2115,124 @@ Curowit Workshop Administration`;
           </div>
         </div>
 
-        {/* Master Meeting Link Callout ("Show The Link Not Specific Customer") */}
-        <div className="bg-gradient-to-r from-[#FFF8EA] to-[#F7EBD7] border-2 border-[#07545A]/20 p-4 rounded-2xl mb-4 shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-6 h-6 rounded-lg bg-[#07545A] text-[#FFF8EA] flex items-center justify-center shrink-0">
-                  <Video className="w-3.5 h-3.5" />
+        {/* Dual Command Center: Buyer Booking Link & Master Meeting Link */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 mb-4 shrink-0">
+          {/* Card A: Public Buyer Booking Link */}
+          <div className="bg-gradient-to-br from-[#FFF8EA] to-[#F7EBD7] border-2 border-[#07545A]/25 p-4 rounded-2xl flex flex-col justify-between shadow-2xs">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded-md bg-[#07545A] text-[#F2A900] flex items-center justify-center shrink-0">
+                    <Sparkles className="w-3 h-3" />
+                  </div>
+                  <h4 className="font-bold text-[#07545A] text-xs">
+                    Public Buyer Booking Link
+                  </h4>
                 </div>
-                <h4 className="font-bold text-[#07545A] text-sm">
-                  Workshop Master Meeting Link
-                </h4>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-900 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
-                  Shared With All Patrons
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                  Give to Buyers
                 </span>
               </div>
-              <p className="text-[11px] text-[#173B3D]/80">
-                This session link is broadcasted to all enrolled patrons for this workshop (not tied to an individual customer profile).
+              <p className="text-[11px] text-[#173B3D]/70 mb-2">
+                Share this direct storefront URL with buyers on WhatsApp, social media, or email to let them book spots.
               </p>
+
+              {/* URL Display */}
+              <div className="p-2 bg-white rounded-xl border border-[#07545A]/20 flex items-center justify-between gap-2">
+                <span className="font-mono text-[11px] text-[#07545A] font-bold truncate select-all">
+                  {buyerBookingUrl}
+                </span>
+              </div>
             </div>
 
-            {/* Quick Actions for Link */}
-            <div className="flex items-center gap-2 shrink-0">
+            {/* Quick Actions */}
+            <div className="flex items-center gap-1.5 pt-3 mt-2 border-t border-[#07545A]/10 flex-wrap">
+              <button
+                type="button"
+                onClick={handleCopyBuyerLink}
+                className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
+                  isCopiedBuyerLink
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-[#07545A] text-[#FFF8EA] hover:bg-[#063F45]'
+                }`}
+                title="Copy buyer booking link"
+              >
+                {isCopiedBuyerLink ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copy Buyer Link</span>
+                  </>
+                )}
+              </button>
+
+              <a
+                href={buyerBookingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-white text-[#07545A] hover:bg-[#07545A]/10 border border-[#07545A]/20 flex items-center gap-1 transition-all cursor-pointer"
+                title="Open storefront booking page in new tab"
+              >
+                <ExternalLink className="w-3 h-3" />
+                <span>Open Store</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={handleShareBuyerInvite}
+                className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-white text-[#07545A] hover:bg-[#07545A]/10 border border-[#07545A]/20 flex items-center gap-1 transition-all cursor-pointer"
+                title="Copy ready-to-send invite message with booking link"
+              >
+                <Share2 className="w-3 h-3" />
+                <span>Share Invite</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Card B: Live Meeting Link */}
+          <div className="bg-gradient-to-br from-[#FFF8EA] to-[#F7EBD7] border-2 border-[#07545A]/25 p-4 rounded-2xl flex flex-col justify-between shadow-2xs">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded-md bg-[#07545A] text-[#FFF8EA] flex items-center justify-center shrink-0">
+                    <Video className="w-3 h-3" />
+                  </div>
+                  <h4 className="font-bold text-[#07545A] text-xs">
+                    Live Session Access Link
+                  </h4>
+                </div>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  currentLink
+                    ? 'text-emerald-900 bg-emerald-100 border-emerald-300'
+                    : 'text-amber-900 bg-amber-100 border-amber-300'
+                }`}>
+                  {currentLink ? 'Master Link Set' : 'Link Required'}
+                </span>
+              </div>
+              <p className="text-[11px] text-[#173B3D]/70 mb-2">
+                This is the actual video call URL (Google Meet / Zoom) for enrolled patrons to join the session.
+              </p>
+
+              {/* URL Display */}
+              <div className="p-2 bg-white rounded-xl border border-[#07545A]/20 flex items-center justify-between gap-2">
+                {currentLink ? (
+                  <span className="font-mono text-[11px] text-[#07545A] font-bold truncate select-all">
+                    {currentLink}
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-amber-800 italic">
+                    No meeting URL configured yet. Click "Edit Link" below.
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex items-center gap-1.5 pt-3 mt-2 border-t border-[#07545A]/10 flex-wrap">
               <button
                 type="button"
                 onClick={handleCopyMeetingLink}
@@ -2100,7 +2251,7 @@ Curowit Workshop Administration`;
                 ) : (
                   <>
                     <Copy className="w-3.5 h-3.5" />
-                    <span>Copy Link</span>
+                    <span>Copy Meet Link</span>
                   </>
                 )}
               </button>
@@ -2110,45 +2261,36 @@ Curowit Workshop Administration`;
                   href={currentLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-xl font-bold text-xs bg-[#FFF8EA] text-[#07545A] hover:bg-[#07545A]/10 border border-[#07545A]/20 flex items-center gap-1.5 transition-all cursor-pointer"
-                  title="Test / Open meeting link"
+                  className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-white text-[#07545A] hover:bg-[#07545A]/10 border border-[#07545A]/20 flex items-center gap-1 transition-all cursor-pointer"
+                  title="Test meeting link in new tab"
                 >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Open</span>
+                  <ExternalLink className="w-3 h-3" />
+                  <span>Open Meet</span>
                 </a>
               )}
 
               <button
                 type="button"
-                onClick={handleShareSessionInvite}
-                className="px-3 py-1.5 rounded-xl font-bold text-xs bg-[#FFF8EA] text-[#07545A] hover:bg-[#07545A]/10 border border-[#07545A]/20 flex items-center gap-1.5 transition-all cursor-pointer"
-                title="Share session invitation text"
+                onClick={() => setActiveTab('meeting')}
+                className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-white text-[#07545A] hover:bg-[#07545A]/10 border border-[#07545A]/20 flex items-center gap-1 transition-all cursor-pointer"
+                title="Switch to editor to update meeting link and notes"
               >
-                <Share2 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Share Invite</span>
+                <Edit2 className="w-3 h-3" />
+                <span>Edit Link</span>
               </button>
-            </div>
-          </div>
 
-          {/* Current link display pill */}
-          <div className="mt-2.5 pt-2.5 border-t border-[#07545A]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-[10px] font-bold text-[#687778] uppercase shrink-0">Current URL:</span>
-              {currentLink ? (
-                <span className="font-mono text-[11px] text-[#07545A] font-bold truncate bg-white px-2 py-0.5 rounded-lg border border-[#07545A]/15 select-all">
-                  {currentLink}
-                </span>
-              ) : (
-                <span className="text-[11px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
-                  No meeting link configured yet. Set below.
-                </span>
+              {attendees.length > 0 && currentLink && (
+                <button
+                  type="button"
+                  onClick={handleEmailAttendeesMeetingLink}
+                  className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 flex items-center gap-1 transition-all cursor-pointer"
+                  title="Email this meeting link to all booked buyers"
+                >
+                  <Mail className="w-3 h-3 text-emerald-700" />
+                  <span>Email All Buyers</span>
+                </button>
               )}
             </div>
-            {workshop.meetingNotes && (
-              <span className="text-[11px] text-[#687778] italic truncate">
-                Notes: {workshop.meetingNotes}
-              </span>
-            )}
           </div>
         </div>
 
@@ -2174,7 +2316,18 @@ Curowit Workshop Administration`;
             }`}
           >
             <Video className="w-3.5 h-3.5" />
-            <span>Update Meeting Link & Instructions</span>
+            <span>Linkediting: Update Live Meeting URL</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`py-2 px-3 text-xs font-bold border-b-2 transition-colors cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'overview'
+                ? 'border-[#07545A] text-[#07545A]'
+                : 'border-transparent text-[#173B3D]/70 hover:text-[#07545A]'
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>Full Workshop Overview & Details</span>
           </button>
         </div>
 
@@ -2462,6 +2615,89 @@ Curowit Workshop Administration`;
           </div>
         )}
 
+        {/* Tab 3: Full Workshop Overview & Dossier */}
+        {activeTab === 'overview' && (
+          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+            <div className="bg-[#FFF8EA] p-4 sm:p-5 rounded-2xl border border-[#07545A]/15 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                <div className="md:col-span-1 rounded-2xl overflow-hidden aspect-4/3 bg-stone-200 border border-[#07545A]/20 shadow-xs">
+                  <img src={workshop.image} alt={workshop.title} className="w-full h-full object-cover" />
+                </div>
+                <div className="md:col-span-2 space-y-2.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#3F704B] bg-white px-2.5 py-0.5 rounded-full border border-[#07545A]/15 shadow-2xs">
+                      {workshop.format}
+                    </span>
+                    <span className="text-xs font-bold text-[#07545A] bg-[#07545A]/10 px-2.5 py-0.5 rounded-full">
+                      ₹{workshop.price} / attendee
+                    </span>
+                    <span className="text-xs font-bold text-[#E97868] bg-[#E97868]/10 px-2.5 py-0.5 rounded-full">
+                      {workshop.seatsLeft} seats remaining
+                    </span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-bold text-[#07545A] font-display">
+                    {workshop.title}
+                  </h3>
+                  <p className="text-xs text-[#173B3D]/80 leading-relaxed whitespace-pre-wrap">
+                    {workshop.description}
+                  </p>
+                </div>
+              </div>
+
+              {/* Specification Grid */}
+              <div className="p-3 bg-white rounded-xl border border-[#07545A]/15 grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]">
+                <div>
+                  <span className="text-[#687778] block text-[10px] uppercase font-bold">Instructor</span>
+                  <span className="font-bold text-[#07545A]">{workshop.creatorName}</span>
+                </div>
+                <div>
+                  <span className="text-[#687778] block text-[10px] uppercase font-bold">Date & Time</span>
+                  <span className="font-bold text-[#07545A]">{workshop.date} · {workshop.time}</span>
+                </div>
+                <div>
+                  <span className="text-[#687778] block text-[10px] uppercase font-bold">Duration</span>
+                  <span className="font-bold text-[#07545A]">{workshop.duration}</span>
+                </div>
+                <div>
+                  <span className="text-[#687778] block text-[10px] uppercase font-bold">Platform / Location</span>
+                  <span className="font-bold text-[#07545A]">{workshop.location || workshop.meetingPlatform || 'Google Meet'}</span>
+                </div>
+              </div>
+
+              {/* Direct Link Share Command Panel */}
+              <div className="p-3.5 bg-gradient-to-r from-[#FFFDF7] to-white rounded-xl border border-[#07545A]/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <span className="text-[10px] uppercase font-extrabold text-[#07545A] block">
+                    Public Buyer URL For Ticket Bookings:
+                  </span>
+                  <span className="font-mono text-[11px] text-[#07545A] font-bold truncate block select-all">
+                    {buyerBookingUrl}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleCopyBuyerLink}
+                    className="px-3 py-1.5 bg-[#07545A] text-[#FFF8EA] hover:bg-[#063F45] rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copy Buyer Link</span>
+                  </button>
+                  <a
+                    href={buyerBookingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 bg-white text-[#07545A] hover:bg-[#07545A]/10 border border-[#07545A]/20 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Open Link</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Modal Footer */}
         <div className="pt-3 mt-3 border-t border-[#07545A]/10 flex items-center justify-between shrink-0">
           <span className="text-[11px] text-[#687778]">
@@ -2546,28 +2782,7 @@ const WorkshopEditModal: React.FC<WorkshopEditModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="font-bold text-[#07545A]">Cover Image</label>
-              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#07545A] hover:text-[#064247] cursor-pointer bg-[#07545A]/5 px-2 py-0.5 rounded-lg border border-[#07545A]/15">
-                <Upload className="w-3 h-3 text-[#F2A900]" />
-                <span>Upload to Cloudinary</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    e.target.value = '';
-                    if (file) {
-                      try {
-                        const res = await cloudinaryService.uploadFile(file, { folder: 'curowit-workshops' });
-                        setImage(res.secureUrl || res.url);
-                      } catch {}
-                    }
-                  }}
-                />
-              </label>
-            </div>
+            <label className="font-bold text-[#07545A] block mb-1">Cover Image URL</label>
             <div className="flex gap-3 items-center">
               <img
                 src={image}
@@ -2802,28 +3017,7 @@ const StoryEditModal: React.FC<StoryEditModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="font-bold text-[#07545A]">Cover Image</label>
-              <label className="inline-flex items-center gap-1 text-[11px] font-bold text-[#07545A] hover:text-[#064247] cursor-pointer bg-[#07545A]/5 px-2 py-0.5 rounded-lg border border-[#07545A]/15">
-                <Upload className="w-3 h-3 text-[#F2A900]" />
-                <span>Upload to Cloudinary</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    e.target.value = '';
-                    if (file) {
-                      try {
-                        const res = await cloudinaryService.uploadFile(file, { folder: 'curowit-stories' });
-                        setImage(res.secureUrl || res.url);
-                      } catch {}
-                    }
-                  }}
-                />
-              </label>
-            </div>
+            <label className="font-bold text-[#07545A] block mb-1">Cover Image URL</label>
             <div className="flex gap-3 items-center">
               <img
                 src={image}
