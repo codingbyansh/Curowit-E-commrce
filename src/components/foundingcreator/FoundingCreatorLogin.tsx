@@ -113,7 +113,7 @@ export const FoundingCreatorLogin: React.FC<FoundingCreatorLoginProps> = ({ onNa
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="creator@yourstudio.in"
-                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl outline-none focus:border-[#07545A]"
+                    className="w-full pl-9 pr-3 py-2.5 text-base sm:text-xs bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl outline-none focus:border-[#07545A]"
                   />
                 </div>
               </div>
@@ -143,7 +143,7 @@ export const FoundingCreatorLogin: React.FC<FoundingCreatorLoginProps> = ({ onNa
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-9 pr-3 py-2.5 text-xs bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl outline-none focus:border-[#07545A]"
+                    className="w-full pl-9 pr-3 py-2.5 text-base sm:text-xs bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl outline-none focus:border-[#07545A]"
                   />
                 </div>
               </div>
@@ -169,7 +169,7 @@ export const FoundingCreatorLogin: React.FC<FoundingCreatorLoginProps> = ({ onNa
           <div className="pt-3 border-t border-[#07545A]/10 text-center">
             <div className="inline-flex items-center gap-1.5 text-[11px] text-[#173B3D]/70 font-medium">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Secure encrypted artisan access with Supabase sync</span>
+              <span>End-to-end encrypted artisan portal</span>
             </div>
           </div>
 

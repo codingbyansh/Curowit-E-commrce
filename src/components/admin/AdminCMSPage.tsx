@@ -560,7 +560,7 @@ export const AdminCMSPage: React.FC = () => {
         )}
 
         {/* ========================================================
-            TAB 2: ORDERS MANAGER (SUPABASE REALTIME SYNC)
+            TAB 2: ORDERS MANAGER
             ======================================================== */}
         {activeTab === 'orders' && <OrderManagement />}
 

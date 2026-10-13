@@ -95,8 +95,8 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       num: '02',
       title: 'Portfolio & Store Documents',
       headline: 'Upload craft lookbook & certifications',
-      timeframe: 'Instant sync',
-      summary: 'Upload craft photographs, artisan cards, or studio credentials. All files are synchronized directly to our persistent Supabase document archive.',
+      timeframe: 'Immediate submission',
+      summary: 'Upload craft photographs, artisan cards, or studio credentials. All files are safely archived in your studio profile.',
       deliverables: ['High-res finished piece photos', 'Craft method verification', 'Optional GST / Artisan ID'],
       proTip: 'Independent hobbyists and student creators do not require GST registration.',
     },
@@ -395,28 +395,10 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       {/* =========================================================================
           3. HERO EDITORIAL SHOWCASE (WARM, AUTHENTIC, IMPACTFUL)
           ========================================================================= */}
-      <section className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-24 border-b border-[#07545A]/10 bg-gradient-to-b from-[#FFF8EA]/50 via-[#FFFDF7] to-[#FFFDF7]">
-        {/* Craft Dotted Grid Layer */}
-        <div
-          className="pointer-events-none absolute inset-0 z-0 opacity-40 mix-blend-multiply"
-          style={{
-            backgroundImage: `radial-gradient(circle, rgba(23, 59, 61, 0.22) 1.25px, transparent 1.25px)`,
-            backgroundSize: '24px 24px',
-          }}
-          aria-hidden="true"
-        />
-
-        {/* Craft Blueprint Vector Drafting Lines */}
-        <svg
-          className="pointer-events-none absolute inset-0 w-full h-full z-0 opacity-35 select-none"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
-        >
-          <line x1="0" y1="20" x2="100%" y2="20" stroke="#173B3D" strokeWidth="1" strokeDasharray="4 6" strokeOpacity="0.4" />
-          <circle cx="92%" cy="140" r="130" fill="none" stroke="#173B3D" strokeWidth="1" strokeDasharray="3 5" strokeOpacity="0.3" />
-          <circle cx="92%" cy="140" r="160" fill="none" stroke="#173B3D" strokeWidth="0.8" strokeDasharray="8 6" strokeOpacity="0.25" />
-          <line x1="10%" y1="100%" x2="90%" y2="0" stroke="#173B3D" strokeWidth="0.8" strokeDasharray="6 8" strokeOpacity="0.2" />
-        </svg>
+      <section className="relative overflow-hidden pt-10 pb-14 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-24 border-b border-[#07545A]/10 bg-gradient-to-b from-[#FFF8EA]/50 via-[#FFFDF7] to-[#FFFDF7]">
+        {/* Soft, warm luxury ambient glow without drafting matrix */}
+        <div className="pointer-events-none absolute top-0 right-1/4 w-96 h-96 rounded-full bg-[#F2A900]/10 blur-3xl" aria-hidden="true" />
+        <div className="pointer-events-none absolute bottom-0 left-10 w-80 h-80 rounded-full bg-[#07545A]/5 blur-3xl" aria-hidden="true" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -912,18 +894,18 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       </section>
 
       {/* =========================================================================
-          7. LIVE STATUS QUERY & SUPABASE DATABASE SYNC PANEL
+          7. APPLICATION STATUS VERIFICATION PANEL
           ========================================================================= */}
       <section id="status-tracker-section" className="py-16 sm:py-20 border-b border-[#07545A]/10 bg-[#FFF8EA]/50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-5">
           <span className="text-xs font-bold uppercase tracking-wider text-[#07545A] bg-[#07545A]/10 px-3 py-1 rounded-full">
-            Real-Time Database Query
+            Application Tracker
           </span>
           <h2 className="text-2xl sm:text-3xl font-bold text-[#07545A] font-display">
             Check Your Application Status
           </h2>
           <p className="text-xs sm:text-sm text-[#173B3D]/70 max-w-lg mx-auto">
-            Already submitted your artisan profile? Enter your application reference ID or email to check real-time Supabase audit progress.
+            Already submitted your artisan profile? Enter your application reference ID or email to check real-time curation review progress.
           </p>
 
           <form onSubmit={handleLiveStatusLookup} className="max-w-md mx-auto flex items-center gap-2">
@@ -935,7 +917,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                 value={statusQuery}
                 onChange={(e) => setStatusQuery(e.target.value)}
                 placeholder="APP-FC-XXXXX or your email..."
-                className="w-full pl-9 pr-3 py-2.5 text-xs bg-white border border-[#07545A]/20 rounded-xl outline-none focus:border-[#07545A]"
+                className="w-full pl-9 pr-3 py-2.5 text-base sm:text-xs bg-white border border-[#07545A]/20 rounded-xl outline-none focus:border-[#07545A]"
               />
             </div>
             <button

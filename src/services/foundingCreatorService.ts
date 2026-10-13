@@ -1,7 +1,11 @@
 import { supabase } from '../supabase';
 import { storage } from '../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { foundingCreatorSyncService, StoreDocument, StoreDocumentType } from '../lib/foundingCreatorSync';
+import {
+  foundingCreatorSyncService,
+  uploadFileToStorageOrBase64,
+  StoreDocument,
+  StoreDocumentType,
+} from '../lib/foundingCreatorSync';
 import {
   CreatorProfile,
   CreatorApplication,
@@ -590,33 +594,17 @@ export const foundingCreatorService = {
     };
   },
 
-  // 3. FILE UPLOADS TO FIREBASE STORAGE
+  // 3. FILE UPLOADS (STORAGE WITH RESILIENT BASE64 PERSISTENCE)
   async uploadPortfolioFile(file: File, creatorId: string): Promise<string> {
-    try {
-      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const storagePath = `creator-portfolios/${creatorId}/${Date.now()}_${sanitizedName}`;
-      const fileRef = ref(storage, storagePath);
-      const snapshot = await uploadBytes(fileRef, file);
-      const downloadUrl = await getDownloadURL(snapshot.ref);
-      return downloadUrl;
-    } catch (err) {
-      console.warn('Firebase Storage upload notice, falling back to local object preview:', err);
-      return URL.createObjectURL(file);
-    }
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const storagePath = `creator-portfolios/${creatorId}/${Date.now()}_${sanitizedName}`;
+    return await uploadFileToStorageOrBase64(file, storagePath);
   },
 
   async uploadProductImage(file: File, creatorId: string, productId: string): Promise<string> {
-    try {
-      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const storagePath = `creator-products/${creatorId}/${productId}/${Date.now()}_${sanitizedName}`;
-      const fileRef = ref(storage, storagePath);
-      const snapshot = await uploadBytes(fileRef, file);
-      const downloadUrl = await getDownloadURL(snapshot.ref);
-      return downloadUrl;
-    } catch (err) {
-      console.warn('Firebase Storage product image upload notice, fallback used:', err);
-      return URL.createObjectURL(file);
-    }
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const storagePath = `creator-products/${creatorId}/${productId}/${Date.now()}_${sanitizedName}`;
+    return await uploadFileToStorageOrBase64(file, storagePath);
   },
 
   // 4. APPLICATION STATUS QUERY

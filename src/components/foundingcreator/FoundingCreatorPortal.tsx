@@ -126,7 +126,7 @@ export const FoundingCreatorPortal: React.FC<FoundingCreatorPortalProps> = ({
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-full overflow-x-hidden min-h-screen">
       {currentView === 'landing' && <FoundingCreatorLanding onNavigate={handleNavigate} />}
       {currentView === 'apply' && <FoundingCreatorApply onNavigate={handleNavigate} />}
       {currentView === 'status' && (

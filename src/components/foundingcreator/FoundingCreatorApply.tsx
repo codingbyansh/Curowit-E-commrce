@@ -348,7 +348,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
         ) : (
           <div className="bg-white rounded-3xl border border-[#07545A]/15 shadow-sm overflow-hidden">
             {/* Header / Stepper Progress Bar */}
-            <div className="bg-[#FFF8EA] p-6 border-b border-[#07545A]/12">
+            <div className="bg-[#FFF8EA] p-4 sm:p-6 border-b border-[#07545A]/12">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#07545A] bg-[#07545A]/10 px-2.5 py-0.5 rounded-full">
@@ -358,7 +358,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                     Apply to Join the Curowit Atelier
                   </h1>
                 </div>
-                <span className="text-xs font-bold text-[#07545A] bg-white px-3 py-1 rounded-full border border-[#07545A]/15">
+                <span className="text-xs font-bold text-[#07545A] bg-white px-3 py-1 rounded-full border border-[#07545A]/15 shrink-0 ml-2">
                   Step {currentStep} of 4
                 </span>
               </div>
@@ -382,14 +382,14 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
 
             {/* Error Message Alert */}
             {errorMessage && (
-              <div className="mx-6 mt-6 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+              <div className="mx-4 sm:mx-6 mt-4 sm:mt-6 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{errorMessage}</span>
               </div>
             )}
 
             {/* FORM BODY */}
-            <div className="p-6 sm:p-8 space-y-6">
+            <div className="p-4 sm:p-8 space-y-6">
               {/* STEP 1: Personal Details */}
               {currentStep === 1 && (
                 <div className="space-y-4">
@@ -408,7 +408,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder="e.g. Meera Sharma"
-                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
+                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
                       />
                     </div>
 
@@ -421,7 +421,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
                         placeholder="e.g. Meera Sharma (Studio Dhaga)"
-                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
+                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
                       />
                     </div>
                   </div>
@@ -437,7 +437,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="creator@yourstudio.in"
-                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
+                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
                       />
                     </div>
 
@@ -451,7 +451,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="+91 98201 44521"
-                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
+                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
                       />
                     </div>
                   </div>
@@ -467,7 +467,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Minimum 6 characters"
-                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
+                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
                       />
                     </div>
 
@@ -481,7 +481,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Re-enter password"
-                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
+                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
                       />
                     </div>
                   </div>
@@ -495,7 +495,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
                         placeholder="Jaipur"
-                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
+                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
                       />
                     </div>
 
@@ -507,7 +507,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                         value={state}
                         onChange={(e) => setState(e.target.value)}
                         placeholder="Rajasthan"
-                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
+                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
                       />
                     </div>
 
@@ -519,7 +519,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                         value={pincode}
                         onChange={(e) => setPincode(e.target.value)}
                         placeholder="302001"
-                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
+                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
                       />
                     </div>
                   </div>
@@ -534,7 +534,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                         value={instagramUrl}
                         onChange={(e) => setInstagramUrl(e.target.value)}
                         placeholder="https://instagram.com/your_handle"
-                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
+                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
                       />
                     </div>
 
@@ -547,7 +547,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                         value={portfolioUrl}
                         onChange={(e) => setPortfolioUrl(e.target.value)}
                         placeholder="https://yourportfolio.com"
-                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
+                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
                       />
                     </div>
                   </div>
@@ -567,7 +567,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                       <select
                         value={creatorType}
                         onChange={(e) => setCreatorType(e.target.value as CreatorType)}
-                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A] font-semibold"
+                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A] font-semibold"
                       >
                         <option value="Individual">Individual Artisan / Solo Maker</option>
                         <option value="Student">Student Creator</option>
@@ -586,7 +586,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                         value={brandName}
                         onChange={(e) => setBrandName(e.target.value)}
                         placeholder="e.g. Studio Dhaga"
-                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
+                        className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
                       />
                     </div>
                   </div>
@@ -626,7 +626,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                       value={intro}
                       onChange={(e) => setIntro(e.target.value)}
                       placeholder="e.g. Self-taught crochet artist creating heirloom toys and accessories from Rajasthan..."
-                      className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
+                      className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
                     />
                   </div>
 
@@ -640,7 +640,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                       value={craftDescription}
                       onChange={(e) => setCraftDescription(e.target.value)}
                       placeholder="Detail your material sourcing, crafting techniques, and whether pieces are made by hand or custom designed..."
-                      className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
+                      className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
                     />
                   </div>
 
@@ -720,7 +720,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                       Section C: Portfolio & Craft Verification
                     </h3>
                     <p className="text-xs text-[#173B3D]/70 mt-0.5">
-                      Upload high-resolution images of your finished pieces. Uploaded to secure Firebase Storage.
+                      Upload high-resolution images of your finished pieces for atelier review.
                     </p>
                   </div>
 
@@ -743,7 +743,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                         <Upload className="w-6 h-6" />
                       </div>
                       <span className="font-bold text-xs text-[#07545A]">
-                        {isUploadingFile ? 'Uploading to Firebase Storage...' : 'Click to Upload Craft Images / Lookbook'}
+                        {isUploadingFile ? 'Uploading images...' : 'Click to Upload Craft Images / Lookbook'}
                       </span>
                       <span className="text-[11px] text-[#173B3D]/60">
                         Supports PNG, JPG, WebP, PDF (Max 10MB per file)
@@ -791,7 +791,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                       value={gstin}
                       onChange={(e) => setGstin(e.target.value)}
                       placeholder="e.g. 08AAAAA0000A1Z5 or Artisan Card ID"
-                      className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
+                      className="w-full px-3 py-2 bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl text-base sm:text-xs outline-none focus:border-[#07545A]"
                     />
                     <span className="text-[10px] text-[#687778] block mt-1">
                       Sole artisans and students do not require GST registration to sell on Curowit.

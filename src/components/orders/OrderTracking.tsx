@@ -144,7 +144,7 @@ export const OrderTracking: React.FC = () => {
           if (isMounted) {
             setSupabaseMilestones(fresh);
             setLastRefreshedAt(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-            showToast('Tracking Updated', `New milestone synced from Supabase for Order #${activeOrder.id}`);
+            showToast('Tracking Updated', `Live milestones refreshed for Order #${activeOrder.id}`);
           }
         }
       )
@@ -193,7 +193,7 @@ export const OrderTracking: React.FC = () => {
     if (found) {
       setActiveOrder(found);
       setTrackingOrderId(found.id);
-      showToast('Order Found', `Tracking Order #${found.id} from Supabase database`);
+      showToast('Order Found', `Tracking Order #${found.id} status`);
     } else {
       showToast(
         'Order Not Found',
@@ -320,14 +320,14 @@ export const OrderTracking: React.FC = () => {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#07545A]/10 text-[#07545A] text-xs font-bold mb-3">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <Truck className="w-3.5 h-3.5 text-[#F2A900]" />
-              <span>Supabase Real-Time Order Tracking</span>
+              <span>Real-Time Artisan Order Tracking</span>
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-extrabold text-[#07545A] font-display tracking-tight mb-2">
               Track Your Handcrafted Order
             </h1>
             <p className="text-xs sm:text-sm text-[#173B3D]/75 leading-relaxed mb-6">
-              Enter your Order ID to track every slow-crafted milestone synced in real-time from our Supabase database. Includes live courier movement, artisan studio notes, and instant status updates.
+              Enter your Order ID to track every slow-crafted milestone in real-time. Includes live courier movement, artisan studio notes, and instant status updates.
             </p>
 
             {/* Order Lookup Search Form */}
@@ -457,10 +457,10 @@ export const OrderTracking: React.FC = () => {
                       <span>{activeOrder.status}</span>
                     </span>
 
-                    {/* Supabase live badge */}
+                    {/* Live status badge */}
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                       <Radio className="w-2.5 h-2.5 text-emerald-600 animate-pulse" />
-                      <span>Supabase Synced</span>
+                      <span>Live Status Active</span>
                     </span>
                   </div>
 
@@ -616,14 +616,14 @@ export const OrderTracking: React.FC = () => {
                         Detailed Activity Timeline
                       </h2>
                       <span className="text-[11px] text-[#687778]">
-                        Data streamed directly from Supabase <code className="bg-[#07545A]/10 px-1.5 py-0.5 rounded text-[10px] text-[#07545A]">order_tracking</code> table
+                        Verified milestones updated continuously from artisan studio to delivery
                       </span>
                     </div>
 
                     <div className="text-right">
                       {isLoadingTracking && (
                         <span className="text-[11px] text-[#07545A] font-bold animate-pulse">
-                          Syncing...
+                          Updating...
                         </span>
                       )}
                       {lastRefreshedAt && !isLoadingTracking && (
