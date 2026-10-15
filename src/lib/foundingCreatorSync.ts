@@ -1073,7 +1073,8 @@ class FoundingCreatorSyncService {
 
   public getLocalProfiles(): CreatorProfile[] {
     try {
-      return JSON.parse(localStorage.getItem(LOCAL_KEYS.PROFILES) || '[]');
+      const list: CreatorProfile[] = JSON.parse(localStorage.getItem(LOCAL_KEYS.PROFILES) || '[]');
+      return list.filter((p) => p.id !== 'cr-meera-sharma' && p.id !== 'cr-aarav-patel' && p.creatorId !== 'CR-FC-98421' && p.creatorId !== 'CR-FC-10543');
     } catch {
       return [];
     }
@@ -1081,7 +1082,8 @@ class FoundingCreatorSyncService {
 
   public getLocalApplications(): CreatorApplication[] {
     try {
-      return JSON.parse(localStorage.getItem(LOCAL_KEYS.APPLICATIONS) || '[]');
+      const list: CreatorApplication[] = JSON.parse(localStorage.getItem(LOCAL_KEYS.APPLICATIONS) || '[]');
+      return list.filter((a) => a.applicationId !== 'APP-FC-98421' && a.applicationId !== 'APP-FC-10543' && a.id !== 'app-meera-sharma' && a.id !== 'app-aarav-patel');
     } catch {
       return [];
     }
@@ -1097,7 +1099,8 @@ class FoundingCreatorSyncService {
 
   public getLocalProducts(): CreatorProduct[] {
     try {
-      return JSON.parse(localStorage.getItem(LOCAL_KEYS.PRODUCTS) || '[]');
+      const list: CreatorProduct[] = JSON.parse(localStorage.getItem(LOCAL_KEYS.PRODUCTS) || '[]');
+      return list.filter((p) => p.creatorId !== 'cr-meera-sharma' && p.creatorId !== 'cr-aarav-patel');
     } catch {
       return [];
     }
@@ -1175,7 +1178,7 @@ class FoundingCreatorSyncService {
   }
 
   // Row mappers from Supabase snake_case to TypeScript camelCase
-  private mapSupabaseRowToProfile(row: any): CreatorProfile {
+  public mapSupabaseRowToProfile(row: any): CreatorProfile {
     return {
       id: row.id,
       userId: row.user_id || `usr_${row.id}`,
@@ -1203,7 +1206,7 @@ class FoundingCreatorSyncService {
     };
   }
 
-  private mapSupabaseRowToApplication(row: any): CreatorApplication {
+  public mapSupabaseRowToApplication(row: any): CreatorApplication {
     return {
       id: row.id,
       applicationId: row.application_id || `APP-${row.id}`,
@@ -1242,7 +1245,7 @@ class FoundingCreatorSyncService {
     };
   }
 
-  private mapSupabaseRowToDocument(row: any): StoreDocument {
+  public mapSupabaseRowToDocument(row: any): StoreDocument {
     return {
       id: row.id,
       creatorId: row.creator_id,
@@ -1260,7 +1263,7 @@ class FoundingCreatorSyncService {
     };
   }
 
-  private mapSupabaseRowToProduct(row: any): CreatorProduct {
+  public mapSupabaseRowToProduct(row: any): CreatorProduct {
     return {
       id: row.id,
       productId: row.product_id || `prod-${row.id}`,

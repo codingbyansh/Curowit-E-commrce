@@ -305,29 +305,29 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFDF7] text-[#173B3D] selection:bg-[#07545A] selection:text-[#FFF8EA]">
+    <div className="min-h-screen bg-[#FAF7F2] text-[#192B2C] selection:bg-[#07545A] selection:text-[#FFF8EA]">
       {/* =========================================================================
           1. COHORT ADMISSION LIVE NOTIFICATION STRIP
           ========================================================================= */}
-      <div className="bg-[#07545A] text-[#FFF8EA] text-xs py-2 px-4 border-b border-[#063F45]">
+      <div className="bg-[#063B40] text-[#FAF6EE] text-xs py-2 px-4 border-b border-[#04282B]">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-center sm:text-left">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-            <span className="font-medium">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+            <span className="font-medium tracking-wide">
               Founding Creator Cohort 2026 Admissions Active:
             </span>
-            <span className="text-[#F2A900] font-bold">
+            <span className="text-[#F59E0B] font-bold tabular-nums">
               118 of 150 Master Artisan Seats Claimed
             </span>
           </div>
 
           <div className="flex items-center gap-4 text-[11px]">
-            <span className="hidden md:inline text-[#FFF8EA]/70">
-              Avg. Review Turnaround: 28 hrs · 7-Day Settlement SLA
+            <span className="hidden md:inline text-[#FAF6EE]/75">
+              Avg. Review Turnaround: <strong className="text-white font-medium">28 hrs</strong> · Guaranteed 7-Day Settlement SLA
             </span>
             <button
               onClick={() => onNavigate('foundingcreator-apply')}
-              className="text-[#F2A900] font-bold underline hover:text-white transition-colors cursor-pointer"
+              className="text-[#F59E0B] font-bold underline hover:text-white transition-colors cursor-pointer"
             >
               Apply in 5 mins →
             </button>
@@ -338,7 +338,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       {/* =========================================================================
           2. PROGRAM HEADER (STANDALONE CLEAN PORTAL BRANDING)
           ========================================================================= */}
-      <header className="border-b border-[#07545A]/10 bg-[#FFFDF7]/95 backdrop-blur-md sticky top-0 z-40">
+      <header className="border-b border-[#07545A]/12 bg-[#FAF7F2]/90 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -349,12 +349,12 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
               <CurowitLogo variant="horizontal" size="md" responsiveTagline />
             </button>
             <span className="hidden sm:inline-block text-[#07545A]/30">·</span>
-            <span className="hidden sm:inline-block text-xs font-bold text-[#07545A] tracking-wide uppercase">
-              Founding Creator Portal
+            <span className="hidden sm:inline-block text-xs font-semibold text-[#07474C] tracking-wider uppercase font-sans">
+              Founding Creator Atelier
             </span>
             <button
               onClick={() => onNavigate('home')}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#07545A] bg-[#07545A]/10 hover:bg-[#07545A]/15 border border-[#07545A]/20 px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ml-1"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#07474C] bg-[#07545A]/8 hover:bg-[#07545A]/15 border border-[#07545A]/15 px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ml-1"
               title="Return to Curowit Storefront"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
@@ -368,7 +368,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                 const element = document.getElementById('status-tracker-section');
                 element?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="text-xs font-bold text-[#173B3D]/70 hover:text-[#07545A] transition-colors cursor-pointer hidden md:inline-flex items-center gap-1.5 px-3 py-2"
+              className="text-xs font-semibold text-[#192B2C]/75 hover:text-[#07474C] transition-colors cursor-pointer hidden md:inline-flex items-center gap-1.5 px-3 py-2"
             >
               <Search className="w-3.5 h-3.5" />
               <span>Track Application</span>
@@ -376,14 +376,14 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
 
             <button
               onClick={() => onNavigate('foundingcreator-login')}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-[#07545A] border border-[#07545A]/20 hover:bg-[#07545A]/5 transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-[#07474C] border border-[#07545A]/20 hover:bg-[#07545A]/6 transition-colors cursor-pointer"
             >
               Artisan Login
             </button>
 
             <button
               onClick={() => onNavigate('foundingcreator-apply')}
-              className="px-4 sm:px-5 py-2.5 rounded-xl bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-xs font-bold shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+              className="px-4 sm:px-5 py-2.5 rounded-xl bg-[#07545A] hover:bg-[#053B40] text-[#FFF8EA] text-xs font-semibold shadow-[0_2px_8px_-1px_rgba(7,84,90,0.25)] hover:shadow-[0_4px_14px_-2px_rgba(7,84,90,0.35)] transition-all cursor-pointer flex items-center gap-1.5"
             >
               <span>Apply for Cohort</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -395,46 +395,66 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       {/* =========================================================================
           3. HERO EDITORIAL SHOWCASE (WARM, AUTHENTIC, IMPACTFUL)
           ========================================================================= */}
-      <section className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-24 border-b border-[#07545A]/10 bg-gradient-to-b from-[#FFF8EA]/50 via-[#FFFDF7] to-[#FFFDF7]">
-        {/* Craft Dotted Grid Layer */}
+      <section className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-24 border-b border-[#07545A]/10 bg-gradient-to-b from-[#F5EFE6] via-[#FAF7F2] to-[#FAF7F2]">
+        {/* Ambient Radiant Warm Glow */}
         <div
-          className="pointer-events-none absolute inset-0 z-0 opacity-40 mix-blend-multiply"
+          className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[900px] h-[450px] opacity-60 z-0 blur-3xl"
           style={{
-            backgroundImage: `radial-gradient(circle, rgba(23, 59, 61, 0.22) 1.25px, transparent 1.25px)`,
+            background: 'radial-gradient(ellipse 70% 50% at 50% 30%, rgba(245, 158, 11, 0.14), rgba(7, 84, 90, 0.08) 50%, transparent 80%)',
+          }}
+          aria-hidden="true"
+        />
+
+        {/* Tactile Handcrafted Stippled Paper Grain Texture */}
+        <div
+          className="pointer-events-none absolute inset-0 z-0 opacity-30 mix-blend-multiply"
+          style={{
+            backgroundImage: `radial-gradient(circle, rgba(23, 59, 61, 0.18) 1px, transparent 1px)`,
             backgroundSize: '24px 24px',
           }}
           aria-hidden="true"
         />
 
-        {/* Craft Blueprint Vector Drafting Lines */}
+        {/* Artisanal Heritage Drafting Lines & Potter's Wheel Geometry */}
         <svg
-          className="pointer-events-none absolute inset-0 w-full h-full z-0 opacity-35 select-none"
+          className="pointer-events-none absolute inset-0 w-full h-full z-0 opacity-25 select-none"
           xmlns="http://www.w3.org/2000/svg"
           aria-hidden="true"
         >
-          <line x1="0" y1="20" x2="100%" y2="20" stroke="#173B3D" strokeWidth="1" strokeDasharray="4 6" strokeOpacity="0.4" />
-          <circle cx="92%" cy="140" r="130" fill="none" stroke="#173B3D" strokeWidth="1" strokeDasharray="3 5" strokeOpacity="0.3" />
-          <circle cx="92%" cy="140" r="160" fill="none" stroke="#173B3D" strokeWidth="0.8" strokeDasharray="8 6" strokeOpacity="0.25" />
-          <line x1="10%" y1="100%" x2="90%" y2="0" stroke="#173B3D" strokeWidth="0.8" strokeDasharray="6 8" strokeOpacity="0.2" />
+          {/* Top subtle horizontal guideline */}
+          <line x1="0" y1="24" x2="100%" y2="24" stroke="#07545A" strokeWidth="0.75" strokeDasharray="3 6" strokeOpacity="0.5" />
+          
+          {/* Potter's wheel concentric lathe rings */}
+          <circle cx="88%" cy="160" r="110" fill="none" stroke="#07545A" strokeWidth="1" strokeDasharray="2 4" strokeOpacity="0.4" />
+          <circle cx="88%" cy="160" r="145" fill="none" stroke="#D4A373" strokeWidth="0.8" strokeDasharray="6 6" strokeOpacity="0.5" />
+          <circle cx="88%" cy="160" r="185" fill="none" stroke="#07545A" strokeWidth="0.6" strokeDasharray="1 5" strokeOpacity="0.3" />
+
+          {/* Weaver's warp cross-guide on left */}
+          <line x1="8%" y1="0" x2="8%" y2="100%" stroke="#07545A" strokeWidth="0.5" strokeDasharray="4 8" strokeOpacity="0.25" />
+          <line x1="2%" y1="85%" x2="40%" y2="85%" stroke="#D4A373" strokeWidth="0.75" strokeDasharray="5 7" strokeOpacity="0.3" />
         </svg>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left Headline Column */}
             <div className="lg:col-span-7 space-y-6">
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#07545A]">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#07474C] tracking-wide">
                 <span>Artisan Atelier Cohort 2026</span>
-                <span aria-hidden="true">·</span>
+                <span aria-hidden="true" className="text-[#D4A373]">·</span>
                 <span>Handmade Independence</span>
-                <span aria-hidden="true">·</span>
+                <span aria-hidden="true" className="text-[#D4A373]">·</span>
                 <span>Guaranteed 70/30 Model</span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#07545A] font-display tracking-tight leading-[1.12]">
-                Your Craft Deserves True Patrons, Not Algorithmic Advertising Taxes.
+              <h1 className="text-3xl sm:text-4xl lg:text-[3.25rem] font-semibold text-[#07474C] font-display tracking-tight leading-[1.14]">
+                Your Craft Deserves{' '}
+                <span className="font-serif italic font-normal text-[#B45309]">
+                  True Patrons
+                </span>
+                , Not Algorithmic Advertising Taxes.
               </h1>
 
-              <p className="text-base sm:text-lg text-[#173B3D]/80 leading-relaxed max-w-2xl">
+              <p className="text-base sm:text-lg text-[#233837] leading-relaxed max-w-2xl font-normal">
                 Join India’s premier slow-craft atelier marketplace. You retain 100% design ownership,
                 receive a dedicated brand storefront, and earn a transparent 70% direct share with automated
                 7-day settlements post delivery.
@@ -444,7 +464,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                 <button
                   onClick={() => onNavigate('foundingcreator-apply')}
-                  className="px-7 py-3.5 rounded-2xl bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer group"
+                  className="px-7 py-3.5 rounded-2xl bg-[#07545A] hover:bg-[#053B40] text-[#FFF8EA] font-semibold text-sm shadow-[0_4px_16px_-2px_rgba(7,84,90,0.3)] hover:shadow-[0_8px_24px_-4px_rgba(7,84,90,0.4)] transition-all flex items-center justify-center gap-2 cursor-pointer group active:scale-[0.99]"
                 >
                   <span>Apply for Founding Creator Cohort</span>
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -455,7 +475,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                     const el = document.getElementById('calculator-section');
                     el?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="px-6 py-3.5 rounded-2xl bg-white hover:bg-[#FFF8EA] text-[#07545A] border-2 border-[#07545A]/20 font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="px-6 py-3.5 rounded-2xl bg-white hover:bg-[#FCFBF8] text-[#07474C] border border-[#07545A]/20 hover:border-[#07545A]/35 font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
                 >
                   <Sliders className="w-4 h-4 text-[#07545A]" />
                   <span>Simulate 70% Earnings</span>
@@ -463,17 +483,17 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
               </div>
 
               {/* Live Program Guarantees */}
-              <div className="pt-4 flex flex-wrap items-center gap-4 text-xs text-[#173B3D]/70 border-t border-[#07545A]/10">
-                <div className="flex items-center gap-1.5 font-semibold text-[#07545A]">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <div className="pt-4 flex flex-wrap items-center gap-5 text-xs text-[#233837]/80 border-t border-[#07545A]/10">
+                <div className="flex items-center gap-1.5 font-medium text-[#07474C]">
+                  <ShieldCheck className="w-4 h-4 text-emerald-700" />
                   <span>Zero Upfront Listing Fees</span>
                 </div>
-                <div className="flex items-center gap-1.5 font-semibold text-[#07545A]">
+                <div className="flex items-center gap-1.5 font-medium text-[#07474C]">
                   <CreditCard className="w-4 h-4 text-[#07545A]" />
                   <span>7-Day Payout SLA</span>
                 </div>
-                <div className="flex items-center gap-1.5 font-semibold text-[#07545A]">
-                  <Truck className="w-4 h-4 text-[#E97868]" />
+                <div className="flex items-center gap-1.5 font-medium text-[#07474C]">
+                  <Truck className="w-4 h-4 text-[#C86D51]" />
                   <span>Plastic-Free Eco Packaging</span>
                 </div>
               </div>
@@ -484,60 +504,64 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
               <div className="relative">
                 <div className="grid grid-cols-2 gap-3.5">
                   <div className="space-y-3.5">
-                    <div className="overflow-hidden rounded-3xl shadow-sm border border-[#07545A]/10 group relative">
+                    <div className="overflow-hidden rounded-3xl shadow-sm border border-[#07545A]/12 group relative bg-stone-100">
                       <img
                         src="https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=600&q=80"
                         alt="Pottery Studio"
                         className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-3 text-white text-[11px]">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-3.5 text-white text-[11px]">
                         <div>
-                          <p className="font-bold">Aarav Patel · Pottery</p>
-                          <p className="opacity-80">Ahmedabad Studio</p>
+                          <p className="font-semibold text-white">Aarav Patel · Pottery</p>
+                          <p className="text-white/80 text-[10px]">Ahmedabad Studio</p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="overflow-hidden rounded-3xl shadow-sm border border-[#07545A]/10 group relative">
+                    <div className="overflow-hidden rounded-3xl shadow-sm border border-[#07545A]/12 group relative bg-stone-100">
                       <img
                         src="https://images.unsplash.com/photo-1607344645866-009c320b5ab8?auto=format&fit=crop&w=600&q=80"
                         alt="Textile Weaving"
                         className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-3 text-white text-[11px]">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-3.5 text-white text-[11px]">
                         <div>
-                          <p className="font-bold">Meera Sharma · Crochet</p>
-                          <p className="opacity-80">Jaipur Studio</p>
+                          <p className="font-semibold text-white">Meera Sharma · Crochet</p>
+                          <p className="text-white/80 text-[10px]">Jaipur Studio</p>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-3.5 pt-6">
-                    <div className="overflow-hidden rounded-3xl shadow-sm border border-[#07545A]/10 group relative">
+                    <div className="overflow-hidden rounded-3xl shadow-sm border border-[#07545A]/12 group relative bg-stone-100">
                       <img
                         src="https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=600&q=80"
                         alt="Botanical Candles"
                         className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-3 text-white text-[11px]">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-3.5 text-white text-[11px]">
                         <div>
-                          <p className="font-bold">Divya K. · Soy Atelier</p>
-                          <p className="opacity-80">Dehradun, UK</p>
+                          <p className="font-semibold text-white">Divya K. · Soy Atelier</p>
+                          <p className="text-white/80 text-[10px]">Dehradun, UK</p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="overflow-hidden rounded-3xl shadow-sm border border-[#07545A]/10 group relative">
+                    <div className="overflow-hidden rounded-3xl shadow-sm border border-[#07545A]/12 group relative bg-stone-100">
                       <img
                         src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80"
                         alt="Handcrafted Jewellery"
                         className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-3 text-white text-[11px]">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-3.5 text-white text-[11px]">
                         <div>
-                          <p className="font-bold">Tara Sen · Silver Wire</p>
-                          <p className="opacity-80">Pondicherry</p>
+                          <p className="font-semibold text-white">Tara Sen · Silver Wire</p>
+                          <p className="text-white/80 text-[10px]">Pondicherry</p>
                         </div>
                       </div>
                     </div>
@@ -545,18 +569,18 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                 </div>
 
                 {/* Floating Metric Badge */}
-                <div className="absolute -bottom-5 left-4 right-4 bg-[#FFF8EA] border-2 border-[#07545A]/15 shadow-xl rounded-2xl p-4 flex items-center justify-between gap-4">
+                <div className="absolute -bottom-5 left-4 right-4 bg-white/95 backdrop-blur-md border border-[#07545A]/15 shadow-[0_12px_28px_-6px_rgba(7,84,90,0.15)] rounded-2xl p-4 flex items-center justify-between gap-4">
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#07545A] block">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[#07474C] block font-sans">
                       Direct Creator Share
                     </span>
-                    <span className="text-2xl font-bold font-display text-[#07545A]">
+                    <span className="text-2xl font-semibold font-display text-[#07474C] tabular-nums">
                       70% Net Payout
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-[#173B3D]/70 block">Settlement SLA</span>
-                    <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full inline-block">
+                    <span className="text-[10px] text-[#233837]/70 block font-medium">Settlement SLA</span>
+                    <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-full inline-block">
                       Day 7 Post Delivery
                     </span>
                   </div>
@@ -570,28 +594,47 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       {/* =========================================================================
           4. INTERACTIVE 70/30 REVENUE & SETTLEMENT CALCULATOR
           ========================================================================= */}
-      <section id="calculator-section" className="py-16 sm:py-24 border-b border-[#07545A]/10 bg-[#FFFDF7]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="calculator-section" className="py-16 sm:py-24 border-b border-[#07545A]/10 bg-gradient-to-b from-[#FAF7F2] via-[#F4ECE1]/40 to-[#FAF7F2] relative overflow-hidden">
+        {/* Subtle Ambient Light Spot */}
+        <div
+          className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] opacity-40 z-0 blur-3xl"
+          style={{
+            background: 'radial-gradient(circle, rgba(217, 119, 6, 0.1) 0%, rgba(7, 84, 90, 0.05) 50%, transparent 75%)',
+          }}
+          aria-hidden="true"
+        />
+
+        {/* Blueprint guidelines */}
+        <svg
+          className="pointer-events-none absolute inset-0 w-full h-full z-0 opacity-20 select-none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <circle cx="12%" cy="60%" r="180" fill="none" stroke="#07545A" strokeWidth="0.8" strokeDasharray="3 6" strokeOpacity="0.4" />
+          <line x1="0" y1="50%" x2="100%" y2="50%" stroke="#07545A" strokeWidth="0.5" strokeDasharray="6 8" strokeOpacity="0.25" />
+        </svg>
+
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#07545A] bg-[#07545A]/10 px-3 py-1 rounded-full">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#07474C] bg-[#07545A]/8 border border-[#07545A]/12 px-3.5 py-1 rounded-full inline-block font-sans">
               Interactive Revenue Simulator
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#07545A] font-display mt-3 mb-2">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-[#07474C] font-display mt-3 mb-2 tracking-tight">
               Calculate Your Real Creator Take-Home
             </h2>
-            <p className="text-xs sm:text-sm text-[#173B3D]/70">
-              No hidden listing fees, no shelf taxes. Slide your crafted piece pricing and monthly volume
+            <p className="text-xs sm:text-sm text-[#233837]/75 font-normal max-w-lg mx-auto">
+              No hidden listing fees, no pay-to-play shelf taxes. Slide your crafted piece pricing and monthly volume
               to preview guaranteed earnings.
             </p>
           </div>
 
           {/* Calculator Card */}
-          <div className="bg-white rounded-3xl border-2 border-[#07545A]/15 shadow-sm p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="bg-white/95 rounded-3xl border border-[#07545A]/15 shadow-[0_12px_32px_-6px_rgba(7,84,90,0.08)] p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center backdrop-blur-xs">
             {/* Left Inputs Controls */}
             <div className="lg:col-span-7 space-y-6">
               {/* Category Quick Presets */}
               <div>
-                <label className="text-xs font-bold text-[#07545A] block mb-2">
+                <label className="text-xs font-semibold text-[#07474C] block mb-2.5 font-sans">
                   Select Your Craft Medium Benchmark:
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -601,10 +644,10 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                       <button
                         key={catName}
                         onClick={() => handleSelectPreset(catName)}
-                        className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                        className={`text-xs px-3.5 py-1.5 rounded-xl font-medium transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-[#07545A] text-[#FFF8EA] shadow-xs'
-                            : 'bg-[#FFF8EA] text-[#07545A] hover:bg-[#07545A]/10 border border-[#07545A]/10'
+                            ? 'bg-[#07545A] text-[#FFF8EA] shadow-xs font-semibold'
+                            : 'bg-[#F5EFE6] text-[#07474C] hover:bg-[#07545A]/10 border border-[#07545A]/12'
                         }`}
                       >
                         {catName}
@@ -615,10 +658,12 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
               </div>
 
               {/* Slider 1: Average Selling Price */}
-              <div className="space-y-2 bg-[#FFF8EA]/50 p-4 rounded-2xl border border-[#07545A]/10">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-[#07545A]">Average Piece Retail Price</span>
-                  <span className="text-base text-[#07545A] font-display">₹{calcPrice.toLocaleString('en-IN')}</span>
+              <div className="space-y-2 bg-[#F9F6F0] p-4.5 rounded-2xl border border-[#07545A]/10">
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <span className="text-[#07474C]">Average Piece Retail Price</span>
+                  <span className="text-lg text-[#07474C] font-display font-semibold tabular-nums">
+                    ₹{calcPrice.toLocaleString('en-IN')}
+                  </span>
                 </div>
                 <input
                   type="range"
@@ -629,7 +674,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                   onChange={(e) => setCalcPrice(Number(e.target.value))}
                   className="w-full accent-[#07545A] cursor-pointer"
                 />
-                <div className="flex justify-between text-[10px] text-[#173B3D]/60">
+                <div className="flex justify-between text-[10px] text-[#233837]/60 tabular-nums">
                   <span>₹400 (Small Keepsake)</span>
                   <span>₹5,000</span>
                   <span>₹12,000 (Heirloom Masterpiece)</span>
@@ -637,10 +682,12 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
               </div>
 
               {/* Slider 2: Monthly Output Volume */}
-              <div className="space-y-2 bg-[#FFF8EA]/50 p-4 rounded-2xl border border-[#07545A]/10">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-[#07545A]">Estimated Monthly Handmade Sales</span>
-                  <span className="text-base text-[#07545A] font-display">{calcVolume} Orders / mo</span>
+              <div className="space-y-2 bg-[#F9F6F0] p-4.5 rounded-2xl border border-[#07545A]/10">
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <span className="text-[#07474C]">Estimated Monthly Handmade Sales</span>
+                  <span className="text-lg text-[#07474C] font-display font-semibold tabular-nums">
+                    {calcVolume} Orders / mo
+                  </span>
                 </div>
                 <input
                   type="range"
@@ -651,56 +698,62 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                   onChange={(e) => setCalcVolume(Number(e.target.value))}
                   className="w-full accent-[#07545A] cursor-pointer"
                 />
-                <div className="flex justify-between text-[10px] text-[#173B3D]/60">
-                  <span>5 pieces (Weekend Artisan)</span>
+                <div className="flex justify-between text-[10px] text-[#233837]/60">
+                  <span>5 pieces (Weekend Studio)</span>
                   <span>50 pieces</span>
-                  <span>150 pieces (Full Studio)</span>
+                  <span>150 pieces (Full Atelier)</span>
                 </div>
               </div>
 
               {/* Real-time comparison note */}
-              <div className="p-3 bg-[#FFFDF7] rounded-xl border border-[#07545A]/15 text-[11px] text-[#173B3D]/80 flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="p-3.5 bg-[#FAF7F2] rounded-xl border border-[#07545A]/12 text-[11px] text-[#233837]/80 flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
                 <span>
-                  <strong>The Curowit Difference:</strong> Traditional ecommerce platforms charge 35–50% in blended commissions, paid ads, and packaging fees. With Curowit, your 70% share is protected and guaranteed.
+                  <strong className="text-[#07474C]">The Curowit Difference:</strong> Traditional ecommerce platforms charge 35–50% in blended commissions, paid ads, and packaging fees. With Curowit, your 70% share is protected and guaranteed.
                 </span>
               </div>
             </div>
 
             {/* Right Output Card */}
-            <div className="lg:col-span-5 bg-gradient-to-br from-[#07545A] to-[#042B30] text-[#FFF8EA] p-6 sm:p-8 rounded-3xl shadow-xl space-y-6">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#F2A900] block mb-1">
+            <div className="lg:col-span-5 bg-gradient-to-br from-[#07474C] via-[#053A3E] to-[#022124] text-[#FFF8EA] p-6 sm:p-8 rounded-3xl shadow-[0_16px_36px_-6px_rgba(7,84,90,0.35)] border border-amber-400/20 space-y-6 relative overflow-hidden">
+              {/* Subtle top right golden ambient halo */}
+              <div
+                className="pointer-events-none absolute -top-12 -right-12 w-48 h-48 rounded-full bg-amber-400/15 blur-2xl"
+                aria-hidden="true"
+              />
+
+              <div className="relative z-10">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#F59E0B] block mb-1 font-sans">
                   Your Net Projected Revenue
                 </span>
-                <div className="text-3xl sm:text-4xl font-extrabold font-display text-white">
+                <div className="text-3xl sm:text-4xl font-semibold font-display text-white tracking-tight tabular-nums">
                   ₹{creatorMonthlyTakeHome.toLocaleString('en-IN')}
-                  <span className="text-xs font-normal text-[#FFF8EA]/70 block mt-1">per month (Direct 70% Share)</span>
+                  <span className="text-xs font-normal text-[#FFF8EA]/75 block mt-1 font-sans">per month (Direct 70% Share)</span>
                 </div>
               </div>
 
-              <div className="divide-y divide-white/10 text-xs space-y-3 pt-2">
+              <div className="relative z-10 divide-y divide-white/10 text-xs space-y-3 pt-2">
                 <div className="flex justify-between pt-3">
                   <span className="text-[#FFF8EA]/75">Total Customer GMV:</span>
-                  <span className="font-bold">₹{grossMonthlySales.toLocaleString('en-IN')}</span>
+                  <span className="font-semibold tabular-nums">₹{grossMonthlySales.toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between pt-3">
                   <span className="text-[#FFF8EA]/75">Curowit Platform Care (30%):</span>
-                  <span className="font-bold text-[#F2A900]">₹{platformCareShare.toLocaleString('en-IN')}</span>
+                  <span className="font-semibold text-[#F59E0B] tabular-nums">₹{platformCareShare.toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between pt-3">
                   <span className="text-[#FFF8EA]/75">Annual Creator Earnings:</span>
-                  <span className="font-bold text-emerald-300">₹{annualProjectedRevenue.toLocaleString('en-IN')} / yr</span>
+                  <span className="font-semibold text-emerald-300 tabular-nums">₹{annualProjectedRevenue.toLocaleString('en-IN')} / yr</span>
                 </div>
                 <div className="flex justify-between pt-3">
                   <span className="text-[#FFF8EA]/75">Settlement Window:</span>
-                  <span className="font-bold text-white">7 Calendar Days post delivery</span>
+                  <span className="font-semibold text-white">7 Calendar Days post delivery</span>
                 </div>
               </div>
 
               <button
                 onClick={() => onNavigate('foundingcreator-apply')}
-                className="w-full py-3.5 px-4 rounded-xl bg-[#F2A900] hover:bg-[#E69A16] text-[#173B3D] text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 px-4 rounded-xl bg-[#F59E0B] hover:bg-[#D97706] text-[#192827] text-xs font-semibold transition-all shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center gap-2 relative z-10 active:scale-[0.99]"
               >
                 <span>Apply to Lock-in 70% Commercial Split</span>
                 <ArrowRight className="w-4 h-4" />
@@ -713,16 +766,26 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       {/* =========================================================================
           5. INTERACTIVE 8-STEP COHORT ROADMAP
           ========================================================================= */}
-      <section className="py-16 sm:py-24 border-b border-[#07545A]/10 bg-[#FFF8EA]/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-16 sm:py-24 border-b border-[#07545A]/10 bg-[#FAF7F2] relative overflow-hidden">
+        {/* Subtle lathe rings background */}
+        <svg
+          className="pointer-events-none absolute right-0 top-0 h-full w-96 opacity-15 select-none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <circle cx="280" cy="180" r="160" fill="none" stroke="#07545A" strokeWidth="1" strokeDasharray="3 5" />
+          <circle cx="280" cy="180" r="220" fill="none" stroke="#D4A373" strokeWidth="0.8" strokeDasharray="5 7" />
+        </svg>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#07545A] bg-[#07545A]/10 px-3 py-1 rounded-full">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#07474C] bg-[#07545A]/8 border border-[#07545A]/12 px-3.5 py-1 rounded-full inline-block font-sans">
               Transparent Maker Journey
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#07545A] font-display mt-3 mb-2">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-[#07474C] font-display mt-3 mb-2 tracking-tight">
               The 8-Step Path to 7-Day Settlement
             </h2>
-            <p className="text-xs sm:text-sm text-[#173B3D]/70">
+            <p className="text-xs sm:text-sm text-[#233837]/75 max-w-lg mx-auto">
               Click any step to inspect the audit checklist, turnaround SLA, and dashboard workflow.
             </p>
           </div>
@@ -738,12 +801,12 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                   className={`p-3 rounded-2xl text-center transition-all cursor-pointer border ${
                     isSelected
                       ? 'bg-[#07545A] text-[#FFF8EA] border-[#07545A] shadow-md -translate-y-1'
-                      : 'bg-white hover:bg-[#FFF8EA] text-[#173B3D] border-[#07545A]/15'
+                      : 'bg-white hover:bg-[#FAF6EE] text-[#192B2C] border-[#07545A]/14 shadow-2xs'
                   }`}
                 >
-                  <span className="text-[10px] uppercase font-bold block opacity-70">Step</span>
-                  <span className="text-lg font-extrabold font-display block">{st.num}</span>
-                  <span className="text-[10px] font-semibold truncate block mt-0.5">{st.title}</span>
+                  <span className="text-[10px] uppercase font-medium block opacity-75 font-sans">Step</span>
+                  <span className="text-lg font-semibold font-display block tabular-nums">{st.num}</span>
+                  <span className="text-[10px] font-medium truncate block mt-0.5">{st.title}</span>
                 </button>
               );
             })}
@@ -753,38 +816,38 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
           {(() => {
             const current = roadmapSteps[activeStepIndex];
             return (
-              <div className="bg-white rounded-3xl border-2 border-[#07545A]/15 p-6 sm:p-10 shadow-sm grid grid-cols-1 lg:grid-cols-12 gap-8 items-center animate-in fade-in-50 duration-200">
+              <div className="bg-white/95 rounded-3xl border border-[#07545A]/15 p-6 sm:p-10 shadow-[0_8px_24px_-4px_rgba(7,84,90,0.06)] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center animate-in fade-in-50 duration-200">
                 <div className="lg:col-span-7 space-y-4">
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#07545A]">
-                    <span className="bg-[#FFF8EA] px-2.5 py-1 rounded-full border border-[#07545A]/15">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-[#07474C]">
+                    <span className="bg-[#FAF6EE] border border-[#07545A]/14 px-3 py-1 rounded-full">
                       Step {current.num} of 08
                     </span>
-                    <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                    <span className="text-emerald-700 font-medium flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5" />
                       <span>{current.timeframe}</span>
                     </span>
                   </div>
 
-                  <h3 className="text-2xl font-bold font-display text-[#07545A]">
+                  <h3 className="text-2xl sm:text-3xl font-semibold font-display text-[#07474C] tracking-tight">
                     {current.headline}
                   </h3>
 
-                  <p className="text-xs sm:text-sm text-[#173B3D]/80 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-[#233837]/80 leading-relaxed">
                     {current.summary}
                   </p>
 
                   <div className="pt-2">
-                    <span className="text-xs font-bold text-[#07545A] block mb-2">
+                    <span className="text-xs font-semibold text-[#07474C] block mb-2 font-sans">
                       Key Deliverables & Verification:
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       {current.deliverables.map((deliv, i) => (
                         <div
                           key={i}
-                          className="bg-[#FFFDF7] border border-[#07545A]/15 p-2.5 rounded-xl text-xs flex items-center gap-2"
+                          className="bg-[#FAF7F2] border border-[#07545A]/12 p-2.5 rounded-xl text-xs flex items-center gap-2"
                         >
-                          <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                          <span className="font-medium text-[#173B3D]">{deliv}</span>
+                          <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                          <span className="font-medium text-[#192B2C]">{deliv}</span>
                         </div>
                       ))}
                     </div>
@@ -792,18 +855,18 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                 </div>
 
                 {/* Pro-Tip Box */}
-                <div className="lg:col-span-5 bg-[#FFF8EA] border-2 border-[#07545A]/20 p-6 rounded-2xl space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#07545A]">
-                    <Sparkles className="w-4 h-4 text-[#F2A900]" />
+                <div className="lg:col-span-5 bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F5ECE0] border border-[#D4A373]/40 p-6 rounded-2xl space-y-3 shadow-2xs">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-[#07474C]">
+                    <Sparkles className="w-4 h-4 text-[#D97706]" />
                     <span>Curator’s Pro-Tip for Artisans:</span>
                   </div>
-                  <p className="text-xs text-[#173B3D]/85 leading-relaxed italic">
+                  <p className="text-xs text-[#233837]/85 leading-relaxed font-serif italic text-sm">
                     "{current.proTip}"
                   </p>
                   <div className="pt-2 flex items-center justify-between text-xs">
                     <button
                       onClick={() => setActiveStepIndex((prev) => (prev + 1) % roadmapSteps.length)}
-                      className="text-[#07545A] font-bold hover:underline cursor-pointer"
+                      className="text-[#07474C] font-semibold hover:underline cursor-pointer"
                     >
                       Next Step: {roadmapSteps[(activeStepIndex + 1) % roadmapSteps.length].title} →
                     </button>
@@ -818,12 +881,14 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       {/* =========================================================================
           6. INTERACTIVE CRAFT CATEGORIES LOOKBOOK
           ========================================================================= */}
-      <section className="py-16 sm:py-24 border-b border-[#07545A]/10 bg-[#FFFDF7]">
+      <section className="py-16 sm:py-24 border-b border-[#07545A]/10 bg-gradient-to-b from-[#FAF7F2] to-[#F5EFE6]/60 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#07545A]">Craft Disciplines</span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-[#07545A] font-display mt-1">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#07474C] bg-[#07545A]/8 border border-[#07545A]/12 px-3 py-1 rounded-full inline-block font-sans">
+                Craft Disciplines
+              </span>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-[#07474C] font-display mt-2 tracking-tight">
                 Handmade & Atelier Lookbook
               </h2>
             </div>
@@ -844,10 +909,10 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                   <button
                     key={f.id}
                     onClick={() => setActiveCategoryFilter(f.id)}
-                    className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-colors cursor-pointer ${
+                    className={`text-xs px-3.5 py-1.5 rounded-xl font-medium transition-all cursor-pointer ${
                       isActive
-                        ? 'bg-[#07545A] text-[#FFF8EA]'
-                        : 'bg-[#FFF8EA] text-[#07545A] hover:bg-[#07545A]/10 border border-[#07545A]/10'
+                        ? 'bg-[#07545A] text-[#FFF8EA] shadow-xs font-semibold'
+                        : 'bg-white text-[#07474C] hover:bg-[#FAF6EE] border border-[#07545A]/12'
                     }`}
                   >
                     {f.label}
@@ -862,45 +927,46 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
             {filteredLookbook.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-3xl border border-[#07545A]/15 overflow-hidden shadow-2xs hover:shadow-md transition-all group flex flex-col justify-between"
+                className="bg-white rounded-3xl border border-[#07545A]/12 overflow-hidden shadow-[0_4px_16px_-2px_rgba(7,84,90,0.06)] hover:shadow-[0_12px_28px_-4px_rgba(7,84,90,0.12)] transition-all group flex flex-col justify-between hover:border-[#07545A]/25"
               >
                 <div>
-                  <div className="h-56 overflow-hidden relative">
+                  <div className="h-60 overflow-hidden relative bg-stone-100">
                     <img
                       src={item.image}
                       alt={item.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      referrerPolicy="no-referrer"
                     />
-                    <span className="absolute top-3 right-3 text-[10px] font-bold text-[#07545A] bg-[#FFF8EA] px-2.5 py-1 rounded-full shadow-xs">
+                    <span className="absolute top-3.5 right-3.5 text-[10px] font-semibold text-[#07474C] bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full border border-[#07545A]/10 shadow-2xs font-sans">
                       {item.leadTime}
                     </span>
                   </div>
 
-                  <div className="p-5 space-y-2">
-                    <div className="flex items-center gap-1.5 text-xs text-[#07545A]/80">
+                  <div className="p-5.5 space-y-2">
+                    <div className="flex items-center gap-1.5 text-xs text-[#07474C]/80 font-medium">
                       <MapPin className="w-3.5 h-3.5 text-[#07545A]" />
                       <span>{item.location}</span>
                     </div>
 
-                    <h3 className="font-bold text-base text-[#07545A] font-display">
+                    <h3 className="font-semibold text-lg text-[#07474C] font-display tracking-tight">
                       {item.title}
                     </h3>
-                    <p className="text-xs font-semibold text-[#173B3D]/70">
+                    <p className="text-xs font-medium text-[#233837]/75">
                       By {item.artisan}
                     </p>
-                    <p className="text-[11px] text-[#173B3D]/70 italic">
+                    <p className="text-[11px] text-[#233837]/70 italic font-serif">
                       Technique: {item.technique}
                     </p>
                   </div>
                 </div>
 
-                <div className="p-5 pt-0 border-t border-[#07545A]/10 mt-2 flex items-center justify-between">
-                  <span className="text-base font-bold font-display text-[#07545A]">
+                <div className="p-5.5 pt-0 border-t border-[#07545A]/10 mt-2 flex items-center justify-between">
+                  <span className="text-lg font-semibold font-display text-[#07474C] tabular-nums">
                     {item.price}
                   </span>
                   <button
                     onClick={() => onNavigate('foundingcreator-apply')}
-                    className="text-xs font-bold text-[#07545A] hover:underline cursor-pointer flex items-center gap-1"
+                    className="text-xs font-semibold text-[#07474C] hover:text-[#B45309] hover:underline cursor-pointer flex items-center gap-1 transition-colors"
                   >
                     <span>Sell Similar Craft →</span>
                   </button>
@@ -914,72 +980,72 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       {/* =========================================================================
           7. LIVE STATUS QUERY & SUPABASE DATABASE SYNC PANEL
           ========================================================================= */}
-      <section id="status-tracker-section" className="py-16 sm:py-20 border-b border-[#07545A]/10 bg-[#FFF8EA]/50">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-5">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#07545A] bg-[#07545A]/10 px-3 py-1 rounded-full">
+      <section id="status-tracker-section" className="py-16 sm:py-24 border-b border-[#07545A]/10 bg-gradient-to-b from-[#F5EFE6]/70 via-[#FAF7F2] to-[#FAF7F2] relative overflow-hidden">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-5 relative z-10">
+          <span className="text-xs font-semibold uppercase tracking-wider text-[#07474C] bg-[#07545A]/8 border border-[#07545A]/12 px-3.5 py-1 rounded-full inline-block font-sans">
             Real-Time Database Query
           </span>
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#07545A] font-display">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-[#07474C] font-display tracking-tight">
             Check Your Application Status
           </h2>
-          <p className="text-xs sm:text-sm text-[#173B3D]/70 max-w-lg mx-auto">
+          <p className="text-xs sm:text-sm text-[#233837]/75 max-w-lg mx-auto font-normal">
             Already submitted your artisan profile? Enter your application reference ID or email to check real-time Supabase audit progress.
           </p>
 
           <form onSubmit={handleLiveStatusLookup} className="max-w-md mx-auto flex items-center gap-2">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#173B3D]/40" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#233837]/45" />
               <input
                 type="text"
                 required
                 value={statusQuery}
                 onChange={(e) => setStatusQuery(e.target.value)}
                 placeholder="APP-FC-XXXXX or your email..."
-                className="w-full pl-9 pr-3 py-2.5 text-xs bg-white border border-[#07545A]/20 rounded-xl outline-none focus:border-[#07545A]"
+                className="w-full pl-10 pr-3 py-2.5 text-xs bg-white border border-[#07545A]/20 rounded-xl outline-none focus:border-[#07545A] focus:ring-1 focus:ring-[#07545A]/20 transition-all shadow-2xs"
               />
             </div>
             <button
               type="submit"
               disabled={isSearchingStatus}
-              className="px-5 py-2.5 rounded-xl bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-xs font-bold cursor-pointer transition-colors shrink-0 shadow-xs"
+              className="px-5 py-2.5 rounded-xl bg-[#07545A] hover:bg-[#053B40] text-[#FFF8EA] text-xs font-semibold cursor-pointer transition-colors shrink-0 shadow-xs active:scale-[0.98]"
             >
               {isSearchingStatus ? 'Checking...' : 'Check Status'}
             </button>
           </form>
 
           {statusSearchError && (
-            <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl max-w-md mx-auto flex items-center justify-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="p-3 bg-amber-50 border border-amber-200/80 text-amber-900 text-xs rounded-xl max-w-md mx-auto flex items-center justify-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-amber-700" />
               <span>{statusSearchError}</span>
             </div>
           )}
 
           {searchedStatusResult && (
-            <div className="p-6 bg-white border-2 border-[#07545A]/20 rounded-3xl max-w-lg mx-auto text-left space-y-3 shadow-md animate-in zoom-in-95 duration-150">
+            <div className="p-6 bg-white border border-[#07545A]/15 rounded-3xl max-w-lg mx-auto text-left space-y-3 shadow-md animate-in zoom-in-95 duration-150">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] font-bold text-[#687778] uppercase block">
+                  <span className="text-[10px] font-semibold text-[#687778] uppercase block font-sans">
                     Applicant Name
                   </span>
-                  <span className="text-sm font-bold text-[#07545A]">
+                  <span className="text-sm font-semibold text-[#07474C]">
                     {searchedStatusResult.applicantName}
                   </span>
                 </div>
                 <span
-                  className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
+                  className={`text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase font-sans ${
                     searchedStatusResult.applicationStatus === 'approved'
-                      ? 'bg-emerald-100 text-emerald-800'
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                       : searchedStatusResult.applicationStatus === 'rejected'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-amber-100 text-amber-800'
+                      ? 'bg-red-50 text-red-800 border border-red-200'
+                      : 'bg-amber-50 text-amber-800 border border-amber-200'
                   }`}
                 >
                   {searchedStatusResult.applicationStatus.replace('_', ' ')}
                 </span>
               </div>
 
-              <div className="text-xs text-[#173B3D]/75 space-y-1">
-                <p><strong>Application ID:</strong> {searchedStatusResult.applicationId}</p>
+              <div className="text-xs text-[#233837]/80 space-y-1">
+                <p><strong>Application ID:</strong> <span className="font-mono">{searchedStatusResult.applicationId}</span></p>
                 <p><strong>Craft Discipline:</strong> {searchedStatusResult.categories?.join(', ')}</p>
                 <p><strong>Submitted:</strong> {new Date(searchedStatusResult.submittedAt).toLocaleDateString('en-GB')}</p>
               </div>
@@ -987,7 +1053,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
               <div className="pt-2 border-t border-[#07545A]/10 flex items-center justify-between">
                 <button
                   onClick={() => onNavigate(`foundingcreator-status?id=${encodeURIComponent(searchedStatusResult.applicationId)}`)}
-                  className="text-xs font-bold text-[#07545A] hover:underline flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-semibold text-[#07474C] hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <span>View Full Status Details</span>
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -1001,13 +1067,16 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       {/* =========================================================================
           8. FREQUENTLY ASKED QUESTIONS WITH SEARCH
           ========================================================================= */}
-      <section className="py-16 sm:py-24 border-b border-[#07545A]/10 bg-[#FFFDF7]">
+      <section className="py-16 sm:py-24 border-b border-[#07545A]/10 bg-[#FAF7F2]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#07545A] font-display mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[#07474C] bg-[#07545A]/8 border border-[#07545A]/12 px-3.5 py-1 rounded-full inline-block font-sans mb-2">
+              Artisan Transparency
+            </span>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-[#07474C] font-display tracking-tight mb-2">
               Frequently Asked Questions
             </h2>
-            <p className="text-xs sm:text-sm text-[#173B3D]/70 max-w-md mx-auto">
+            <p className="text-xs sm:text-sm text-[#233837]/75 max-w-md mx-auto">
               Clear policies on revenue splits, 7-day payouts, intellectual property, and shipping logistics.
             </p>
           </div>
@@ -1015,13 +1084,13 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
           {/* FAQ Search & Category Filter */}
           <div className="mb-8 space-y-3">
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#173B3D]/40" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#233837]/45" />
               <input
                 type="text"
                 value={faqSearchQuery}
                 onChange={(e) => setFaqSearchQuery(e.target.value)}
                 placeholder="Search questions (e.g. GST, Payout, Packaging, Customization)..."
-                className="w-full pl-10 pr-4 py-2.5 text-xs bg-[#FFF8EA]/50 border border-[#07545A]/20 rounded-2xl outline-none focus:border-[#07545A]"
+                className="w-full pl-10 pr-4 py-2.5 text-xs bg-white border border-[#07545A]/20 rounded-2xl outline-none focus:border-[#07545A] focus:ring-1 focus:ring-[#07545A]/20 shadow-2xs"
               />
             </div>
 
@@ -1035,10 +1104,10 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                 <button
                   key={fc.id}
                   onClick={() => setFaqCategoryFilter(fc.id as any)}
-                  className={`px-3 py-1 rounded-xl font-bold cursor-pointer transition-colors ${
+                  className={`px-3.5 py-1.5 rounded-xl font-medium cursor-pointer transition-colors ${
                     faqCategoryFilter === fc.id
-                      ? 'bg-[#07545A] text-[#FFF8EA]'
-                      : 'bg-white text-[#173B3D] border border-[#07545A]/15 hover:bg-[#FFF8EA]'
+                      ? 'bg-[#07545A] text-[#FFF8EA] font-semibold'
+                      : 'bg-white text-[#192B2C] border border-[#07545A]/14 hover:bg-[#FAF6EE]'
                   }`}
                 >
                   {fc.label}
@@ -1054,11 +1123,11 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
               return (
                 <div
                   key={idx}
-                  className="bg-white rounded-2xl border border-[#07545A]/15 overflow-hidden transition-shadow shadow-2xs"
+                  className="bg-white rounded-2xl border border-[#07545A]/14 overflow-hidden transition-all shadow-2xs hover:border-[#07545A]/25"
                 >
                   <button
                     onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-sm text-[#07545A] cursor-pointer"
+                    className="w-full p-4.5 sm:p-5 text-left flex items-center justify-between gap-4 font-semibold text-sm text-[#07474C] cursor-pointer"
                   >
                     <span>{faq.q}</span>
                     <ChevronDown
@@ -1068,7 +1137,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                     />
                   </button>
                   {isOpen && (
-                    <div className="px-5 pb-5 pt-1 text-xs text-[#173B3D]/80 leading-relaxed border-t border-[#07545A]/10 bg-[#FFFDF7]">
+                    <div className="px-5 pb-5 pt-1 text-xs text-[#233837]/80 leading-relaxed border-t border-[#07545A]/10 bg-[#FAF7F2]/40">
                       {faq.a}
                     </div>
                   )}
@@ -1082,28 +1151,47 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       {/* =========================================================================
           9. BOTTOM IMPACT CTA BANNER
           ========================================================================= */}
-      <section className="py-20 bg-gradient-to-b from-[#07545A] to-[#042B30] text-[#FFF8EA] text-center px-4 relative overflow-hidden">
+      <section className="py-20 sm:py-24 bg-gradient-to-b from-[#07474C] via-[#05383D] to-[#021F22] text-[#FFF8EA] text-center px-4 relative overflow-hidden">
+        {/* Radiant Ambient Warm Golden Flare */}
+        <div
+          className="pointer-events-none absolute inset-0 z-0 opacity-50"
+          style={{
+            background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(245, 158, 11, 0.18), transparent 70%)',
+          }}
+          aria-hidden="true"
+        />
+
+        {/* Blueprint Lines in Dark Background */}
+        <svg
+          className="pointer-events-none absolute inset-0 w-full h-full z-0 opacity-15 select-none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <circle cx="50%" cy="100%" r="320" fill="none" stroke="#FFF8EA" strokeWidth="0.8" strokeDasharray="4 8" />
+          <circle cx="50%" cy="100%" r="420" fill="none" stroke="#F59E0B" strokeWidth="0.6" strokeDasharray="6 10" />
+        </svg>
+
         <div className="max-w-3xl mx-auto space-y-6 relative z-10">
-          <span className="text-xs font-bold uppercase tracking-wider bg-white/10 px-3.5 py-1 rounded-full text-[#F2A900]">
+          <span className="text-xs font-semibold uppercase tracking-wider bg-white/10 border border-white/15 px-3.5 py-1 rounded-full text-[#F59E0B] inline-block font-sans">
             Limited Admissions · Cohort 2026
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold font-display">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold font-display tracking-tight leading-tight">
             Ready to Share Your Slow Craft with Conscious Patrons?
           </h2>
-          <p className="text-sm text-[#FFF8EA]/80 leading-relaxed max-w-xl mx-auto">
+          <p className="text-sm sm:text-base text-[#FAF6EE]/80 leading-relaxed max-w-xl mx-auto font-normal">
             Submit your application in less than 5 minutes. No upfront fees, zero algorithmic ad taxes,
             and guaranteed 7-day post-delivery settlements.
           </p>
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3.5">
             <button
               onClick={() => onNavigate('foundingcreator-apply')}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#F2A900] hover:bg-[#E69A16] text-[#173B3D] font-bold text-sm shadow-lg transition-all cursor-pointer"
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-[#F59E0B] to-[#D97706] hover:from-[#D97706] hover:to-[#B45309] text-[#192827] font-semibold text-sm shadow-[0_8px_24px_-4px_rgba(245,158,11,0.35)] transition-all cursor-pointer active:scale-[0.99]"
             >
               Apply to Join Founding Creator Cohort →
             </button>
             <button
               onClick={() => onNavigate('foundingcreator-login')}
-              className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-white/10 hover:bg-white/20 text-[#FFF8EA] border border-white/25 font-bold text-sm transition-all cursor-pointer"
+              className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-white/10 hover:bg-white/18 text-[#FFF8EA] border border-white/20 font-semibold text-sm transition-all cursor-pointer"
             >
               Artisan Atelier Sign In
             </button>

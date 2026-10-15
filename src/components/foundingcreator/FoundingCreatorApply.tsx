@@ -236,13 +236,32 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFDF7] text-[#173B3D] py-8 sm:py-12 px-4">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-[#FAF7F2] text-[#192B2C] py-8 sm:py-12 px-4 relative overflow-hidden">
+      {/* Radiant Warm Ambient Glow */}
+      <div
+        className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[800px] h-[400px] opacity-40 z-0 blur-3xl"
+        style={{
+          background: 'radial-gradient(ellipse 70% 50% at 50% 30%, rgba(245, 158, 11, 0.12), rgba(7, 84, 90, 0.08) 50%, transparent 80%)',
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Subtle blueprint guidelines */}
+      <svg
+        className="pointer-events-none absolute inset-0 w-full h-full z-0 opacity-20 select-none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <circle cx="85%" cy="20%" r="150" fill="none" stroke="#07545A" strokeWidth="0.8" strokeDasharray="3 6" />
+        <circle cx="15%" cy="75%" r="180" fill="none" stroke="#D4A373" strokeWidth="0.8" strokeDasharray="5 7" />
+      </svg>
+
+      <div className="max-w-3xl mx-auto relative z-10">
         {/* Navigation Breadcrumbs */}
         <div className="flex items-center justify-between mb-8">
           <button
             onClick={() => onNavigate('foundingcreator')}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#07545A] hover:text-[#E69A16] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#07474C] hover:text-[#B45309] transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Creator Program</span>
@@ -250,66 +269,66 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
 
           <button
             onClick={() => onNavigate('foundingcreator-login')}
-            className="text-xs font-bold text-[#173B3D]/70 hover:text-[#07545A]"
+            className="text-xs font-medium text-[#233837]/75 hover:text-[#07474C]"
           >
-            Already applied? <span className="underline">Login here</span>
+            Already applied? <span className="underline font-semibold">Login here</span>
           </button>
         </div>
 
         {/* Success Screen (Step 5) */}
         {currentStep === 5 && submissionSuccess ? (
-          <div className="bg-white rounded-3xl border-2 border-[#07545A]/20 p-6 sm:p-10 shadow-lg text-center space-y-6 animate-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 mx-auto flex items-center justify-center">
+          <div className="bg-white/95 rounded-3xl border border-[#07545A]/15 p-6 sm:p-10 shadow-[0_12px_32px_-6px_rgba(7,84,90,0.08)] text-center space-y-6 animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 mx-auto flex items-center justify-center">
               <CheckCircle2 className="w-10 h-10" />
             </div>
 
             <div className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+              <span className="text-xs font-semibold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 font-sans">
                 Application Received
               </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#07545A] font-display">
+              <h2 className="text-2xl sm:text-3xl font-semibold text-[#07474C] font-display tracking-tight">
                 Welcome to the Founding Creator Cohort!
               </h2>
-              <p className="text-xs sm:text-sm text-[#173B3D]/75 max-w-lg mx-auto">
+              <p className="text-xs sm:text-sm text-[#233837]/75 max-w-lg mx-auto font-normal">
                 Your application has been registered and assigned to our artisan curation committee.
-                A confirmation summary has been logged for <span className="font-bold text-[#07545A]">{submissionSuccess.applicantEmail}</span>.
+                A confirmation summary has been logged for <span className="font-semibold text-[#07474C]">{submissionSuccess.applicantEmail}</span>.
               </p>
             </div>
 
             {/* Application ID Card */}
-            <div className="bg-[#FFF8EA] border border-[#07545A]/20 p-4 rounded-2xl max-w-sm mx-auto space-y-1">
-              <span className="text-[10px] font-bold text-[#687778] uppercase">Unique Application ID</span>
+            <div className="bg-[#FAF6EE] border border-[#07545A]/15 p-4 rounded-2xl max-w-sm mx-auto space-y-1">
+              <span className="text-[10px] font-semibold text-[#687778] uppercase font-sans">Unique Application ID</span>
               <div className="flex items-center justify-center gap-2">
-                <span className="text-lg font-mono font-bold text-[#07545A] select-all">
+                <span className="text-lg font-mono font-bold text-[#07474C] select-all">
                   {submissionSuccess.applicationId}
                 </span>
                 <button
                   onClick={copyAppId}
-                  className="p-1.5 rounded-lg text-[#07545A] hover:bg-[#07545A]/10 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg text-[#07474C] hover:bg-[#07545A]/10 transition-colors cursor-pointer"
                   title="Copy Application ID"
                 >
-                  {copiedId ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  {copiedId ? <Check className="w-4 h-4 text-emerald-700" /> : <Copy className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
             {/* Next Steps Checklist */}
-            <div className="bg-[#FFFDF7] border border-[#07545A]/12 p-5 rounded-2xl text-left max-w-md mx-auto space-y-3 text-xs">
-              <h4 className="font-bold text-[#07545A] text-sm flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#F2A900]" />
+            <div className="bg-[#FAF7F2] border border-[#07545A]/12 p-5 rounded-2xl text-left max-w-md mx-auto space-y-3 text-xs">
+              <h4 className="font-semibold text-[#07474C] text-sm flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#D97706]" />
                 <span>What Happens Next?</span>
               </h4>
-              <ul className="space-y-2 text-[#173B3D]/80">
+              <ul className="space-y-2 text-[#233837]/80">
                 <li className="flex items-start gap-2">
-                  <span className="w-4 h-4 rounded-full bg-[#07545A]/10 text-[#07545A] font-bold flex items-center justify-center shrink-0 text-[10px]">1</span>
+                  <span className="w-4 h-4 rounded-full bg-[#07545A]/10 text-[#07474C] font-semibold flex items-center justify-center shrink-0 text-[10px]">1</span>
                   <span><strong>Portfolio Review:</strong> Our craft curators evaluate your photos and studio pedigree within 24–48 hours.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="w-4 h-4 rounded-full bg-[#07545A]/10 text-[#07545A] font-bold flex items-center justify-center shrink-0 text-[10px]">2</span>
+                  <span className="w-4 h-4 rounded-full bg-[#07545A]/10 text-[#07474C] font-semibold flex items-center justify-center shrink-0 text-[10px]">2</span>
                   <span><strong>Approval Notification:</strong> You will be notified of approval and your creator dashboard will be activated.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="w-4 h-4 rounded-full bg-[#07545A]/10 text-[#07545A] font-bold flex items-center justify-center shrink-0 text-[10px]">3</span>
+                  <span className="w-4 h-4 rounded-full bg-[#07545A]/10 text-[#07474C] font-semibold flex items-center justify-center shrink-0 text-[10px]">3</span>
                   <span><strong>Product Listing:</strong> Once activated, submit products for public storefront listing under the 70/30 commission model.</span>
                 </li>
               </ul>
@@ -318,48 +337,48 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
               <button
                 onClick={() => onNavigate(`foundingcreator-status?id=${submissionSuccess.applicationId}`)}
-                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-xs font-bold transition-all shadow-xs cursor-pointer"
+                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#07545A] hover:bg-[#053B40] text-[#FFF8EA] text-xs font-semibold transition-all shadow-xs cursor-pointer active:scale-[0.98]"
               >
                 Track Application Status
               </button>
               <button
                 onClick={() => onNavigate('foundingcreator-login')}
-                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-white hover:bg-[#FFF8EA] text-[#07545A] border border-[#07545A]/20 text-xs font-bold transition-colors cursor-pointer"
+                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-white hover:bg-[#FAF6EE] text-[#07474C] border border-[#07545A]/20 text-xs font-semibold transition-colors cursor-pointer"
               >
                 Go to Creator Login
               </button>
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-3xl border border-[#07545A]/15 shadow-sm overflow-hidden">
+          <div className="bg-white/95 rounded-3xl border border-[#07545A]/14 shadow-[0_12px_32px_-6px_rgba(7,84,90,0.08)] overflow-hidden">
             {/* Header / Stepper Progress Bar */}
-            <div className="bg-[#FFF8EA] p-6 border-b border-[#07545A]/12">
+            <div className="bg-gradient-to-r from-[#FAF6EE] to-[#F5ECE0] p-6 border-b border-[#07545A]/12">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#07545A] bg-[#07545A]/10 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#07474C] bg-[#07545A]/8 border border-[#07545A]/12 px-2.5 py-0.5 rounded-full inline-block font-sans">
                     Founding Creator Application
                   </span>
-                  <h1 className="text-xl sm:text-2xl font-bold text-[#07545A] font-display mt-1">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-[#07474C] font-display mt-1 tracking-tight">
                     Apply to Join the Curowit Atelier
                   </h1>
                 </div>
-                <span className="text-xs font-bold text-[#07545A] bg-white px-3 py-1 rounded-full border border-[#07545A]/15">
+                <span className="text-xs font-semibold text-[#07474C] bg-white px-3 py-1 rounded-full border border-[#07545A]/15 shadow-2xs font-sans">
                   Step {currentStep} of 4
                 </span>
               </div>
 
               {/* Progress Steps Indicators */}
-              <div className="grid grid-cols-4 gap-1 sm:gap-2 text-center text-[10px] sm:text-xs font-bold">
-                <div className={`pb-2 border-b-2 transition-colors truncate ${currentStep >= 1 ? 'border-[#07545A] text-[#07545A]' : 'border-stone-200 text-stone-400'}`}>
+              <div className="grid grid-cols-4 gap-1 sm:gap-2 text-center text-[10px] sm:text-xs font-semibold">
+                <div className={`pb-2 border-b-2 transition-colors truncate ${currentStep >= 1 ? 'border-[#07545A] text-[#07474C]' : 'border-stone-200 text-stone-400'}`}>
                   1. Personal
                 </div>
-                <div className={`pb-2 border-b-2 transition-colors truncate ${currentStep >= 2 ? 'border-[#07545A] text-[#07545A]' : 'border-stone-200 text-stone-400'}`}>
+                <div className={`pb-2 border-b-2 transition-colors truncate ${currentStep >= 2 ? 'border-[#07545A] text-[#07474C]' : 'border-stone-200 text-stone-400'}`}>
                   2. Studio
                 </div>
-                <div className={`pb-2 border-b-2 transition-colors truncate ${currentStep >= 3 ? 'border-[#07545A] text-[#07545A]' : 'border-stone-200 text-stone-400'}`}>
+                <div className={`pb-2 border-b-2 transition-colors truncate ${currentStep >= 3 ? 'border-[#07545A] text-[#07474C]' : 'border-stone-200 text-stone-400'}`}>
                   3. Portfolio
                 </div>
-                <div className={`pb-2 border-b-2 transition-colors truncate ${currentStep >= 4 ? 'border-[#07545A] text-[#07545A]' : 'border-stone-200 text-stone-400'}`}>
+                <div className={`pb-2 border-b-2 transition-colors truncate ${currentStep >= 4 ? 'border-[#07545A] text-[#07474C]' : 'border-stone-200 text-stone-400'}`}>
                   4. Terms
                 </div>
               </div>

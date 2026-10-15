@@ -272,7 +272,7 @@ interface StoreContextType {
     workshopId: string,
     meetingLink: string,
     meetingNotes?: string,
-    platform?: 'Google Meet' | 'Zoom'
+    platform?: 'Google Meet' | 'Zoom' | 'Studio Offline'
   ) => void;
   addresses: SavedAddress[];
   saveAddress: (addr: Omit<SavedAddress, 'id'> & { id?: string }) => void;
@@ -673,7 +673,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     workshopId: string,
     meetingLink: string,
     meetingNotes?: string,
-    platform: 'Google Meet' | 'Zoom' = 'Google Meet'
+    platform: 'Google Meet' | 'Zoom' | 'Studio Offline' = 'Google Meet'
   ) => {
     // 1. Update the workshop in catalog
     setWorkshops((prev) =>

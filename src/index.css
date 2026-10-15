@@ -3,19 +3,25 @@
 @layer base {
   :root {
     --font-display: 'Fraunces', Georgia, serif;
+    --font-serif: 'Cormorant Garamond', 'Fraunces', Georgia, serif;
     --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
     --font-brand: 'Comfortaa', cursive, sans-serif;
   }
 
   body {
     font-family: var(--font-sans);
-    background-color: #F7EBD7;
+    background-color: #FAF6EE;
     color: #173B3D;
     overflow-x: hidden;
   }
 
   h1, h2, h3, .font-display {
     font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  .font-serif-accent {
+    font-family: var(--font-serif);
   }
 }
 
@@ -139,4 +145,63 @@
 .animate-heart-ripple {
   animation: heartRipple 620ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Artisan Craft & Atelier Background Enhancements */
+.bg-craft-grain {
+  background-color: #FAF6EE;
+  background-image: 
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(217, 119, 6, 0.07) 0%, transparent 65%),
+    radial-gradient(circle at 85% 25%, rgba(7, 84, 90, 0.07) 0%, transparent 50%),
+    radial-gradient(circle at 10% 70%, rgba(200, 109, 81, 0.05) 0%, transparent 45%),
+    radial-gradient(circle, rgba(23, 59, 61, 0.12) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 28px 28px;
+}
+
+.bg-craft-canvas {
+  background-color: #FAF7F2;
+  background-image:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(242, 169, 0, 0.09) 0%, transparent 70%),
+    radial-gradient(circle at 90% 20%, rgba(7, 84, 90, 0.06) 0%, transparent 45%),
+    radial-gradient(circle at 15% 75%, rgba(200, 109, 81, 0.06) 0%, transparent 45%),
+    linear-gradient(to right, rgba(7, 84, 90, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(7, 84, 90, 0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+}
+
+.bg-atelier-card {
+  background: linear-gradient(160deg, #FFFFFF 0%, #FDFBF7 100%);
+  border: 1px solid rgba(7, 84, 90, 0.12);
+  box-shadow: 0 4px 20px -3px rgba(7, 84, 90, 0.05), 0 2px 6px -1px rgba(7, 84, 90, 0.03);
+}
+
+.bg-atelier-card:hover {
+  border-color: rgba(7, 84, 90, 0.22);
+}
+
+.bg-atelier-warm {
+  background: linear-gradient(135deg, #FFFDF8 0%, #FBF4E8 50%, #F6ECE0 100%);
+  border: 1px solid rgba(7, 84, 90, 0.12);
+}
+
+.bg-atelier-dark {
+  background: radial-gradient(circle at 85% 15%, #0B535A 0%, #063C41 45%, #022023 100%);
+}
+
+.craft-shadow-sm {
+  box-shadow: 0 2px 8px -1px rgba(7, 84, 90, 0.06), 0 1px 3px rgba(7, 84, 90, 0.03);
+}
+
+.craft-shadow-md {
+  box-shadow: 0 10px 25px -4px rgba(7, 84, 90, 0.08), 0 4px 10px -2px rgba(7, 84, 90, 0.04);
+}
+
+.craft-shadow-lg {
+  box-shadow: 0 20px 40px -8px rgba(7, 84, 90, 0.12), 0 8px 16px -4px rgba(7, 84, 90, 0.06);
+}
+
+/* Craft deckle hairline divider */
+.craft-hairline {
+  background-image: linear-gradient(to right, transparent, rgba(7, 84, 90, 0.18), transparent);
+}
+
 

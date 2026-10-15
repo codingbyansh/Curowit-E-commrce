@@ -116,13 +116,32 @@ export const FoundingCreatorStatus: React.FC<FoundingCreatorStatusProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFDF7] text-[#173B3D] py-8 sm:py-12 px-4">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className="min-h-screen bg-[#FAF7F2] text-[#192B2C] py-8 sm:py-12 px-4 relative overflow-hidden">
+      {/* Radiant Warm Ambient Glow */}
+      <div
+        className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[800px] h-[400px] opacity-40 z-0 blur-3xl"
+        style={{
+          background: 'radial-gradient(ellipse 70% 50% at 50% 30%, rgba(245, 158, 11, 0.12), rgba(7, 84, 90, 0.08) 50%, transparent 80%)',
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Subtle blueprint guidelines */}
+      <svg
+        className="pointer-events-none absolute inset-0 w-full h-full z-0 opacity-20 select-none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+      >
+        <circle cx="90%" cy="15%" r="160" fill="none" stroke="#07545A" strokeWidth="0.8" strokeDasharray="3 6" />
+        <circle cx="10%" cy="80%" r="180" fill="none" stroke="#D4A373" strokeWidth="0.8" strokeDasharray="5 7" />
+      </svg>
+
+      <div className="max-w-2xl mx-auto space-y-6 relative z-10">
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between">
           <button
             onClick={() => onNavigate('foundingcreator')}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#07545A] hover:text-[#E69A16] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#07474C] hover:text-[#B45309] transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Creator Program</span>
@@ -130,22 +149,22 @@ export const FoundingCreatorStatus: React.FC<FoundingCreatorStatusProps> = ({
 
           <button
             onClick={() => onNavigate('foundingcreator-apply')}
-            className="text-xs font-bold text-[#173B3D]/70 hover:text-[#07545A]"
+            className="text-xs font-medium text-[#233837]/75 hover:text-[#07474C]"
           >
-            Not applied yet? <span className="underline">Apply here</span>
+            Not applied yet? <span className="underline font-semibold">Apply here</span>
           </button>
         </div>
 
         {/* Card Header */}
-        <div className="bg-white rounded-3xl border border-[#07545A]/15 p-6 sm:p-8 shadow-xs space-y-4">
+        <div className="bg-white/95 rounded-3xl border border-[#07545A]/14 p-6 sm:p-8 shadow-[0_8px_24px_-4px_rgba(7,84,90,0.06)] space-y-4">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#07545A] bg-[#07545A]/10 px-2.5 py-0.5 rounded-full">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#07474C] bg-[#07545A]/8 border border-[#07545A]/12 px-3 py-1 rounded-full inline-block font-sans">
               Real-Time Verification
             </span>
-            <h1 className="text-xl sm:text-2xl font-bold text-[#07545A] font-display mt-1">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-[#07474C] font-display mt-2 tracking-tight">
               Track Founding Creator Application
             </h1>
-            <p className="text-xs text-[#173B3D]/70 mt-1">
+            <p className="text-xs text-[#233837]/75 mt-1 font-normal">
               Enter your Application ID (e.g. <code>APP-FC-98421</code>) or your registered email address to check status.
             </p>
           </div>
@@ -158,27 +177,27 @@ export const FoundingCreatorStatus: React.FC<FoundingCreatorStatusProps> = ({
             className="flex items-center gap-2"
           >
             <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#173B3D]/40" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#233837]/45" />
               <input
                 type="text"
                 required
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="APP-FC-XXXXX or your email..."
-                className="w-full pl-9 pr-3 py-2.5 text-xs bg-[#FFFDF7] border border-[#07545A]/20 rounded-xl outline-none focus:border-[#07545A]"
+                className="w-full pl-10 pr-3 py-2.5 text-xs bg-[#FAF7F2] border border-[#07545A]/20 rounded-xl outline-none focus:border-[#07545A] focus:ring-1 focus:ring-[#07545A]/20 transition-all shadow-2xs"
               />
             </div>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
+              className="px-5 py-2.5 rounded-xl bg-[#07545A] hover:bg-[#053B40] text-[#FFF8EA] text-xs font-semibold transition-all shadow-xs cursor-pointer shrink-0 active:scale-[0.98]"
             >
               Search
             </button>
           </form>
 
           {/* Search guidance note */}
-          <div className="pt-1 flex items-center gap-1.5 text-[11px] text-[#173B3D]/60 flex-wrap">
-            <span className="font-medium">Lookup tip:</span>
+          <div className="pt-1 flex items-center gap-1.5 text-[11px] text-[#233837]/65 flex-wrap">
+            <span className="font-semibold text-[#07474C]">Lookup tip:</span>
             <span>Enter your 9-digit application reference code or registered email address.</span>
           </div>
         </div>
@@ -187,21 +206,21 @@ export const FoundingCreatorStatus: React.FC<FoundingCreatorStatusProps> = ({
         {searched && (
           <div>
             {!result?.application ? (
-              <div className="bg-white rounded-3xl border border-dashed border-[#07545A]/25 p-8 text-center space-y-3">
+              <div className="bg-white/95 rounded-3xl border border-dashed border-[#07545A]/25 p-8 text-center space-y-3 shadow-2xs">
                 <AlertCircle className="w-10 h-10 text-amber-600 mx-auto" />
-                <h3 className="font-bold text-[#07545A] text-sm">No Application Found</h3>
-                <p className="text-xs text-[#173B3D]/70 max-w-sm mx-auto">
+                <h3 className="font-semibold text-[#07474C] text-sm">No Application Found</h3>
+                <p className="text-xs text-[#233837]/75 max-w-sm mx-auto">
                   We could not find an application matching "{query}". Please check the ID or email address, or submit a new application.
                 </p>
                 <button
                   onClick={() => onNavigate('foundingcreator-apply')}
-                  className="px-4 py-2 rounded-xl bg-[#07545A] text-[#FFF8EA] text-xs font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-[#07545A] hover:bg-[#053B40] text-[#FFF8EA] text-xs font-semibold cursor-pointer transition-colors shadow-xs"
                 >
                   Start New Application
                 </button>
               </div>
             ) : (
-              <div className="bg-white rounded-3xl border border-[#07545A]/15 overflow-hidden shadow-sm space-y-6 p-6 sm:p-8 animate-in fade-in-50 duration-200">
+              <div className="bg-white/95 rounded-3xl border border-[#07545A]/14 overflow-hidden shadow-[0_8px_24px_-4px_rgba(7,84,90,0.06)] space-y-6 p-6 sm:p-8 animate-in fade-in-50 duration-200">
                 {/* Status Hero Card */}
                 {(() => {
                   const statusInfo = getStatusDisplay(result.application.applicationStatus);
