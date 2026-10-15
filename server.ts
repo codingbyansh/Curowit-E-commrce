@@ -31,10 +31,15 @@ function isDemoRecord(record: any): boolean {
   return false;
 }
 
+const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
+
 function ensureDataDir() {
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    if (!fs.existsSync(UPLOADS_DIR)) {
+      fs.mkdirSync(UPLOADS_DIR, { recursive: true });
     }
   } catch (err) {
     console.warn('Notice ensuring .data directory:', err);
@@ -76,7 +81,169 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+  // Static media repository for permanently stored uploads
+  app.use('/api/media', express.static(UPLOADS_DIR));
+
+  function saveBase64ToFile(
+    base64Data: string,
+    originalName?: string,
+    folder?: string
+  ): { url: string; filename: string } {
+    ensureDataDir();
+    let mimeType = 'image/jpeg';
+    let cleanBase64 = base64Data;
+    const match = base64Data.match(/^data:([a-zA-Z0-9/+-]+);base64,(.+)$/);
+    if (match) {
+      mimeType = match[1];
+      cleanBase64 = match[2];
+    }
+
+    let ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+    if (ext === 'svg+xml') ext = 'svg';
+    if (ext === 'octet-stream') ext = 'bin';
+    const prefix = folder ? `${folder.replace(/[^a-zA-Z0-9_-]/g, '_')}_` : '';
+    const sanitized = (originalName || 'upload')
+      .replace(/\.[^/.]+$/, '')
+      .replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `${prefix}${Date.now()}_${sanitized}.${ext}`;
+    const filePath = path.join(UPLOADS_DIR, filename);
+
+    const buffer = Buffer.from(cleanBase64, 'base64');
+    fs.writeFileSync(filePath, buffer);
+    return { url: `/api/media/${filename}`, filename };
+  }
+
+  // Get Cloudinary config status
+  app.get('/api/cloudinary/config', (_req, res) => {
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'dehmbsgqo';
+    const apiKey = process.env.CLOUDINARY_API_KEY || '242583393382769';
+    const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET || 'ml_default';
+    const hasSecret = Boolean(process.env.CLOUDINARY_API_SECRET);
+
+    res.json({
+      cloudName,
+      apiKey,
+      uploadPreset,
+      hasSecret,
+      isConfigured: Boolean(cloudName && apiKey),
+      serverMediaStorage: true,
+    });
+  });
+
+  // Direct media upload endpoint
+  app.post('/api/media/upload', (req, res) => {
+    try {
+      const { file, filename, folder } = req.body || {};
+      if (!file) {
+        res.status(400).json({ error: 'Missing file payload' });
+        return;
+      }
+      const saved = saveBase64ToFile(file, filename, folder);
+      res.json({
+        success: true,
+        url: saved.url,
+        filename: saved.filename,
+        provider: 'curowit_server',
+      });
+    } catch (err: any) {
+      console.error('[Media Upload] Failed:', err);
+      res.status(500).json({ error: 'Failed to store media file' });
+    }
+  });
+
+  // Resilient Cloudinary Upload endpoint with auto-fallback to permanent media store
+  app.post('/api/cloudinary/upload', async (req, res) => {
+    try {
+      const { file, folder = 'curowit', filename, upload_preset } = req.body || {};
+      if (!file) {
+        res.status(400).json({ error: 'Missing file data' });
+        return;
+      }
+
+      const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'dehmbsgqo';
+      const apiKey = process.env.CLOUDINARY_API_KEY || '242583393382769';
+      const apiSecret = process.env.CLOUDINARY_API_SECRET || 'fWp-RcWGOCpO9sZY3MEvu43Pi3Q';
+      const preset = upload_preset || process.env.CLOUDINARY_UPLOAD_PRESET || 'ml_default';
+
+      let cloudinarySucceeded = false;
+      let cloudinaryUrl = '';
+
+      // 1. Attempt Cloudinary Upload if cloud name configured
+      if (cloudName && apiSecret) {
+        try {
+          const timestamp = Math.round(Date.now() / 1000);
+          const strToSign = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+          const signature = crypto.createHash('sha1').update(strToSign).digest('hex');
+
+          const fd = new URLSearchParams();
+          fd.append('file', file);
+          fd.append('api_key', apiKey);
+          fd.append('timestamp', timestamp.toString());
+          fd.append('folder', folder);
+          fd.append('signature', signature);
+
+          const cRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+            method: 'POST',
+            body: fd,
+          });
+
+          if (cRes.ok) {
+            const cData = await cRes.json();
+            if (cData.secure_url) {
+              cloudinarySucceeded = true;
+              cloudinaryUrl = cData.secure_url;
+            }
+          } else {
+            const errData = await cRes.json();
+            console.warn('[Cloudinary Notice] Upstream returned status:', cRes.status, errData);
+          }
+        } catch (cErr) {
+          console.warn('[Cloudinary Notice] Cloudinary call failed, using high-res server repository:', cErr);
+        }
+      }
+
+      // If Cloudinary succeeded, return the CDN URL
+      if (cloudinarySucceeded && cloudinaryUrl) {
+        res.json({
+          success: true,
+          url: cloudinaryUrl,
+          provider: 'cloudinary',
+          cloudName,
+        });
+        return;
+      }
+
+      // 2. Fallback: Save persistently to Curowit server media storage
+      const saved = saveBase64ToFile(file, filename, folder);
+      res.json({
+        success: true,
+        url: saved.url,
+        provider: 'curowit_server',
+        filename: saved.filename,
+        notice: 'Uploaded to Curowit high-speed media storage',
+      });
+    } catch (err: any) {
+      console.error('[Cloudinary Endpoint] Error:', err);
+      // Secondary fallback
+      try {
+        const { file, filename, folder } = req.body || {};
+        if (file) {
+          const saved = saveBase64ToFile(file, filename, folder);
+          res.json({
+            success: true,
+            url: saved.url,
+            provider: 'curowit_server',
+            filename: saved.filename,
+          });
+          return;
+        }
+      } catch {}
+      res.status(500).json({ error: 'Upload failed' });
+    }
+  });
 
   // Health & public key config endpoint
   app.get('/api/razorpay/config', (_req, res) => {

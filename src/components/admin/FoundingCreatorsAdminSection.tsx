@@ -907,21 +907,44 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
               {selectedApp.portfolioFiles.length > 0 && (
                 <div>
                   <span className="font-bold text-[#07545A] block mb-2">
-                    Submitted Portfolio Imagery ({selectedApp.portfolioFiles.length})
+                    Submitted Portfolio Imagery & Files ({selectedApp.portfolioFiles.length})
                   </span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {selectedApp.portfolioFiles.map((f, i) => (
-                      <a
-                        key={i}
-                        href={f.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-xl overflow-hidden border h-24 block relative group bg-stone-100"
-                        title={f.name}
-                      >
-                        <img src={f.url} alt={f.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                      </a>
-                    ))}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {selectedApp.portfolioFiles.map((f, i) => {
+                      const isPdf = f.name?.toLowerCase().endsWith('.pdf') || f.type === 'application/pdf';
+                      return (
+                        <a
+                          key={i}
+                          href={f.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded-xl overflow-hidden border border-[#07545A]/15 h-24 block relative group bg-[#FFFDF7] p-1.5 hover:shadow-xs transition-all"
+                          title={f.name}
+                        >
+                          {isPdf ? (
+                            <div className="w-full h-full rounded-lg bg-rose-50 text-rose-700 flex flex-col items-center justify-center p-2 text-center">
+                              <Download className="w-5 h-5 mb-1" />
+                              <span className="text-[10px] font-bold truncate max-w-full block">{f.name}</span>
+                              <span className="text-[9px] uppercase tracking-wider text-rose-600 font-bold">PDF Document</span>
+                            </div>
+                          ) : (
+                            <img
+                              src={f.url}
+                              alt={f.name}
+                              className="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                                (e.target as HTMLElement).parentElement!.classList.add('bg-stone-100');
+                              }}
+                            />
+                          )}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-bold rounded-xl gap-1">
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>View</span>
+                          </div>
+                        </a>
+                      );
+                    })}
                   </div>
                 </div>
               )}

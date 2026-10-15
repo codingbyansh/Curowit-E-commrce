@@ -1,6 +1,7 @@
 import { supabase } from '../supabase';
 import { storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { cloudinaryService } from '../services/cloudinaryService';
 import {
   CreatorProfile,
   CreatorApplication,
@@ -753,16 +754,24 @@ class FoundingCreatorSyncService {
     const now = new Date().toISOString();
     let downloadUrl = '';
 
-    // 1. Upload file binary
+    // 1. Upload file via Cloudinary / Server Media pipeline
     try {
-      const sanitized = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const storagePath = `creator-store-documents/${creatorId}/${Date.now()}_${sanitized}`;
-      const fileRef = ref(storage, storagePath);
-      const snapshot = await uploadBytes(fileRef, file);
-      downloadUrl = await getDownloadURL(snapshot.ref);
-    } catch (storageErr) {
-      console.warn('Storage upload fallback to object URL:', storageErr);
-      downloadUrl = URL.createObjectURL(file);
+      const res = await cloudinaryService.uploadFile(file, {
+        folder: `creator-store-documents/${creatorId}`,
+        filename: file.name,
+      });
+      downloadUrl = res.url;
+    } catch (uploadErr) {
+      console.warn('Document upload notice, using fallback:', uploadErr);
+      try {
+        const sanitized = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const storagePath = `creator-store-documents/${creatorId}/${Date.now()}_${sanitized}`;
+        const fileRef = ref(storage, storagePath);
+        const snapshot = await uploadBytes(fileRef, file);
+        downloadUrl = await getDownloadURL(snapshot.ref);
+      } catch {
+        downloadUrl = URL.createObjectURL(file);
+      }
     }
 
     // 2. Build StoreDocument model

@@ -747,10 +747,13 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                         <Upload className="w-6 h-6" />
                       </div>
                       <span className="font-bold text-xs text-[#07545A]">
-                        {isUploadingFile ? 'Uploading to Firebase Storage...' : 'Click to Upload Craft Images / Lookbook'}
+                        {isUploadingFile
+                          ? 'Uploading & securing craft media...'
+                          : 'Click to Upload Craft Images / Lookbook'}
                       </span>
-                      <span className="text-[11px] text-[#173B3D]/60">
-                        Supports PNG, JPG, WebP, PDF (Max 10MB per file)
+                      <span className="text-[11px] text-[#173B3D]/70 flex items-center gap-1.5 font-medium">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Cloudinary CDN & Media Storage • PNG, JPG, WebP, PDF (Max 10MB)
                       </span>
                     </label>
                   </div>
@@ -758,29 +761,57 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                   {/* Uploaded Files List */}
                   {uploadedFiles.length > 0 && (
                     <div className="space-y-2">
-                      <span className="text-xs font-bold text-[#07545A] block">
-                        Attached Files ({uploadedFiles.length})
-                      </span>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-[#07545A] block">
+                          Attached Media Files ({uploadedFiles.length})
+                        </span>
+                        <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Ready for review
+                        </span>
+                      </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        {uploadedFiles.map((file, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center justify-between p-2.5 bg-[#FFFDF7] border border-[#07545A]/15 rounded-xl text-xs"
-                          >
-                            <div className="flex items-center gap-2 truncate">
-                              <FileText className="w-4 h-4 text-[#07545A] shrink-0" />
-                              <span className="truncate font-medium">{file.name}</span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => removeUploadedFile(idx)}
-                              className="p-1 text-red-500 hover:bg-red-50 rounded-lg shrink-0 cursor-pointer"
-                              title="Remove file"
+                        {uploadedFiles.map((file, idx) => {
+                          const isImg =
+                            file.type?.startsWith('image/') ||
+                            file.url?.startsWith('data:image') ||
+                            /\.(jpg|jpeg|png|webp|gif)$/i.test(file.name || file.url);
+                          return (
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between p-2.5 bg-[#FFFDF7] border border-[#07545A]/15 rounded-xl text-xs gap-2"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))}
+                              <div className="flex items-center gap-2.5 truncate min-w-0">
+                                {isImg ? (
+                                  <img
+                                    src={file.url}
+                                    alt={file.name}
+                                    className="w-9 h-9 rounded-lg object-cover border border-[#07545A]/15 bg-white shrink-0"
+                                  />
+                                ) : (
+                                  <div className="w-9 h-9 rounded-lg bg-[#07545A]/10 text-[#07545A] flex items-center justify-center shrink-0">
+                                    <FileText className="w-4 h-4" />
+                                  </div>
+                                )}
+                                <div className="truncate min-w-0">
+                                  <span className="truncate font-bold text-[#07545A] block">{file.name}</span>
+                                  {file.size && (
+                                    <span className="text-[10px] text-[#173B3D]/60 block font-mono">
+                                      {(file.size / 1024).toFixed(1)} KB
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeUploadedFile(idx)}
+                                className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg shrink-0 cursor-pointer transition-colors"
+                                title="Remove file"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

@@ -2,6 +2,7 @@ import { supabase } from '../supabase';
 import { storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { foundingCreatorSyncService, StoreDocument, StoreDocumentType } from '../lib/foundingCreatorSync';
+import { cloudinaryService } from './cloudinaryService';
 import {
   CreatorProfile,
   CreatorApplication,
@@ -290,32 +291,47 @@ export const foundingCreatorService = {
     };
   },
 
-  // 3. FILE UPLOADS TO FIREBASE STORAGE
+  // 3. SECURE FILE UPLOADS WITH CLOUDINARY & MEDIA REPOSITORY
   async uploadPortfolioFile(file: File, creatorId: string): Promise<string> {
     try {
-      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const storagePath = `creator-portfolios/${creatorId}/${Date.now()}_${sanitizedName}`;
-      const fileRef = ref(storage, storagePath);
-      const snapshot = await uploadBytes(fileRef, file);
-      const downloadUrl = await getDownloadURL(snapshot.ref);
-      return downloadUrl;
+      const res = await cloudinaryService.uploadFile(file, {
+        folder: `creator-portfolios/${creatorId}`,
+        filename: file.name,
+      });
+      return res.url;
     } catch (err) {
-      console.warn('Firebase Storage upload notice, falling back to local object preview:', err);
-      return URL.createObjectURL(file);
+      console.warn('Cloudinary upload notice, using resilient fallback:', err);
+      // Secondary fallback
+      try {
+        const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const storagePath = `creator-portfolios/${creatorId}/${Date.now()}_${sanitizedName}`;
+        const fileRef = ref(storage, storagePath);
+        const snapshot = await uploadBytes(fileRef, file);
+        return await getDownloadURL(snapshot.ref);
+      } catch {
+        return URL.createObjectURL(file);
+      }
     }
   },
 
   async uploadProductImage(file: File, creatorId: string, productId: string): Promise<string> {
     try {
-      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const storagePath = `creator-products/${creatorId}/${productId}/${Date.now()}_${sanitizedName}`;
-      const fileRef = ref(storage, storagePath);
-      const snapshot = await uploadBytes(fileRef, file);
-      const downloadUrl = await getDownloadURL(snapshot.ref);
-      return downloadUrl;
+      const res = await cloudinaryService.uploadFile(file, {
+        folder: `creator-products/${creatorId}/${productId}`,
+        filename: file.name,
+      });
+      return res.url;
     } catch (err) {
-      console.warn('Firebase Storage product image upload notice, fallback used:', err);
-      return URL.createObjectURL(file);
+      console.warn('Product image upload notice, using resilient fallback:', err);
+      try {
+        const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const storagePath = `creator-products/${creatorId}/${productId}/${Date.now()}_${sanitizedName}`;
+        const fileRef = ref(storage, storagePath);
+        const snapshot = await uploadBytes(fileRef, file);
+        return await getDownloadURL(snapshot.ref);
+      } catch {
+        return URL.createObjectURL(file);
+      }
     }
   },
 
