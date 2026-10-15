@@ -28,6 +28,10 @@ import {
 } from 'lucide-react';
 import { CurowitLogo } from '../common/CurowitLogo';
 import { foundingCreatorSyncService } from '../../lib/foundingCreatorSync';
+import potteryArtisanImg from '../../assets/images/artisan_pottery_ceramic_1792071874114.jpg';
+import crochetArtisanImg from '../../assets/images/artisan_crochet_yarn_1792071815219.jpg';
+import candleArtisanImg from '../../assets/images/artisan_soy_candle_1792071897745.jpg';
+import jewelleryArtisanImg from '../../assets/images/artisan_wire_jewellery_1792071924885.jpg';
 
 interface FoundingCreatorLandingProps {
   onNavigate: (view: string) => void;
@@ -166,7 +170,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       location: 'Ahmedabad, Gujarat',
       price: '₹1,850',
       leadTime: '3-5 days',
-      image: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=700&q=80',
+      image: potteryArtisanImg,
       technique: 'Wheel-thrown & gas kiln fired at 1220°C',
     },
     {
@@ -177,7 +181,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       location: 'Jaipur, Rajasthan',
       price: '₹1,250',
       leadTime: '2-4 days',
-      image: 'https://images.unsplash.com/photo-1607344645866-009c320b5ab8?auto=format&fit=crop&w=700&q=80',
+      image: crochetArtisanImg,
       technique: 'Vegetable-dyed organic cotton yarn',
     },
     {
@@ -188,7 +192,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       location: 'Pondicherry',
       price: '₹2,100',
       leadTime: '3 days',
-      image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=700&q=80',
+      image: jewelleryArtisanImg,
       technique: 'Hand-sculpted clay with hypoallergenic wire',
     },
     {
@@ -199,7 +203,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       location: 'Dehradun, Uttarakhand',
       price: '₹950',
       leadTime: '2 days',
-      image: 'https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=700&q=80',
+      image: candleArtisanImg,
       technique: 'Hand-poured 100% natural soy with wooden wick',
     },
     {
@@ -504,14 +508,14 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
               <div className="relative">
                 <div className="grid grid-cols-2 gap-3.5">
                   <div className="space-y-3.5">
-                    <div className="overflow-hidden rounded-3xl shadow-sm border border-[#07545A]/12 group relative bg-stone-100">
+                    <div className="overflow-hidden rounded-3xl shadow-sm border border-[#07545A]/12 group relative bg-[#F5EFE6]">
                       <img
-                        src="https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=600&q=80"
-                        alt="Pottery Studio"
+                        src={potteryArtisanImg}
+                        alt="Aarav Patel Handcrafted Pottery Studio"
                         className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
-                        referrerPolicy="no-referrer"
+                        loading="lazy"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-3.5 text-white text-[11px]">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent flex items-end p-3.5 text-white text-[11px]">
                         <div>
                           <p className="font-semibold text-white">Aarav Patel · Pottery</p>
                           <p className="text-white/80 text-[10px]">Ahmedabad Studio</p>
@@ -519,14 +523,14 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                       </div>
                     </div>
 
-                    <div className="overflow-hidden rounded-3xl shadow-sm border border-[#07545A]/12 group relative bg-stone-100">
+                    <div className="overflow-hidden rounded-3xl shadow-sm border border-[#07545A]/12 group relative bg-[#F5EFE6]">
                       <img
-                        src="https://images.unsplash.com/photo-1607344645866-009c320b5ab8?auto=format&fit=crop&w=600&q=80"
-                        alt="Textile Weaving"
+                        src={crochetArtisanImg}
+                        alt="Meera Sharma Botanical Crochet & Handwoven Crafts"
                         className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500"
-                        referrerPolicy="no-referrer"
+                        loading="lazy"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-3.5 text-white text-[11px]">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent flex items-end p-3.5 text-white text-[11px]">
                         <div>
                           <p className="font-semibold text-white">Meera Sharma · Crochet</p>
                           <p className="text-white/80 text-[10px]">Jaipur Studio</p>
@@ -536,14 +540,14 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                   </div>
 
                   <div className="space-y-3.5 pt-6">
-                    <div className="overflow-hidden rounded-3xl shadow-sm border border-[#07545A]/12 group relative bg-stone-100">
+                    <div className="overflow-hidden rounded-3xl shadow-sm border border-[#07545A]/12 group relative bg-[#F5EFE6]">
                       <img
-                        src="https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=600&q=80"
-                        alt="Botanical Candles"
+                        src={candleArtisanImg}
+                        alt="Divya K. Soy Wax Candle Atelier"
                         className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-500"
-                        referrerPolicy="no-referrer"
+                        loading="lazy"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-3.5 text-white text-[11px]">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent flex items-end p-3.5 text-white text-[11px]">
                         <div>
                           <p className="font-semibold text-white">Divya K. · Soy Atelier</p>
                           <p className="text-white/80 text-[10px]">Dehradun, UK</p>
@@ -551,14 +555,14 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                       </div>
                     </div>
 
-                    <div className="overflow-hidden rounded-3xl shadow-sm border border-[#07545A]/12 group relative bg-stone-100">
+                    <div className="overflow-hidden rounded-3xl shadow-sm border border-[#07545A]/12 group relative bg-[#F5EFE6]">
                       <img
-                        src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80"
-                        alt="Handcrafted Jewellery"
+                        src={jewelleryArtisanImg}
+                        alt="Tara Sen Handcrafted Silver & Pearl Jewellery"
                         className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
-                        referrerPolicy="no-referrer"
+                        loading="lazy"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-3.5 text-white text-[11px]">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent flex items-end p-3.5 text-white text-[11px]">
                         <div>
                           <p className="font-semibold text-white">Tara Sen · Silver Wire</p>
                           <p className="text-white/80 text-[10px]">Pondicherry</p>
