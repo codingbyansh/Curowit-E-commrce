@@ -54,22 +54,38 @@ function loadPersistedCreatorData() {
       const parsed = JSON.parse(raw);
       const apps = Array.isArray(parsed.applications) ? parsed.applications.filter((a: any) => !isDemoRecord(a)) : [];
       const profs = Array.isArray(parsed.profiles) ? parsed.profiles.filter((p: any) => !isDemoRecord(p)) : [];
-      return { applications: apps, profiles: profs };
+      const paymentMethods = Array.isArray(parsed.paymentMethods) ? parsed.paymentMethods : [];
+      const tickets = Array.isArray(parsed.tickets) ? parsed.tickets : [];
+      return { applications: apps, profiles: profs, paymentMethods, tickets };
     }
   } catch (err) {
     console.warn('Notice loading persisted creator data:', err);
   }
-  return { applications: [], profiles: [] };
+  return { applications: [], profiles: [], paymentMethods: [], tickets: [] };
 }
 
-function savePersistedCreatorData(applications: any[], profiles: any[]) {
+function savePersistedCreatorData(
+  applications: any[],
+  profiles: any[],
+  paymentMethods: any[] = [],
+  tickets: any[] = []
+) {
   ensureDataDir();
   try {
     const apps = applications.filter((a: any) => !isDemoRecord(a));
     const profs = profiles.filter((p: any) => !isDemoRecord(p));
     fs.writeFileSync(
       DATA_FILE,
-      JSON.stringify({ applications: apps, profiles: profs }, null, 2),
+      JSON.stringify(
+        {
+          applications: apps,
+          profiles: profs,
+          paymentMethods,
+          tickets,
+        },
+        null,
+        2
+      ),
       'utf-8'
     );
   } catch (err) {
@@ -260,6 +276,8 @@ async function startServer() {
   const initialData = loadPersistedCreatorData();
   const serverCreatorApplications: any[] = initialData.applications;
   const serverCreatorProfiles: any[] = initialData.profiles;
+  const serverCreatorPaymentMethods: any[] = initialData.paymentMethods || [];
+  const serverCreatorTickets: any[] = initialData.tickets || [];
 
   app.get('/api/founding-creator/config', (_req, res) => {
     res.json({
@@ -440,7 +458,12 @@ async function startServer() {
       }
 
       // Save changes to disk immediately
-      savePersistedCreatorData(serverCreatorApplications, serverCreatorProfiles);
+      savePersistedCreatorData(
+        serverCreatorApplications,
+        serverCreatorProfiles,
+        serverCreatorPaymentMethods,
+        serverCreatorTickets
+      );
 
       console.log(`[Founding Creator] New application registered on server: ${applicationId} by ${fullName} (${email})`);
 
@@ -501,7 +524,12 @@ async function startServer() {
         }
 
         // Persist update to disk immediately
-        savePersistedCreatorData(serverCreatorApplications, serverCreatorProfiles);
+        savePersistedCreatorData(
+          serverCreatorApplications,
+          serverCreatorProfiles,
+          serverCreatorPaymentMethods,
+          serverCreatorTickets
+        );
       }
 
       console.log(`[Founding Creator] Application ${applicationId} reviewed: ${action} by ${reviewer || 'Admin'}`);
@@ -536,6 +564,271 @@ async function startServer() {
       });
     } catch (error) {
       res.status(500).json({ error: 'Failed to reconcile payout' });
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // CREATOR PAYMENT DETAILS & BANK DESTINATION ENDPOINTS
+  // --------------------------------------------------------------------------
+  // Get all payment methods (for Admin CRM review & payouts)
+  app.get('/api/founding-creator/payment-methods', (_req, res) => {
+    res.json({
+      success: true,
+      paymentMethods: serverCreatorPaymentMethods,
+      total: serverCreatorPaymentMethods.length,
+    });
+  });
+
+  // Get single creator payment method
+  app.get('/api/founding-creator/payment-methods/:creatorId', (req, res) => {
+    const { creatorId } = req.params;
+    const pm = serverCreatorPaymentMethods.find((p) => p.creatorId === creatorId);
+    res.json({
+      success: true,
+      paymentMethod: pm || null,
+    });
+  });
+
+  // Save / Update payment method (from Creator Dashboard or Admin)
+  app.post('/api/founding-creator/payment-methods', (req, res) => {
+    try {
+      const body = req.body || {};
+      const {
+        creatorId,
+        methodType = 'UPI',
+        upiId,
+        accountHolderName,
+        bankName,
+        accountNumber,
+        maskedAccountNumber,
+        ifscCode,
+        verificationStatus = 'verified',
+      } = body;
+
+      if (!creatorId) {
+        res.status(400).json({ error: 'creatorId is required' });
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const existingIdx = serverCreatorPaymentMethods.findIndex((p) => p.creatorId === creatorId);
+
+      const computedMasked =
+        maskedAccountNumber ||
+        (accountNumber && accountNumber.length >= 4 ? `•••• •••• ${accountNumber.slice(-4)}` : undefined);
+
+      const updatedMethod = {
+        id: existingIdx !== -1 ? serverCreatorPaymentMethods[existingIdx].id : `pm-${Date.now()}`,
+        creatorId,
+        methodType,
+        upiId: upiId !== undefined ? upiId : (existingIdx !== -1 ? serverCreatorPaymentMethods[existingIdx].upiId : ''),
+        accountHolderName: accountHolderName !== undefined ? accountHolderName : (existingIdx !== -1 ? serverCreatorPaymentMethods[existingIdx].accountHolderName : ''),
+        bankName: bankName !== undefined ? bankName : (existingIdx !== -1 ? serverCreatorPaymentMethods[existingIdx].bankName : ''),
+        maskedAccountNumber: computedMasked !== undefined ? computedMasked : (existingIdx !== -1 ? serverCreatorPaymentMethods[existingIdx].maskedAccountNumber : ''),
+        ifscCode: (ifscCode !== undefined ? ifscCode : (existingIdx !== -1 ? serverCreatorPaymentMethods[existingIdx].ifscCode : '')).toUpperCase(),
+        verificationStatus,
+        isDefault: true,
+        createdAt: existingIdx !== -1 ? serverCreatorPaymentMethods[existingIdx].createdAt : now,
+        updatedAt: now,
+      };
+
+      if (existingIdx !== -1) {
+        serverCreatorPaymentMethods[existingIdx] = updatedMethod;
+      } else {
+        serverCreatorPaymentMethods.push(updatedMethod);
+      }
+
+      savePersistedCreatorData(
+        serverCreatorApplications,
+        serverCreatorProfiles,
+        serverCreatorPaymentMethods,
+        serverCreatorTickets
+      );
+
+      console.log(`[Founding Creator] Payment details updated for creator ${creatorId}: UPI=${updatedMethod.upiId}, Bank=${updatedMethod.bankName}`);
+      res.json({
+        success: true,
+        paymentMethod: updatedMethod,
+      });
+    } catch (error) {
+      console.error('Error saving payment details:', error);
+      res.status(500).json({ error: 'Failed to save payment details' });
+    }
+  });
+
+  // --------------------------------------------------------------------------
+  // CREATOR SUPPORT TICKETS & QUERY RESOLUTION ENDPOINTS
+  // --------------------------------------------------------------------------
+  // Get all support tickets (for Admin Support Desk & Query Resolution)
+  app.get('/api/founding-creator/tickets', (_req, res) => {
+    res.json({
+      success: true,
+      tickets: serverCreatorTickets,
+      total: serverCreatorTickets.length,
+    });
+  });
+
+  // Get tickets for a specific creator
+  app.get('/api/founding-creator/tickets/:creatorId', (req, res) => {
+    const { creatorId } = req.params;
+    const creatorTickets = serverCreatorTickets.filter((t) => t.creatorId === creatorId);
+    res.json({
+      success: true,
+      tickets: creatorTickets,
+      total: creatorTickets.length,
+    });
+  });
+
+  // Creator raises a new support ticket
+  app.post('/api/founding-creator/tickets', (req, res) => {
+    try {
+      const body = req.body || {};
+      const { creatorId, creatorName, creatorEmail, subject, category, description, priority = 'medium' } = body;
+
+      if (!creatorId || !subject || !description) {
+        res.status(400).json({ error: 'creatorId, subject and description are required' });
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const ticketRandom = Math.floor(100 + Math.random() * 900);
+      const ticketId = body.ticketId || `TKT-FC-${ticketRandom}`;
+
+      const newTicket = {
+        id: body.id || `tkt-${Date.now()}`,
+        ticketId,
+        creatorId,
+        creatorName: creatorName || 'Founding Creator',
+        creatorEmail: creatorEmail || '',
+        subject: subject.trim(),
+        category: category || 'orders',
+        priority,
+        status: 'open',
+        description: description.trim(),
+        messages: [
+          {
+            id: `msg-${Date.now()}`,
+            senderType: 'creator',
+            senderName: creatorName || 'Creator',
+            message: description.trim(),
+            createdAt: now,
+          },
+        ],
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      serverCreatorTickets.unshift(newTicket);
+
+      savePersistedCreatorData(
+        serverCreatorApplications,
+        serverCreatorProfiles,
+        serverCreatorPaymentMethods,
+        serverCreatorTickets
+      );
+
+      console.log(`[Founding Creator] Support ticket raised: ${ticketId} by ${creatorName || creatorId}`);
+      res.json({
+        success: true,
+        ticket: newTicket,
+      });
+    } catch (error) {
+      console.error('Error creating support ticket:', error);
+      res.status(500).json({ error: 'Failed to create support ticket' });
+    }
+  });
+
+  // Admin replies to or solves a support ticket
+  app.post('/api/founding-creator/tickets/:ticketId/reply', (req, res) => {
+    try {
+      const { ticketId } = req.params;
+      const {
+        message,
+        senderType = 'admin',
+        senderName = 'Curowit Support Specialist',
+        status,
+      } = req.body || {};
+
+      const ticket = serverCreatorTickets.find(
+        (t) => t.ticketId === ticketId || t.id === ticketId
+      );
+
+      if (!ticket) {
+        res.status(404).json({ error: 'Ticket not found' });
+        return;
+      }
+
+      const now = new Date().toISOString();
+      if (!Array.isArray(ticket.messages)) {
+        ticket.messages = [];
+      }
+
+      if (message && message.trim()) {
+        ticket.messages.push({
+          id: `msg-${Date.now()}`,
+          senderType,
+          senderName,
+          message: message.trim(),
+          createdAt: now,
+        });
+      }
+
+      if (status) {
+        ticket.status = status;
+      }
+      ticket.updatedAt = now;
+
+      savePersistedCreatorData(
+        serverCreatorApplications,
+        serverCreatorProfiles,
+        serverCreatorPaymentMethods,
+        serverCreatorTickets
+      );
+
+      console.log(`[Founding Creator] Ticket ${ticket.ticketId} updated. Status: ${ticket.status}, message added.`);
+      res.json({
+        success: true,
+        ticket,
+      });
+    } catch (error) {
+      console.error('Error replying to ticket:', error);
+      res.status(500).json({ error: 'Failed to update ticket' });
+    }
+  });
+
+  // Update ticket status directly
+  app.post('/api/founding-creator/tickets/:ticketId/status', (req, res) => {
+    try {
+      const { ticketId } = req.params;
+      const { status } = req.body || {};
+
+      const ticket = serverCreatorTickets.find(
+        (t) => t.ticketId === ticketId || t.id === ticketId
+      );
+
+      if (!ticket) {
+        res.status(404).json({ error: 'Ticket not found' });
+        return;
+      }
+
+      if (status) {
+        ticket.status = status;
+        ticket.updatedAt = new Date().toISOString();
+      }
+
+      savePersistedCreatorData(
+        serverCreatorApplications,
+        serverCreatorProfiles,
+        serverCreatorPaymentMethods,
+        serverCreatorTickets
+      );
+
+      res.json({
+        success: true,
+        ticket,
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update ticket status' });
     }
   });
 

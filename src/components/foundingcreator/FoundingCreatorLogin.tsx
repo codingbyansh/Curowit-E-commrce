@@ -188,7 +188,7 @@ export const FoundingCreatorLogin: React.FC<FoundingCreatorLoginProps> = ({ onNa
           <div className="pt-3 border-t border-[#07545A]/10 text-center">
             <div className="inline-flex items-center gap-1.5 text-[11px] text-[#233837]/70 font-medium">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-              <span>Secure encrypted artisan access with Supabase sync</span>
+              <span>Secure encrypted artisan access with cloud database sync</span>
             </div>
           </div>
 

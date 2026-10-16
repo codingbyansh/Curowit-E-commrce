@@ -724,7 +724,7 @@ export const FoundingCreatorApply: React.FC<FoundingCreatorApplyProps> = ({ onNa
                       Section C: Portfolio & Craft Verification
                     </h3>
                     <p className="text-xs text-[#173B3D]/70 mt-0.5">
-                      Upload high-resolution images of your finished pieces. Uploaded to secure Firebase Storage.
+                      Upload high-resolution images of your finished pieces. Uploaded to secure cloud storage.
                     </p>
                   </div>
 

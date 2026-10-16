@@ -84,7 +84,7 @@ export const OrderManagement: React.FC = () => {
     .filter((o) => o.status !== 'Cancelled')
     .reduce((sum, o) => sum + (o.total || 0), 0);
 
-  // Manual refresh from Supabase
+  // Manual refresh from database
   const handleManualSync = async () => {
     setIsSyncing(true);
     try {
@@ -93,12 +93,12 @@ export const OrderManagement: React.FC = () => {
         freshOrders.forEach((fo) => {
           updateOrder(fo.id, fo);
         });
-        showToast('Supabase Sync Complete', `Synced ${freshOrders.length} orders from Supabase`);
+        showToast('Sync Complete', `Synced ${freshOrders.length} orders from cloud database`);
       } else {
-        showToast('Supabase Live', 'All orders are currently in sync with Supabase');
+        showToast('Database Live', 'All orders are currently in sync with database');
       }
     } catch (err) {
-      showToast('Sync Notice', 'Failed to retrieve Supabase orders', 'error');
+      showToast('Sync Notice', 'Failed to retrieve cloud orders', 'error');
     } finally {
       setIsSyncing(false);
     }
@@ -180,14 +180,14 @@ export const OrderManagement: React.FC = () => {
       );
 
       showToast(
-        'Supabase Synced',
-        `Order #${selectedOrderForUpdate.id} updated to ${targetStatus} and milestone added to Supabase 'order_tracking' table.`
+        'Order Synced',
+        `Order #${selectedOrderForUpdate.id} updated to ${targetStatus} and tracking milestone saved.`
       );
 
       setSelectedOrderForUpdate(null);
     } catch (err) {
       console.warn('Status update error:', err);
-      showToast('Error', 'Failed to update order status in Supabase', 'error');
+      showToast('Error', 'Failed to update order status in database', 'error');
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -210,21 +210,21 @@ export const OrderManagement: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* ========================================================
-          SUPABASE LIVE STATUS BANNER & HEADER
+          REALTIME LIVE STATUS BANNER & HEADER
           ======================================================== */}
       <div className="bg-[#FFF8EA] rounded-3xl p-5 sm:p-6 border border-[#07545A]/15 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
             <h2 className="text-lg font-extrabold text-[#07545A] font-display">
-              Supabase Live Order Management
+              Realtime Order Management
             </h2>
             <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-              Realtime Active
+              Live Active
             </span>
           </div>
           <p className="text-xs text-[#173B3D]/70 max-w-2xl leading-relaxed">
-            All order status changes made here update the Supabase <code className="bg-[#07545A]/10 px-1 rounded text-[#07545A]">orders</code> and <code className="bg-[#07545A]/10 px-1 rounded text-[#07545A]">order_tracking</code> tables instantly. Customers viewing the tracking page receive live updates in real time.
+            All order status changes made here update order and tracking records instantly. Customers viewing the tracking page receive live updates in real time.
           </p>
         </div>
 
@@ -235,7 +235,7 @@ export const OrderManagement: React.FC = () => {
             className="flex-1 sm:flex-initial px-4 py-2 bg-white hover:bg-[#F7EBD7] text-[#07545A] border border-[#07545A]/20 text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-            <span>{isSyncing ? 'Syncing...' : 'Sync with Supabase'}</span>
+            <span>{isSyncing ? 'Syncing...' : 'Sync Orders'}</span>
           </button>
         </div>
       </div>
@@ -417,7 +417,7 @@ export const OrderManagement: React.FC = () => {
                     </span>
 
                     <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-semibold">
-                      Supabase Synced
+                      Realtime Synced
                     </span>
                   </div>
 
@@ -571,12 +571,12 @@ export const OrderManagement: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {/* View Supabase tracking history */}
+                    {/* View live tracking history */}
                     <button
                       onClick={() => openTrackingInspector(order.id)}
                       className="px-3 py-1.5 bg-white hover:bg-[#F7EBD7] text-[#07545A] border border-[#07545A]/20 text-xs font-bold rounded-xl transition-colors cursor-pointer"
                     >
-                      View Supabase Timeline
+                      View Tracking Timeline
                     </button>
 
                     {/* Delete order */}
@@ -584,7 +584,7 @@ export const OrderManagement: React.FC = () => {
                       onClick={() => {
                         if (
                           confirm(
-                            `Delete order #${order.id}? This will remove it from Supabase orders and order_tracking tables.`
+                            `Delete order #${order.id}? This will remove it from database orders and tracking records.`
                           )
                         ) {
                           deleteOrder(order.id);
@@ -612,7 +612,7 @@ export const OrderManagement: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-[#07545A]/15">
               <div>
                 <h3 className="font-extrabold text-base text-[#07545A] font-display">
-                  Update Status & Sync Supabase
+                  Update Status & Save Milestone
                 </h3>
                 <span className="text-xs text-[#687778]">
                   Order #{selectedOrderForUpdate.id} · Customer: {selectedOrderForUpdate.shippingAddress.fullName}
@@ -713,9 +713,7 @@ export const OrderManagement: React.FC = () => {
               </div>
 
               <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-emerald-800 text-[11px] leading-relaxed">
-                <strong>Supabase Sync:</strong> This action updates both the{' '}
-                <code>orders</code> table and inserts a timestamped record into the{' '}
-                <code>order_tracking</code> table in Supabase.
+                <strong>Database Sync:</strong> This action updates both the primary order record and creates a timestamped entry in the live tracking audit log.
               </div>
             </div>
 
@@ -734,7 +732,7 @@ export const OrderManagement: React.FC = () => {
                 className="px-5 py-2 bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>{isUpdatingStatus ? 'Syncing...' : 'Sync to Supabase'}</span>
+                <span>{isUpdatingStatus ? 'Syncing...' : 'Save & Update Status'}</span>
               </button>
             </div>
           </div>
@@ -750,7 +748,7 @@ export const OrderManagement: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-[#07545A]/15">
               <div>
                 <h3 className="font-extrabold text-base text-[#07545A] font-display">
-                  Supabase 'order_tracking' Records
+                  Live Order Tracking Records
                 </h3>
                 <span className="text-xs text-[#687778]">
                   Order #{inspectOrderId}
@@ -766,11 +764,11 @@ export const OrderManagement: React.FC = () => {
 
             {isLoadingMilestones ? (
               <div className="py-8 text-center text-xs text-[#07545A] font-bold animate-pulse">
-                Loading records from Supabase...
+                Loading tracking records...
               </div>
             ) : inspectMilestones.length === 0 ? (
               <div className="py-8 text-center text-xs text-[#687778]">
-                No explicit milestones saved in Supabase yet. Trigger a status update above to append milestone events!
+                No explicit milestones saved yet. Trigger a status update above to append milestone events!
               </div>
             ) : (
               <div className="space-y-3">

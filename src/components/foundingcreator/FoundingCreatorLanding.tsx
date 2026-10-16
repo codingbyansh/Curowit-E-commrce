@@ -25,6 +25,7 @@ import {
   AlertCircle,
   Sparkle,
   Compass,
+  LogIn,
 } from 'lucide-react';
 import { CurowitLogo } from '../common/CurowitLogo';
 import { foundingCreatorSyncService } from '../../lib/foundingCreatorSync';
@@ -100,7 +101,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       title: 'Portfolio & Store Documents',
       headline: 'Upload craft lookbook & certifications',
       timeframe: 'Instant sync',
-      summary: 'Upload craft photographs, artisan cards, or studio credentials. All files are synchronized directly to our persistent Supabase document archive.',
+      summary: 'Upload craft photographs, artisan cards, or studio credentials. All files are synchronized directly to our persistent secure document archive.',
       deliverables: ['High-res finished piece photos', 'Craft method verification', 'Optional GST / Artisan ID'],
       proTip: 'Independent hobbyists and student creators do not require GST registration.',
     },
@@ -309,45 +310,17 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#192B2C] selection:bg-[#07545A] selection:text-[#FFF8EA]">
+    <div className="min-h-screen bg-[#FAF7F2] text-[#192B2C] selection:bg-[#07545A] selection:text-[#FFF8EA] w-full max-w-full overflow-x-hidden">
       {/* =========================================================================
-          1. COHORT ADMISSION LIVE NOTIFICATION STRIP
+          PROGRAM HEADER (STANDALONE CLEAN PORTAL BRANDING)
           ========================================================================= */}
-      <div className="bg-[#063B40] text-[#FAF6EE] text-xs py-2 px-4 border-b border-[#04282B]">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-center sm:text-left">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-            <span className="font-medium tracking-wide">
-              Founding Creator Cohort 2026 Admissions Active:
-            </span>
-            <span className="text-[#F59E0B] font-bold tabular-nums">
-              118 of 150 Master Artisan Seats Claimed
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4 text-[11px]">
-            <span className="hidden md:inline text-[#FAF6EE]/75">
-              Avg. Review Turnaround: <strong className="text-white font-medium">28 hrs</strong> · Guaranteed 7-Day Settlement SLA
-            </span>
-            <button
-              onClick={() => onNavigate('foundingcreator-apply')}
-              className="text-[#F59E0B] font-bold underline hover:text-white transition-colors cursor-pointer"
-            >
-              Apply in 5 mins →
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* =========================================================================
-          2. PROGRAM HEADER (STANDALONE CLEAN PORTAL BRANDING)
-          ========================================================================= */}
-      <header className="border-b border-[#07545A]/12 bg-[#FAF7F2]/90 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <header className="border-b border-[#07545A]/12 bg-[#FAF7F2]/95 backdrop-blur-md sticky top-0 z-40 w-full">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between gap-2">
+          {/* Brand Logo & Store Return Link */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               onClick={() => onNavigate('home')}
-              className="cursor-pointer hover:opacity-85 transition-opacity"
+              className="cursor-pointer hover:opacity-85 transition-opacity shrink-0 flex items-center"
               title="Return to Curowit Storefront"
             >
               <CurowitLogo variant="horizontal" size="md" responsiveTagline />
@@ -358,7 +331,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
             </span>
             <button
               onClick={() => onNavigate('home')}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#07474C] bg-[#07545A]/8 hover:bg-[#07545A]/15 border border-[#07545A]/15 px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ml-1"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-[#07474C] bg-[#07545A]/8 hover:bg-[#07545A]/15 border border-[#07545A]/15 px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 ml-1"
               title="Return to Curowit Storefront"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
@@ -366,7 +339,9 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
             </button>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Action Buttons: Desktop shows Login & Apply. Mobile view shows ONLY the Apply button to eliminate crowding and side sliding */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Track Application: Hidden on mobile, visible on desktop */}
             <button
               onClick={() => {
                 const element = document.getElementById('status-tracker-section');
@@ -378,18 +353,22 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
               <span>Track Application</span>
             </button>
 
+            {/* Login Button: Hidden on mobile (< sm), visible on sm and up */}
             <button
               onClick={() => onNavigate('foundingcreator-login')}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-[#07474C] border border-[#07545A]/20 hover:bg-[#07545A]/6 transition-colors cursor-pointer"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-semibold text-[#07474C] border border-[#07545A]/25 hover:bg-[#07545A]/8 transition-colors cursor-pointer shrink-0"
+              title="Creator Login"
             >
-              Artisan Login
+              <LogIn className="w-3.5 h-3.5 text-[#07545A]" />
+              <span>Log in as Artisan</span>
             </button>
 
+            {/* Apply Button: ONLY button visible on mobile view */}
             <button
               onClick={() => onNavigate('foundingcreator-apply')}
-              className="px-4 sm:px-5 py-2.5 rounded-xl bg-[#07545A] hover:bg-[#053B40] text-[#FFF8EA] text-xs font-semibold shadow-[0_2px_8px_-1px_rgba(7,84,90,0.25)] hover:shadow-[0_4px_14px_-2px_rgba(7,84,90,0.35)] transition-all cursor-pointer flex items-center gap-1.5"
+              className="px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-xl bg-[#07545A] hover:bg-[#053B40] text-[#FFF8EA] text-xs font-semibold shadow-[0_2px_8px_-1px_rgba(7,84,90,0.25)] hover:shadow-[0_4px_14px_-2px_rgba(7,84,90,0.35)] transition-all cursor-pointer flex items-center gap-1.5 shrink-0 active:scale-95"
             >
-              <span>Apply for Cohort</span>
+              <span>Apply<span className="hidden sm:inline"> for Cohort</span></span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -397,12 +376,12 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       </header>
 
       {/* =========================================================================
-          3. HERO EDITORIAL SHOWCASE (WARM, AUTHENTIC, IMPACTFUL)
+          HERO EDITORIAL SHOWCASE (WARM, AUTHENTIC, IMPACTFUL)
           ========================================================================= */}
-      <section className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-24 border-b border-[#07545A]/10 bg-gradient-to-b from-[#F5EFE6] via-[#FAF7F2] to-[#FAF7F2]">
+      <section className="relative overflow-hidden pt-10 pb-14 sm:pt-14 sm:pb-18 lg:pt-20 lg:pb-24 border-b border-[#07545A]/10 bg-gradient-to-b from-[#F5EFE6] via-[#FAF7F2] to-[#FAF7F2] w-full max-w-full">
         {/* Ambient Radiant Warm Glow */}
         <div
-          className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[900px] h-[450px] opacity-60 z-0 blur-3xl"
+          className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-full max-w-[900px] h-[450px] opacity-60 z-0 blur-3xl"
           style={{
             background: 'radial-gradient(ellipse 70% 50% at 50% 30%, rgba(245, 158, 11, 0.14), rgba(7, 84, 90, 0.08) 50%, transparent 80%)',
           }}
@@ -464,7 +443,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                 7-day settlements post delivery.
               </p>
 
-              {/* Action Buttons */}
+              {/* Action Buttons: Apply, Login, Simulate */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                 <button
                   onClick={() => onNavigate('foundingcreator-apply')}
@@ -474,15 +453,45 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </button>
 
+                {/* Primary Login Option on Founding Page */}
+                <button
+                  onClick={() => onNavigate('foundingcreator-login')}
+                  className="px-6 py-3.5 rounded-2xl bg-white hover:bg-[#FCFBF8] text-[#07474C] border border-[#07545A]/25 hover:border-[#07545A]/50 font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs hover:shadow-xs active:scale-[0.99]"
+                  title="Artisan & Creator Portal Login"
+                >
+                  <LogIn className="w-4 h-4 text-[#07545A]" />
+                  <span>Artisan Portal Login</span>
+                </button>
+
                 <button
                   onClick={() => {
                     const el = document.getElementById('calculator-section');
                     el?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="px-6 py-3.5 rounded-2xl bg-white hover:bg-[#FCFBF8] text-[#07474C] border border-[#07545A]/20 hover:border-[#07545A]/35 font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                  className="px-5 py-3.5 rounded-2xl bg-[#07545A]/5 hover:bg-[#07545A]/10 text-[#07474C] border border-[#07545A]/15 font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Sliders className="w-4 h-4 text-[#07545A]" />
                   <span>Simulate 70% Earnings</span>
+                </button>
+              </div>
+
+              {/* Dedicated High-Visibility Artisan Login Banner */}
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-[#FFFDF7] border border-[#07545A]/15 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#07545A]/10 flex items-center justify-center text-[#07545A] shrink-0">
+                    <LogIn className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-[#07474C]">Already an approved Founding Creator?</p>
+                    <p className="text-[11px] text-[#233837]/75">Access your orders, product catalog, and weekly payouts</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => onNavigate('foundingcreator-login')}
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#07545A] hover:bg-[#053B40] text-[#FFF8EA] text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs shrink-0 active:scale-95"
+                >
+                  <span>Sign In to Dashboard</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
 
@@ -601,7 +610,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       <section id="calculator-section" className="py-16 sm:py-24 border-b border-[#07545A]/10 bg-gradient-to-b from-[#FAF7F2] via-[#F4ECE1]/40 to-[#FAF7F2] relative overflow-hidden">
         {/* Subtle Ambient Light Spot */}
         <div
-          className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] opacity-40 z-0 blur-3xl"
+          className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[800px] h-[400px] opacity-40 z-0 blur-3xl"
           style={{
             background: 'radial-gradient(circle, rgba(217, 119, 6, 0.1) 0%, rgba(7, 84, 90, 0.05) 50%, transparent 75%)',
           }}
@@ -982,7 +991,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
       </section>
 
       {/* =========================================================================
-          7. LIVE STATUS QUERY & SUPABASE DATABASE SYNC PANEL
+          7. LIVE STATUS QUERY & DATABASE SYNC PANEL
           ========================================================================= */}
       <section id="status-tracker-section" className="py-16 sm:py-24 border-b border-[#07545A]/10 bg-gradient-to-b from-[#F5EFE6]/70 via-[#FAF7F2] to-[#FAF7F2] relative overflow-hidden">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-5 relative z-10">
@@ -993,7 +1002,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
             Check Your Application Status
           </h2>
           <p className="text-xs sm:text-sm text-[#233837]/75 max-w-lg mx-auto font-normal">
-            Already submitted your artisan profile? Enter your application reference ID or email to check real-time Supabase audit progress.
+            Already submitted your artisan profile? Enter your application reference ID or email to check real-time audit progress.
           </p>
 
           <form onSubmit={handleLiveStatusLookup} className="max-w-md mx-auto flex items-center gap-2">
@@ -1016,6 +1025,18 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
               {isSearchingStatus ? 'Checking...' : 'Check Status'}
             </button>
           </form>
+
+          {/* Quick Login Helper in Status Section */}
+          <div className="text-xs text-[#233837]/75 flex items-center justify-center gap-1.5 flex-wrap">
+            <span>Already have an active artisan account?</span>
+            <button
+              onClick={() => onNavigate('foundingcreator-login')}
+              className="font-bold text-[#07545A] hover:text-[#B45309] hover:underline cursor-pointer inline-flex items-center gap-1"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Log In to Artisan Dashboard →</span>
+            </button>
+          </div>
 
           {statusSearchError && (
             <div className="p-3 bg-amber-50 border border-amber-200/80 text-amber-900 text-xs rounded-xl max-w-md mx-auto flex items-center justify-center gap-2">

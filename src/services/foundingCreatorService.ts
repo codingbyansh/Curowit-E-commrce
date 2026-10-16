@@ -1,7 +1,7 @@
 import { supabase } from '../supabase';
 import { storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { foundingCreatorSyncService, StoreDocument, StoreDocumentType } from '../lib/foundingCreatorSync';
+import { foundingCreatorSyncService, syncEventBus, StoreDocument, StoreDocumentType } from '../lib/foundingCreatorSync';
 import { cloudinaryService } from './cloudinaryService';
 import {
   CreatorProfile,
@@ -955,17 +955,72 @@ export const foundingCreatorService = {
   },
 
   // 11. PAYMENT DETAILS MANAGEMENT
+  getAllPaymentMethods(): CreatorPaymentMethod[] {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEYS.PAYMENT_METHODS) || '[]');
+    } catch {
+      return [];
+    }
+  },
+
+  async fetchAllPaymentMethodsAsync(): Promise<CreatorPaymentMethod[]> {
+    try {
+      const res = await fetch('/api/founding-creator/payment-methods');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.paymentMethods)) {
+          // Merge with local storage
+          const local = this.getAllPaymentMethods();
+          const map = new Map<string, CreatorPaymentMethod>();
+          data.paymentMethods.forEach((pm: CreatorPaymentMethod) => map.set(pm.creatorId, pm));
+          local.forEach((pm) => {
+            if (!map.has(pm.creatorId) || new Date(pm.updatedAt).getTime() > new Date(map.get(pm.creatorId)!.updatedAt).getTime()) {
+              map.set(pm.creatorId, pm);
+            }
+          });
+          const merged = Array.from(map.values());
+          localStorage.setItem(STORAGE_KEYS.PAYMENT_METHODS, JSON.stringify(merged));
+          return merged;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch payment methods from server:', e);
+    }
+    return this.getAllPaymentMethods();
+  },
+
   getCreatorPaymentMethod(creatorId: string): CreatorPaymentMethod | null {
     try {
-      const all: CreatorPaymentMethod[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.PAYMENT_METHODS) || '[]');
+      const all = this.getAllPaymentMethods();
       return all.find((pm) => pm.creatorId === creatorId) || null;
     } catch {
       return null;
     }
   },
 
+  async fetchCreatorPaymentMethodAsync(creatorId: string): Promise<CreatorPaymentMethod | null> {
+    try {
+      const res = await fetch(`/api/founding-creator/payment-methods/${encodeURIComponent(creatorId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.paymentMethod) {
+          const pm = data.paymentMethod;
+          const all = this.getAllPaymentMethods();
+          const idx = all.findIndex((p) => p.creatorId === creatorId);
+          if (idx !== -1) all[idx] = pm;
+          else all.push(pm);
+          localStorage.setItem(STORAGE_KEYS.PAYMENT_METHODS, JSON.stringify(all));
+          return pm;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch single creator payment method:', e);
+    }
+    return this.getCreatorPaymentMethod(creatorId);
+  },
+
   savePaymentMethod(creatorId: string, data: Partial<CreatorPaymentMethod>): CreatorPaymentMethod {
-    const all: CreatorPaymentMethod[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.PAYMENT_METHODS) || '[]');
+    const all = this.getAllPaymentMethods();
     const idx = all.findIndex((pm) => pm.creatorId === creatorId);
     const now = new Date().toISOString();
 
@@ -977,7 +1032,7 @@ export const foundingCreatorService = {
       accountHolderName: data.accountHolderName,
       bankName: data.bankName,
       maskedAccountNumber: data.maskedAccountNumber,
-      ifscCode: data.ifscCode,
+      ifscCode: data.ifscCode ? data.ifscCode.toUpperCase() : undefined,
       verificationStatus: 'verified',
       isDefault: true,
       createdAt: idx !== -1 ? all[idx].createdAt : now,
@@ -991,6 +1046,35 @@ export const foundingCreatorService = {
     }
 
     localStorage.setItem(STORAGE_KEYS.PAYMENT_METHODS, JSON.stringify(all));
+
+    // Send immediately to server API in background
+    fetch('/api/founding-creator/payment-methods', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        creatorId,
+        methodType: updated.methodType,
+        upiId: updated.upiId,
+        accountHolderName: updated.accountHolderName,
+        bankName: updated.bankName,
+        maskedAccountNumber: updated.maskedAccountNumber,
+        ifscCode: updated.ifscCode,
+        verificationStatus: updated.verificationStatus,
+      }),
+    })
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData.success && resData.paymentMethod) {
+          console.log('[Founding Creator] Payment method synced with server');
+        }
+      })
+      .catch((err) => console.warn('[Founding Creator] Failed to push payment method to server:', err));
+
+    // Emit event bus so admin panel and UI update reactively in real time
+    try {
+      syncEventBus.emit('PAYMENT_METHODS_UPDATED', updated);
+    } catch {}
+
     return updated;
   },
 
@@ -1027,21 +1111,69 @@ export const foundingCreatorService = {
     return false;
   },
 
+  getAllTickets(): CreatorSupportTicket[] {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEYS.SUPPORT_TICKETS) || '[]');
+    } catch {
+      return [];
+    }
+  },
+
+  async fetchAllTicketsAsync(): Promise<CreatorSupportTicket[]> {
+    try {
+      const res = await fetch('/api/founding-creator/tickets');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.tickets)) {
+          const local = this.getAllTickets();
+          const map = new Map<string, CreatorSupportTicket>();
+          data.tickets.forEach((t: CreatorSupportTicket) => map.set(t.id, t));
+          local.forEach((t) => {
+            if (!map.has(t.id) || new Date(t.updatedAt).getTime() > new Date(map.get(t.id)!.updatedAt).getTime()) {
+              map.set(t.id, t);
+            }
+          });
+          const merged = Array.from(map.values()).sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          localStorage.setItem(STORAGE_KEYS.SUPPORT_TICKETS, JSON.stringify(merged));
+          return merged;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch tickets from server:', e);
+    }
+    return this.getAllTickets();
+  },
+
   getCreatorTickets(creatorId: string): CreatorSupportTicket[] {
     try {
-      const all: CreatorSupportTicket[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SUPPORT_TICKETS) || '[]');
+      const all = this.getAllTickets();
       return all.filter((t) => t.creatorId === creatorId);
     } catch {
       return [];
     }
   },
 
-  createSupportTicket(creatorId: string, subject: string, category: any, description: string): CreatorSupportTicket {
+  createSupportTicket(
+    creatorId: string,
+    subject: string,
+    category: any,
+    description: string
+  ): CreatorSupportTicket {
     const now = new Date().toISOString();
+    // Lookup creator details for context
+    const profile = this.getAllProfiles().find((p) => p.id === creatorId || p.creatorId === creatorId);
+    const app = this.getAllApplications().find((a) => a.id === creatorId || a.creatorId === creatorId || a.applicationId === creatorId);
+    const creatorName = profile?.fullName || app?.applicantName || 'Creator';
+    const creatorEmail = profile?.email || app?.applicantEmail || '';
+
     const newTicket: CreatorSupportTicket = {
       id: `ticket-${Date.now()}`,
       ticketId: `TKT-FC-${Math.floor(100 + Math.random() * 900)}`,
       creatorId,
+      creatorName,
+      creatorEmail,
       subject,
       category,
       priority: 'medium',
@@ -1051,7 +1183,7 @@ export const foundingCreatorService = {
         {
           id: `msg-${Date.now()}`,
           senderType: 'creator',
-          senderName: 'Creator',
+          senderName: creatorName,
           message: description,
           createdAt: now,
         },
@@ -1060,10 +1192,95 @@ export const foundingCreatorService = {
       updatedAt: now,
     };
 
-    const all: CreatorSupportTicket[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SUPPORT_TICKETS) || '[]');
+    const all = this.getAllTickets();
     all.unshift(newTicket);
     localStorage.setItem(STORAGE_KEYS.SUPPORT_TICKETS, JSON.stringify(all));
+
+    // Send immediately to server API
+    fetch('/api/founding-creator/tickets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        creatorId,
+        creatorName,
+        creatorEmail,
+        subject,
+        category,
+        priority: 'medium',
+        description,
+      }),
+    })
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData.success && resData.ticket) {
+          console.log('[Founding Creator] Ticket persisted on server:', resData.ticket.ticketId);
+        }
+      })
+      .catch((err) => console.warn('[Founding Creator] Failed to post ticket to server:', err));
+
+    try {
+      syncEventBus.emit('TICKETS_UPDATED', newTicket);
+    } catch {}
+
     return newTicket;
+  },
+
+  resolveSupportTicket(
+    ticketId: string,
+    adminReply?: string,
+    newStatus: 'in_progress' | 'resolved' | 'closed' = 'resolved'
+  ): CreatorSupportTicket | null {
+    const all = this.getAllTickets();
+    const idx = all.findIndex((t) => t.id === ticketId || t.ticketId === ticketId);
+    if (idx === -1) return null;
+
+    const now = new Date().toISOString();
+    const target = all[idx];
+    target.status = newStatus;
+    target.updatedAt = now;
+
+    if (adminReply && adminReply.trim()) {
+      target.messages.push({
+        id: `msg-${Date.now()}`,
+        senderType: 'admin',
+        senderName: 'Curowit Support Specialist',
+        message: adminReply.trim(),
+        createdAt: now,
+      });
+    }
+
+    all[idx] = target;
+    localStorage.setItem(STORAGE_KEYS.SUPPORT_TICKETS, JSON.stringify(all));
+
+    // Notify creator
+    this.addNotification({
+      creatorId: target.creatorId,
+      type: 'support_update',
+      title: `Support Ticket ${newStatus === 'resolved' ? 'Resolved' : 'Updated'}: ${target.ticketId}`,
+      message: adminReply || `Your support ticket regarding "${target.subject}" has been marked as ${newStatus}.`,
+      isRead: false,
+    });
+
+    // POST reply to server
+    fetch('/api/founding-creator/tickets/reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ticketId: target.ticketId,
+        replyMessage: adminReply,
+        senderType: 'admin',
+        senderName: 'Curowit Support Specialist',
+        newStatus,
+      }),
+    })
+      .then((res) => res.json())
+      .catch((err) => console.warn('[Founding Creator] Failed to sync ticket reply to server:', err));
+
+    try {
+      syncEventBus.emit('TICKETS_UPDATED', target);
+    } catch {}
+
+    return target;
   },
 
   // 13. STORE DOCUMENTS PERSISTENCE & SYNC

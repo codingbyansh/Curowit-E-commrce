@@ -74,6 +74,8 @@ export type SyncEventType =
   | 'PRODUCTS_UPDATED'
   | 'ORDERS_UPDATED'
   | 'PAYOUTS_UPDATED'
+  | 'PAYMENT_METHODS_UPDATED'
+  | 'TICKETS_UPDATED'
   | 'NOTIFICATIONS_UPDATED';
 
 type SyncListener = (event: SyncEventType, payload?: any) => void;
@@ -115,6 +117,10 @@ class CreatorSyncEventEmitter {
         console.warn('Sync listener notification notice:', err);
       }
     });
+  }
+
+  emit(event: SyncEventType, payload?: any) {
+    this.notify(event, payload);
   }
 }
 

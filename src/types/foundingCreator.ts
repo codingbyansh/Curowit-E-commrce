@@ -298,6 +298,8 @@ export interface CreatorSupportTicket {
   id: string;
   ticketId: string;
   creatorId: string;
+  creatorName?: string;
+  creatorEmail?: string;
   subject: string;
   category: 'application' | 'products' | 'orders' | 'shipping' | 'payouts' | 'technical' | 'other';
   priority: 'low' | 'medium' | 'high' | 'urgent';

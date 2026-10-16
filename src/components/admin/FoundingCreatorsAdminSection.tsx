@@ -20,6 +20,9 @@ import {
   Download,
   Filter,
   RefreshCw,
+  HelpCircle,
+  Copy,
+  MessageSquare,
 } from 'lucide-react';
 import { foundingCreatorService } from '../../services/foundingCreatorService';
 import { syncEventBus } from '../../lib/foundingCreatorSync';
@@ -29,6 +32,8 @@ import {
   CreatorProduct,
   CreatorOrderItem,
   CreatorPayout,
+  CreatorPaymentMethod,
+  CreatorSupportTicket,
 } from '../../types/foundingCreator';
 
 interface FoundingCreatorsAdminSectionProps {
@@ -39,7 +44,7 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
   showToast,
 }) => {
   const [subTab, setSubTab] = useState<
-    'overview' | 'applications' | 'directory' | 'products' | 'orders' | 'payouts'
+    'overview' | 'applications' | 'directory' | 'products' | 'orders' | 'payouts' | 'support'
   >('overview');
 
   const [applications, setApplications] = useState<CreatorApplication[]>([]);
@@ -47,6 +52,14 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
   const [products, setProducts] = useState<CreatorProduct[]>([]);
   const [orders, setOrders] = useState<CreatorOrderItem[]>([]);
   const [payouts, setPayouts] = useState<CreatorPayout[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<CreatorPaymentMethod[]>([]);
+  const [tickets, setTickets] = useState<CreatorSupportTicket[]>([]);
+
+  // Support tickets management state
+  const [selectedTicket, setSelectedTicket] = useState<CreatorSupportTicket | null>(null);
+  const [adminTicketReply, setAdminTicketReply] = useState('');
+  const [ticketStatusFilter, setTicketStatusFilter] = useState<'all' | 'open' | 'in_progress' | 'resolved'>('all');
+  const [ticketSearch, setTicketSearch] = useState('');
 
   // Syncing state
   const [isSyncing, setIsSyncing] = useState(false);
@@ -75,23 +88,29 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
   const loadData = async (manualToast = false) => {
     try {
       setIsSyncing(true);
-      const [syncedApps, syncedProfiles] = await Promise.all([
+      const [syncedApps, syncedProfiles, syncedPaymentMethods, syncedTickets] = await Promise.all([
         foundingCreatorService.fetchAllApplicationsAsync(),
         foundingCreatorService.fetchAllProfilesAsync(),
+        foundingCreatorService.fetchAllPaymentMethodsAsync(),
+        foundingCreatorService.fetchAllTicketsAsync(),
       ]);
       setApplications(syncedApps);
       setProfiles(syncedProfiles);
+      setPaymentMethods(syncedPaymentMethods);
+      setTickets(syncedTickets);
       setProducts(foundingCreatorService.getAllProducts());
       setOrders(foundingCreatorService.getAllOrderItems());
       setPayouts(foundingCreatorService.getAllPayouts());
       setLastSyncedTime(new Date().toLocaleTimeString());
       if (manualToast) {
-        showToast('Database Synchronized', `Fetched ${syncedApps.length} applications from central database.`, 'success');
+        showToast('Database Synchronized', `Fetched ${syncedApps.length} applications, ${syncedPaymentMethods.length} payment records, and ${syncedTickets.length} support tickets.`, 'success');
       }
     } catch (err) {
       console.warn('Sync notice:', err);
       setApplications(foundingCreatorService.getAllApplications());
       setProfiles(foundingCreatorService.getAllProfiles());
+      setPaymentMethods(foundingCreatorService.getAllPaymentMethods());
+      setTickets(foundingCreatorService.getAllTickets());
     } finally {
       setIsSyncing(false);
     }
@@ -107,7 +126,12 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
 
     // Also listen to reactive sync event bus
     const unsubscribe = syncEventBus.subscribe((event) => {
-      if (event === 'APPLICATION_UPDATED' || event === 'PROFILE_UPDATED') {
+      if (
+        event === 'APPLICATION_UPDATED' ||
+        event === 'PROFILE_UPDATED' ||
+        event === 'PAYMENT_METHODS_UPDATED' ||
+        event === 'TICKETS_UPDATED'
+      ) {
         loadData();
       }
     });
@@ -281,6 +305,22 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
             }`}
           >
             Creator Orders ({orders.length})
+          </button>
+          <button
+            onClick={() => setSubTab('support')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              subTab === 'support'
+                ? 'bg-[#07545A] text-[#FFF8EA]'
+                : 'bg-white text-[#173B3D]/75 hover:bg-[#FFF8EA]'
+            }`}
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+            <span>Support Desk</span>
+            {tickets.filter((t) => t.status === 'open' || t.status === 'in_progress').length > 0 && (
+              <span className="bg-amber-600 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                {tickets.filter((t) => t.status === 'open' || t.status === 'in_progress').length}
+              </span>
+            )}
           </button>
 
           {/* Sync Button */}
@@ -613,6 +653,56 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
                     <span>{p.email}</span>
                   </div>
                   <p className="text-[11px] text-[#173B3D]/70 line-clamp-2 mt-1">{p.bio}</p>
+
+                  {/* Payment Details Sync Block */}
+                  {(() => {
+                    const pm = paymentMethods.find((m) => m.creatorId === p.id || m.creatorId === p.creatorId);
+                    return (
+                      <div className="mt-2.5 p-2.5 bg-white/90 rounded-2xl border border-[#07545A]/12 text-[11px] space-y-1 shadow-2xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-[#07545A] flex items-center gap-1.5 text-[11px]">
+                            <Building2 className="w-3.5 h-3.5 text-[#07545A]" />
+                            <span>Payment Details</span>
+                          </span>
+                          <span
+                            className={`text-[9px] font-bold px-2 py-0.2 rounded-full uppercase ${
+                              pm ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            {pm ? `${pm.methodType} Active` : 'Not Added'}
+                          </span>
+                        </div>
+                        {pm ? (
+                          <div className="text-[#173B3D]/85 text-[10.5px] leading-tight space-y-0.5 pt-0.5">
+                            {pm.upiId && (
+                              <p>
+                                <strong>UPI:</strong> <span className="font-mono text-[#07545A]">{pm.upiId}</span>
+                              </p>
+                            )}
+                            {pm.bankName && (
+                              <p>
+                                <strong>Bank:</strong> {pm.bankName} {pm.maskedAccountNumber ? `(${pm.maskedAccountNumber})` : ''}
+                              </p>
+                            )}
+                            {pm.ifscCode && (
+                              <p>
+                                <strong>IFSC:</strong> <span className="font-mono">{pm.ifscCode}</span>
+                              </p>
+                            )}
+                            {pm.accountHolderName && (
+                              <p>
+                                <strong>Holder:</strong> {pm.accountHolderName}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-[10px] text-[#173B3D]/50 italic pt-0.5">
+                            Creator has not configured payout destination yet.
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -719,7 +809,21 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
                   <tr key={p.id}>
                     <td className="p-3 font-mono font-bold text-[#07545A]">{p.payoutId}</td>
                     <td className="p-3 font-semibold">{p.creatorName}</td>
-                    <td className="p-3 font-mono text-[11px]">{p.payoutDestination}</td>
+                    <td className="p-3 text-[11px]">
+                      {(() => {
+                        const pm = paymentMethods.find((m) => m.creatorId === p.creatorId);
+                        if (pm) {
+                          return (
+                            <div>
+                              {pm.upiId && <span className="font-mono text-[#07545A] font-bold block">UPI: {pm.upiId}</span>}
+                              {pm.bankName && <span className="text-[10px] text-[#687778] block">{pm.bankName} {pm.maskedAccountNumber ? `(${pm.maskedAccountNumber})` : ''} · {pm.ifscCode}</span>}
+                              {!pm.upiId && !pm.bankName && <span className="font-mono">{p.payoutDestination}</span>}
+                            </div>
+                          );
+                        }
+                        return <span className="font-mono">{p.payoutDestination}</span>;
+                      })()}
+                    </td>
                     <td className="p-3 font-bold text-base text-[#07545A]">₹{p.payoutAmount}</td>
                     <td className="p-3">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
@@ -789,6 +893,332 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* SUB-TAB 7: CREATOR SUPPORT TICKETS & QUERY RESOLUTION (SUPPORT DESK) */}
+      {subTab === 'support' && (
+        <div className="space-y-4">
+          {/* Header controls: Search & Status Filters */}
+          <div className="bg-[#FFF8EA] p-4 rounded-3xl border border-[#07545A]/15 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="relative w-full sm:w-72">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#173B3D]/40" />
+              <input
+                type="text"
+                value={ticketSearch}
+                onChange={(e) => setTicketSearch(e.target.value)}
+                placeholder="Search ticket ID, creator, subject..."
+                className="w-full pl-9 pr-3 py-1.5 bg-white border border-[#07545A]/20 rounded-xl text-xs outline-none focus:border-[#07545A]"
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+              {[
+                { id: 'all', label: `All (${tickets.length})` },
+                { id: 'open', label: `Open (${tickets.filter((t) => t.status === 'open').length})` },
+                { id: 'in_progress', label: `In Progress (${tickets.filter((t) => t.status === 'in_progress').length})` },
+                { id: 'resolved', label: `Resolved (${tickets.filter((t) => t.status === 'resolved' || t.status === 'closed').length})` },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setTicketStatusFilter(f.id as any)}
+                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    ticketStatusFilter === f.id
+                      ? 'bg-[#07545A] text-[#FFF8EA]'
+                      : 'bg-white text-[#173B3D]/70 hover:bg-[#FFF8EA]'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Master-Detail Split Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Left Column: Tickets List */}
+            <div className="lg:col-span-5 space-y-2.5 max-h-[650px] overflow-y-auto pr-1">
+              {(() => {
+                const filtered = tickets.filter((t) => {
+                  const q = ticketSearch.toLowerCase().trim();
+                  const matchesQ =
+                    !q ||
+                    t.ticketId.toLowerCase().includes(q) ||
+                    t.subject.toLowerCase().includes(q) ||
+                    (t.creatorName || '').toLowerCase().includes(q) ||
+                    (t.creatorEmail || '').toLowerCase().includes(q);
+                  const matchesS =
+                    ticketStatusFilter === 'all'
+                      ? true
+                      : ticketStatusFilter === 'resolved'
+                      ? t.status === 'resolved' || t.status === 'closed'
+                      : t.status === ticketStatusFilter;
+                  return matchesQ && matchesS;
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="p-8 bg-white rounded-3xl border border-[#07545A]/15 text-center text-xs text-[#173B3D]/60 space-y-2">
+                      <HelpCircle className="w-8 h-8 mx-auto text-[#07545A]/40" />
+                      <p className="font-semibold text-[#07545A]">No Support Tickets Found</p>
+                      <p className="text-[11px]">When founding creators raise query tickets in their dashboard, they appear here instantly with real-time sync.</p>
+                    </div>
+                  );
+                }
+
+                return filtered.map((t) => {
+                  const isSelected = selectedTicket?.id === t.id;
+                  return (
+                    <div
+                      key={t.id}
+                      onClick={() => setSelectedTicket(t)}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer text-xs space-y-2 ${
+                        isSelected
+                          ? 'bg-[#FFF8EA] border-[#07545A] shadow-md ring-1 ring-[#07545A]/20'
+                          : 'bg-white border-[#07545A]/15 hover:border-[#07545A]/35 hover:shadow-2xs'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono font-bold text-[#07545A] text-[10.5px]">
+                              {t.ticketId}
+                            </span>
+                            <span className="text-[10px] text-[#687778]">·</span>
+                            <span className="text-[10px] uppercase font-bold text-[#687778] tracking-wider">
+                              {t.category}
+                            </span>
+                          </div>
+                          <h4 className="font-bold text-sm text-[#07545A] line-clamp-1 mt-0.5">
+                            {t.subject}
+                          </h4>
+                          <span className="text-[11px] text-[#173B3D]/70 block">
+                            By {t.creatorName || 'Artisan Creator'} {t.creatorEmail ? `(${t.creatorEmail})` : ''}
+                          </span>
+                        </div>
+
+                        <span
+                          className={`text-[9.5px] font-bold px-2 py-0.5 rounded-full uppercase shrink-0 ${
+                            t.status === 'open'
+                              ? 'bg-amber-100 text-amber-800'
+                              : t.status === 'in_progress'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-emerald-100 text-emerald-800'
+                          }`}
+                        >
+                          {t.status.replace('_', ' ')}
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-[#173B3D]/80 line-clamp-2 bg-[#FAF6EE] p-2 rounded-xl">
+                        {t.description}
+                      </p>
+
+                      <div className="flex items-center justify-between text-[10px] text-[#687778] pt-1">
+                        <span>{new Date(t.createdAt).toLocaleDateString('en-GB')} {new Date(t.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="font-semibold text-[#07545A] flex items-center gap-1">
+                          <MessageSquare className="w-3 h-3" />
+                          <span>{t.messages?.length || 1} message{t.messages?.length === 1 ? '' : 's'}</span>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            {/* Right Column: Ticket Conversation Thread & Query Solver */}
+            <div className="lg:col-span-7 bg-white rounded-3xl border border-[#07545A]/15 shadow-2xs p-5 flex flex-col justify-between min-h-[500px]">
+              {selectedTicket ? (
+                <div className="space-y-4 flex flex-col h-full justify-between">
+                  <div>
+                    {/* Ticket Header */}
+                    <div className="pb-3 border-b border-[#07545A]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-xs text-[#07545A]">
+                            {selectedTicket.ticketId}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                              selectedTicket.status === 'open'
+                                ? 'bg-amber-100 text-amber-800'
+                                : selectedTicket.status === 'in_progress'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-emerald-100 text-emerald-800'
+                            }`}
+                          >
+                            {selectedTicket.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                        <h3 className="font-bold text-base text-[#07545A] font-display mt-0.5">
+                          {selectedTicket.subject}
+                        </h3>
+                        <p className="text-[11px] text-[#173B3D]/70">
+                          Creator: <strong>{selectedTicket.creatorName || 'Artisan Creator'}</strong> · {selectedTicket.creatorEmail || 'No email provided'}
+                        </p>
+                      </div>
+
+                      {/* Quick Status Toggles */}
+                      <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                        {selectedTicket.status !== 'resolved' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = foundingCreatorService.resolveSupportTicket(
+                                selectedTicket.id,
+                                'Ticket marked as resolved by Curowit Support Administrator.',
+                                'resolved'
+                              );
+                              if (updated) {
+                                setSelectedTicket(updated);
+                                loadData();
+                                showToast('Ticket Resolved', `${selectedTicket.ticketId} marked as resolved.`, 'success');
+                              }
+                            }}
+                            className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Quick Resolve</span>
+                          </button>
+                        )}
+                        {selectedTicket.status === 'open' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = foundingCreatorService.resolveSupportTicket(
+                                selectedTicket.id,
+                                'Curowit Support is actively reviewing your query.',
+                                'in_progress'
+                              );
+                              if (updated) {
+                                setSelectedTicket(updated);
+                                loadData();
+                                showToast('Status Updated', 'Ticket moved to In Progress.', 'info');
+                              }
+                            }}
+                            className="px-2.5 py-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                          >
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>In Progress</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Conversation Message Feed */}
+                    <div className="py-4 space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                      {selectedTicket.messages && selectedTicket.messages.length > 0 ? (
+                        selectedTicket.messages.map((m) => {
+                          const isAdmin = m.senderType === 'admin';
+                          return (
+                            <div
+                              key={m.id}
+                              className={`flex flex-col ${isAdmin ? 'items-end' : 'items-start'}`}
+                            >
+                              <div className="flex items-center gap-1 text-[10px] text-[#687778] mb-1">
+                                <span className="font-bold text-[#07545A]">{m.senderName}</span>
+                                <span>·</span>
+                                <span>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                              </div>
+                              <div
+                                className={`p-3 rounded-2xl max-w-[85%] text-xs leading-relaxed whitespace-pre-wrap ${
+                                  isAdmin
+                                    ? 'bg-[#07545A] text-[#FFF8EA] rounded-tr-none'
+                                    : 'bg-[#FFF8EA] text-[#173B3D] border border-[#07545A]/15 rounded-tl-none'
+                                }`}
+                              >
+                                {m.message}
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="p-3 bg-[#FFF8EA] rounded-2xl text-xs text-[#173B3D]/80">
+                          {selectedTicket.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Admin Reply & Query Solver Composer */}
+                  <div className="pt-3 border-t border-[#07545A]/10 space-y-2.5">
+                    <label className="text-xs font-bold text-[#07545A] block">
+                      Send Reply & Solve Creator Query:
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={adminTicketReply}
+                      onChange={(e) => setAdminTicketReply(e.target.value)}
+                      placeholder="Type official admin response, guidance, or resolution details here..."
+                      className="w-full p-3 bg-[#FAF7F2] border border-[#07545A]/20 rounded-2xl text-xs outline-none focus:border-[#07545A] focus:bg-white transition-all"
+                    />
+
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-[11px] text-[#173B3D]/60">
+                        Response immediately synchronizes to Creator Dashboard notifications.
+                      </span>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={!adminTicketReply.trim()}
+                          onClick={() => {
+                            if (!adminTicketReply.trim()) return;
+                            const updated = foundingCreatorService.resolveSupportTicket(
+                              selectedTicket.id,
+                              adminTicketReply.trim(),
+                              'in_progress'
+                            );
+                            if (updated) {
+                              setSelectedTicket(updated);
+                              setAdminTicketReply('');
+                              loadData();
+                              showToast('Reply Sent', 'Creator received your response.', 'success');
+                            }
+                          }}
+                          className="px-3.5 py-1.5 rounded-xl border border-[#07545A]/30 text-[#07545A] hover:bg-[#07545A]/5 font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          Reply Only
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={!adminTicketReply.trim()}
+                          onClick={() => {
+                            if (!adminTicketReply.trim()) return;
+                            const updated = foundingCreatorService.resolveSupportTicket(
+                              selectedTicket.id,
+                              adminTicketReply.trim(),
+                              'resolved'
+                            );
+                            if (updated) {
+                              setSelectedTicket(updated);
+                              setAdminTicketReply('');
+                              loadData();
+                              showToast('Query Solved & Resolved', 'Ticket marked as resolved and creator notified.', 'success');
+                            }
+                          }}
+                          className="px-4 py-1.5 rounded-xl bg-[#07545A] hover:bg-[#063F45] text-[#FFF8EA] font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Reply & Mark Resolved</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center p-8 text-[#173B3D]/60 space-y-2">
+                  <HelpCircle className="w-10 h-10 text-[#07545A]/30" />
+                  <h4 className="font-bold text-sm text-[#07545A]">Select a Support Ticket</h4>
+                  <p className="text-xs max-w-sm">
+                    Click any ticket on the left to read creator inquiry, inspect craft details, and send synchronized replies to resolve the query.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -1055,6 +1485,163 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: VIEW FULL CREATOR PROFILE & PAYMENT DOSSIER */}
+      {viewingCreator && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-[#FFFDF7] rounded-3xl border-2 border-[#07545A]/25 p-6 max-w-2xl w-full shadow-2xl my-8 space-y-4 text-xs max-h-[90vh] flex flex-col">
+            <div className="flex items-start justify-between pb-3 border-b border-[#07545A]/10">
+              <div className="flex items-center gap-3">
+                {viewingCreator.avatarUrl ? (
+                  <img
+                    src={viewingCreator.avatarUrl}
+                    alt={viewingCreator.fullName}
+                    className="w-12 h-12 rounded-2xl object-cover border border-[#07545A]/20"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-2xl bg-[#07545A] text-[#FFF8EA] font-bold flex items-center justify-center text-base">
+                    {viewingCreator.fullName.charAt(0)}
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-lg font-bold text-[#07545A] font-display">
+                    {viewingCreator.fullName} {viewingCreator.brandName ? `(${viewingCreator.brandName})` : ''}
+                  </h3>
+                  <span className="font-mono text-[10px] font-bold text-[#07545A] block">
+                    ID: {viewingCreator.creatorId} · Status: <span className="uppercase text-emerald-800 font-bold">{viewingCreator.accountStatus}</span>
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setViewingCreator(null)}
+                className="p-1.5 text-[#173B3D]/60 hover:text-[#07545A] rounded-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+              {/* Contact info grid */}
+              <div className="p-3 bg-white border border-[#07545A]/15 rounded-2xl grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                <div>
+                  <span className="text-[10px] text-[#687778] uppercase font-bold block">Email</span>
+                  <span className="font-bold text-[#07545A] truncate block">{viewingCreator.email}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#687778] uppercase font-bold block">Phone</span>
+                  <span className="font-bold text-[#07545A]">{viewingCreator.phone}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#687778] uppercase font-bold block">Location</span>
+                  <span className="font-bold text-[#07545A]">{viewingCreator.city}, {viewingCreator.state}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-[#687778] uppercase font-bold block">Split</span>
+                  <span className="font-bold text-emerald-800">70% Direct Share</span>
+                </div>
+              </div>
+
+              {/* Verified Payment Details Card */}
+              {(() => {
+                const pm = paymentMethods.find((m) => m.creatorId === viewingCreator.id || m.creatorId === viewingCreator.creatorId);
+                return (
+                  <div className="p-4 bg-[#FFF8EA] border border-[#07545A]/20 rounded-2xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm text-[#07545A] flex items-center gap-1.5">
+                        <Building2 className="w-4 h-4 text-[#07545A]" />
+                        <span>Registered Settlement Details (For 7-Day Payouts)</span>
+                      </span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                        pm ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {pm ? `${pm.methodType} Configured` : 'No Bank/UPI Details'}
+                      </span>
+                    </div>
+
+                    {pm ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-white p-3 rounded-xl border border-[#07545A]/10">
+                        {pm.upiId && (
+                          <div className="flex items-center justify-between col-span-1 sm:col-span-2 bg-[#FAF7F2] p-2 rounded-lg">
+                            <div>
+                              <span className="text-[10px] text-[#687778] uppercase font-bold block">UPI ID</span>
+                              <span className="font-mono font-bold text-sm text-[#07545A]">{pm.upiId}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(pm.upiId || '');
+                                showToast('Copied', 'UPI ID copied to clipboard.', 'success');
+                              }}
+                              className="px-2.5 py-1 bg-white border rounded-lg text-[10px] font-bold text-[#07545A] hover:bg-[#FFF8EA] cursor-pointer flex items-center gap-1"
+                            >
+                              <Copy className="w-3 h-3" />
+                              <span>Copy UPI</span>
+                            </button>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-[10px] text-[#687778] uppercase font-bold block">Account Holder Name</span>
+                          <span className="font-bold text-[#173B3D]">{pm.accountHolderName || viewingCreator.fullName}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-[#687778] uppercase font-bold block">Bank Name</span>
+                          <span className="font-bold text-[#173B3D]">{pm.bankName || 'Not specified'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-[#687778] uppercase font-bold block">Account Number</span>
+                          <span className="font-mono font-bold text-[#173B3D]">{pm.maskedAccountNumber || 'Configured'}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-[#687778] uppercase font-bold block">IFSC Code</span>
+                          <span className="font-mono font-bold text-[#07545A]">{pm.ifscCode || 'N/A'}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-[#173B3D]/70 italic">
+                        This creator has not configured their payment details in the Creator Dashboard. When they submit UPI or bank info, it will appear here immediately.
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Bio */}
+              <div>
+                <span className="font-bold text-[#07545A] block mb-1">Artisan Bio:</span>
+                <p className="p-3 bg-white border rounded-xl text-[#173B3D]/80 leading-relaxed whitespace-pre-wrap">
+                  {viewingCreator.bio || 'No bio specified.'}
+                </p>
+              </div>
+
+              {/* Creator Live Products summary */}
+              <div>
+                <span className="font-bold text-[#07545A] block mb-1">
+                  Products in Catalog ({products.filter((pr) => pr.creatorId === viewingCreator.id || pr.creatorId === viewingCreator.creatorId).length}):
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {products
+                    .filter((pr) => pr.creatorId === viewingCreator.id || pr.creatorId === viewingCreator.creatorId)
+                    .map((pr) => (
+                      <div key={pr.id} className="p-2.5 bg-white border rounded-xl flex items-center justify-between text-xs">
+                        <span className="font-semibold truncate max-w-[150px]">{pr.title}</span>
+                        <span className="font-bold text-emerald-800 tabular-nums">₹{pr.price}</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-[#07545A]/10 flex items-center justify-end">
+              <button
+                onClick={() => setViewingCreator(null)}
+                className="px-5 py-2 bg-[#07545A] text-[#FFF8EA] rounded-xl font-bold cursor-pointer"
+              >
+                Close Dossier
+              </button>
+            </div>
           </div>
         </div>
       )}
