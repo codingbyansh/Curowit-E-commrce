@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { CurowitLogo } from '../common/CurowitLogo';
 import { foundingCreatorSyncService } from '../../lib/foundingCreatorSync';
+import { foundingCreatorService } from '../../services/foundingCreatorService';
 import potteryArtisanImg from '../../assets/images/artisan_pottery_ceramic_1792071874114.jpg';
 import crochetArtisanImg from '../../assets/images/artisan_crochet_yarn_1792071815219.jpg';
 import candleArtisanImg from '../../assets/images/artisan_soy_candle_1792071897745.jpg';
@@ -296,7 +297,7 @@ export const FoundingCreatorLanding: React.FC<FoundingCreatorLandingProps> = ({ 
     setSearchedStatusResult(null);
 
     try {
-      const app = await foundingCreatorSyncService.fetchCreatorApplication(statusQuery.trim());
+      const app = await foundingCreatorService.fetchCreatorApplicationAsync(statusQuery.trim());
       if (app) {
         setSearchedStatusResult(app);
       } else {

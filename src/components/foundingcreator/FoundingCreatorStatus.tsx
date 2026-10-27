@@ -40,18 +40,29 @@ export const FoundingCreatorStatus: React.FC<FoundingCreatorStatusProps> = ({
     }
   }, [initialId]);
 
-  const handleSearch = (searchTerm: string) => {
+  const handleSearch = async (searchTerm: string) => {
     if (!searchTerm.trim()) return;
-    const res = foundingCreatorService.getApplicationByIdOrEmail(searchTerm.trim());
-    setResult(res);
+    try {
+      const app = await foundingCreatorService.fetchCreatorApplicationAsync(searchTerm.trim());
+      if (app) {
+        const profs = foundingCreatorService.getAllProfiles();
+        const creator = profs.find((p) => p.id === app.creatorId || p.email?.toLowerCase() === app.applicantEmail?.toLowerCase()) || null;
+        setResult({ application: app, creator });
+      } else {
+        const res = foundingCreatorService.getApplicationByIdOrEmail(searchTerm.trim());
+        setResult(res);
+      }
+    } catch {
+      const res = foundingCreatorService.getApplicationByIdOrEmail(searchTerm.trim());
+      setResult(res);
+    }
     setSearched(true);
   };
 
-  const handleSubmitAdditionalInfo = (e: React.FormEvent) => {
+  const handleSubmitAdditionalInfo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!result?.application || !submittedAdditionalInfo.trim()) return;
 
-    // Update locally and Supabase via foundingCreatorSyncService
     const apps = foundingCreatorService.getAllApplications();
     const idx = apps.findIndex((a) => a.id === result.application!.id);
     if (idx !== -1) {
@@ -60,11 +71,16 @@ export const FoundingCreatorStatus: React.FC<FoundingCreatorStatusProps> = ({
       apps[idx].updatedAt = new Date().toISOString();
       localStorage.setItem('curowit_fc_applications_v1', JSON.stringify(apps));
 
-      foundingCreatorSyncService
-        .updateApplicationStatus(apps[idx].applicationId, 'under_review', {
-          reviewNotes: apps[idx].reviewNotes,
-        })
-        .catch(() => {});
+      // Sync to backend
+      fetch('/api/founding-creator/review-application', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          applicationId: apps[idx].applicationId,
+          action: 'request_info',
+          notes: apps[idx].reviewNotes,
+        }),
+      }).catch(() => {});
 
       setResult({
         ...result,

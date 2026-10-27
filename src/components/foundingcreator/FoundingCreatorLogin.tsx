@@ -24,13 +24,13 @@ export const FoundingCreatorLogin: React.FC<FoundingCreatorLoginProps> = ({ onNa
   const [resetSent, setResetSent] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setIsLoading(true);
 
     try {
-      const res = foundingCreatorService.loginCreator(email);
+      const res = await foundingCreatorService.loginCreatorAsync(email);
       if (!res.success || !res.creator) {
         setErrorMessage(res.error || 'Invalid credentials or creator profile not found.');
         setIsLoading(false);

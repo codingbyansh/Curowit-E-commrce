@@ -23,6 +23,7 @@ import {
   HelpCircle,
   Copy,
   MessageSquare,
+  ShieldCheck,
 } from 'lucide-react';
 import { foundingCreatorService } from '../../services/foundingCreatorService';
 import { syncEventBus } from '../../lib/foundingCreatorSync';
@@ -84,6 +85,42 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
 
   // Selected Creator Profile Modal
   const [viewingCreator, setViewingCreator] = useState<CreatorProfile | null>(null);
+  const [editStatus, setEditStatus] = useState<string>('');
+  const [editVerified, setEditVerified] = useState<boolean>(false);
+  const [editCreatorShare, setEditCreatorShare] = useState<number>(70);
+  const [isUpdatingCreator, setIsUpdatingCreator] = useState<boolean>(false);
+
+  const handleOpenCreatorDossier = (creator: CreatorProfile) => {
+    setViewingCreator(creator);
+    setEditStatus(creator.accountStatus || 'pending');
+    setEditVerified(Boolean(creator.isVerified));
+    setEditCreatorShare(creator.creatorSharePercentage || 70);
+  };
+
+  const handleSaveCreatorEdits = async () => {
+    if (!viewingCreator) return;
+    setIsUpdatingCreator(true);
+    try {
+      const updated = await foundingCreatorService.updateCreatorProfile({
+        id: viewingCreator.id,
+        creatorId: viewingCreator.creatorId,
+        email: viewingCreator.email,
+        accountStatus: editStatus as any,
+        isVerified: editVerified,
+        creatorSharePercentage: Number(editCreatorShare),
+        commissionPercentage: 100 - Number(editCreatorShare),
+      });
+      if (updated) {
+        setViewingCreator(updated);
+        await loadData();
+        showToast('Creator Updated!', 'Changes successfully persisted to backend and synchronized.', 'success');
+      }
+    } catch {
+      showToast('Error', 'Failed to save creator updates to backend.', 'error');
+    } finally {
+      setIsUpdatingCreator(false);
+    }
+  };
 
   const loadData = async (manualToast = false) => {
     try {
@@ -158,31 +195,37 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
 
   // Action handlers
   const handleApproveApp = async (appId: string) => {
-    const success = foundingCreatorService.approveApplication(appId, 'Curowit Admin', 'Approved via Admin CRM.');
+    setIsSyncing(true);
+    const success = await foundingCreatorService.approveApplication(appId, 'Curowit Admin', 'Approved via Admin CRM.');
     if (success) {
       await loadData();
       setSelectedApp(null);
       showToast('Creator Approved!', `Application ${appId} approved and creator account activated.`, 'success');
     }
+    setIsSyncing(false);
   };
 
   const handleConfirmReject = async () => {
     if (!rejectingAppId || !rejectionReason.trim()) return;
-    foundingCreatorService.rejectApplication(rejectingAppId, rejectionReason.trim(), 'Curowit Admin');
+    setIsSyncing(true);
+    await foundingCreatorService.rejectApplication(rejectingAppId, rejectionReason.trim(), 'Curowit Admin');
     await loadData();
     setRejectingAppId(null);
     setRejectionReason('');
     setSelectedApp(null);
+    setIsSyncing(false);
     showToast('Application Rejected', 'Applicant updated and rejection notice recorded.', 'info');
   };
 
   const handleConfirmRequestInfo = async () => {
     if (!requestingInfoAppId || !infoRequestText.trim()) return;
-    foundingCreatorService.requestMoreInformation(requestingInfoAppId, infoRequestText.trim());
+    setIsSyncing(true);
+    await foundingCreatorService.requestMoreInformation(requestingInfoAppId, infoRequestText.trim());
     await loadData();
     setRequestingInfoAppId(null);
     setInfoRequestText('');
     setSelectedApp(null);
+    setIsSyncing(false);
     showToast('Information Requested', 'Applicant notified to update application.', 'info');
   };
 
@@ -711,10 +754,10 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
                   {p.accountStatus}
                 </span>
                 <button
-                  onClick={() => setViewingCreator(p)}
-                  className="font-bold text-[#07545A] hover:underline"
+                  onClick={() => handleOpenCreatorDossier(p)}
+                  className="font-bold text-[#07545A] hover:underline cursor-pointer"
                 >
-                  View Profile →
+                  View Profile & Manage →
                 </button>
               </div>
             </div>
@@ -1539,8 +1582,99 @@ export const FoundingCreatorsAdminSection: React.FC<FoundingCreatorsAdminSection
                   <span className="font-bold text-[#07545A]">{viewingCreator.city}, {viewingCreator.state}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-[#687778] uppercase font-bold block">Split</span>
-                  <span className="font-bold text-emerald-800">70% Direct Share</span>
+                  <span className="text-[10px] text-[#687778] uppercase font-bold block">Current Split</span>
+                  <span className="font-bold text-emerald-800">{viewingCreator.creatorSharePercentage || 70}% Direct Share</span>
+                </div>
+              </div>
+
+              {/* Admin Modification & Governance Panel */}
+              <div className="p-4 bg-white border-2 border-[#07545A]/20 rounded-2xl space-y-3 shadow-xs">
+                <div className="flex items-center justify-between pb-2 border-b border-[#07545A]/10">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-[#07545A]" />
+                    <span className="font-bold text-sm text-[#07545A]">Admin Governance & Permissions</span>
+                  </div>
+                  <span className="text-[10px] text-[#687778] font-medium">Syncs directly to backend database</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Account Status */}
+                  <div>
+                    <label className="text-[10px] font-bold text-[#687778] uppercase block mb-1">
+                      Creator Account Status
+                    </label>
+                    <select
+                      value={editStatus}
+                      onChange={(e) => setEditStatus(e.target.value)}
+                      className="w-full px-3 py-1.5 bg-[#FAF7F2] border border-[#07545A]/20 rounded-xl text-xs font-semibold text-[#07545A] focus:outline-none focus:ring-1 focus:ring-[#07545A]"
+                    >
+                      <option value="approved">Approved & Active</option>
+                      <option value="pending">Pending Review</option>
+                      <option value="rejected">Rejected / Inactive</option>
+                      <option value="suspended">Suspended</option>
+                    </select>
+                  </div>
+
+                  {/* Verification Badge */}
+                  <div>
+                    <label className="text-[10px] font-bold text-[#687778] uppercase block mb-1">
+                      Artisan Verification
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setEditVerified(!editVerified)}
+                      className={`w-full px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+                        editVerified
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-800'
+                          : 'bg-stone-50 border-stone-300 text-stone-600'
+                      }`}
+                    >
+                      <CheckCircle2 className={`w-3.5 h-3.5 ${editVerified ? 'text-emerald-700' : 'text-stone-400'}`} />
+                      <span>{editVerified ? 'Verified Artisan' : 'Unverified'}</span>
+                    </button>
+                  </div>
+
+                  {/* Commission Split */}
+                  <div>
+                    <label className="text-[10px] font-bold text-[#687778] uppercase block mb-1">
+                      Creator Revenue Split (%)
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="10"
+                        max="95"
+                        value={editCreatorShare}
+                        onChange={(e) => setEditCreatorShare(Number(e.target.value))}
+                        className="w-full px-3 py-1.5 bg-[#FAF7F2] border border-[#07545A]/20 rounded-xl text-xs font-semibold text-[#07545A] focus:outline-none focus:ring-1 focus:ring-[#07545A]"
+                      />
+                      <span className="text-xs font-bold text-[#687778]">%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-[10px] text-[#687778]">
+                    Platform fee: {100 - Number(editCreatorShare || 70)}% · Creator receives: {Number(editCreatorShare || 70)}%
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleSaveCreatorEdits}
+                    disabled={isUpdatingCreator}
+                    className="px-4 py-1.5 bg-[#07545A] text-[#FFF8EA] font-bold text-xs rounded-xl hover:bg-[#063F45] transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-xs"
+                  >
+                    {isUpdatingCreator ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Saving Changes...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Save to Backend Database</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
 

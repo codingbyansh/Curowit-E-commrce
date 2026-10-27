@@ -356,8 +356,16 @@ async function startServer() {
         id: existingId,
       } = body;
 
-      if (!fullName || !email || !phone || !city || !state || !pincode || !craftDescription) {
-        res.status(400).json({ error: 'Missing mandatory application fields' });
+      const resolvedName = (fullName || body.applicantName || displayName || '').trim();
+      const resolvedEmail = (email || body.applicantEmail || '').trim().toLowerCase();
+      const resolvedPhone = (phone || body.applicantPhone || '').trim();
+      const resolvedCity = (city || body.city || 'India').trim();
+      const resolvedState = (state || body.state || 'India').trim();
+      const resolvedPincode = (pincode || body.pincode || '000000').trim();
+      const resolvedCraft = (craftDescription || intro || body.aboutCraft || 'Artisan handcrafted goods').trim();
+
+      if (!resolvedName || !resolvedEmail || !resolvedPhone) {
+        res.status(400).json({ error: 'Missing mandatory applicant contact fields (name, email, phone)' });
         return;
       }
 
@@ -372,17 +380,17 @@ async function startServer() {
         id: appId,
         applicationId,
         creatorId,
-        applicantName: fullName.trim(),
-        applicantEmail: email.toLowerCase().trim(),
-        applicantPhone: phone.trim(),
+        applicantName: resolvedName,
+        applicantEmail: resolvedEmail,
+        applicantPhone: resolvedPhone,
         brandName: brandName?.trim() || undefined,
         creatorType: creatorType || 'Individual',
-        city: city.trim(),
-        state: state.trim(),
-        pincode: pincode.trim(),
+        city: resolvedCity,
+        state: resolvedState,
+        pincode: resolvedPincode,
         categories: Array.isArray(categories) ? categories : [categories].filter(Boolean),
-        intro: (intro || craftDescription || '').trim(),
-        craftDescription: craftDescription.trim(),
+        intro: (intro || resolvedCraft || '').trim(),
+        craftDescription: resolvedCraft,
         yearsExperience: yearsExperience || '1-3 years',
         monthlyCapacity: monthlyCapacity || '20-50 pieces',
         craftMethod: craftMethod || 'handmade',
@@ -405,13 +413,13 @@ async function startServer() {
         id: creatorId,
         userId: `usr_${Date.now()}`,
         creatorId: creatorIdentifier,
-        fullName: fullName.trim(),
-        displayName: (displayName || brandName || fullName).trim(),
-        email: email.toLowerCase().trim(),
-        phone: phone.trim(),
-        city: city.trim(),
-        state: state.trim(),
-        pincode: pincode.trim(),
+        fullName: resolvedName,
+        displayName: (displayName || brandName || resolvedName).trim(),
+        email: resolvedEmail,
+        phone: resolvedPhone,
+        city: resolvedCity,
+        state: resolvedState,
+        pincode: resolvedPincode,
         country: 'India',
         brandName: brandName?.trim() || undefined,
         creatorType: creatorType || 'Individual',
@@ -539,9 +547,165 @@ async function startServer() {
         action,
         updatedStatus: newStatus,
         reviewedAt: now,
+        application: appIdx !== -1 ? serverCreatorApplications[appIdx] : null,
+        profile:
+          appIdx !== -1
+            ? serverCreatorProfiles.find(
+                (p) =>
+                  p.id === serverCreatorApplications[appIdx].creatorId ||
+                  p.email?.toLowerCase() === serverCreatorApplications[appIdx].applicantEmail?.toLowerCase()
+              ) || null
+            : null,
       });
     } catch (error) {
       res.status(500).json({ error: 'Failed to process application review' });
+    }
+  });
+
+  // Real-time Status check for creator application (by Application ID, email or phone)
+  app.get('/api/founding-creator/status', (req, res) => {
+    try {
+      const q = String(req.query.query || req.query.id || req.query.email || '').trim().toLowerCase();
+      if (!q) {
+        res.status(400).json({ success: false, error: 'Query parameter is required' });
+        return;
+      }
+
+      const cleanQ = q.replace(/^APP-FC-/i, '').replace(/^app-/i, '');
+      const appRecord = serverCreatorApplications.find((a) => {
+        const aId = (a.applicationId || '').toLowerCase();
+        const rawId = (a.id || '').toLowerCase();
+        const aEmail = (a.applicantEmail || '').toLowerCase();
+        const aPhone = (a.applicantPhone || '').replace(/\D/g, '');
+        const searchPhone = q.replace(/\D/g, '');
+
+        return (
+          aId === q ||
+          rawId === q ||
+          aEmail === q ||
+          (searchPhone.length >= 7 && aPhone.includes(searchPhone)) ||
+          aId.includes(cleanQ)
+        );
+      });
+
+      if (!appRecord) {
+        res.status(404).json({ success: false, error: 'Application not found' });
+        return;
+      }
+
+      const prof = serverCreatorProfiles.find(
+        (p) =>
+          p.id === appRecord.creatorId ||
+          p.email?.toLowerCase() === appRecord.applicantEmail?.toLowerCase()
+      );
+
+      res.json({
+        success: true,
+        application: appRecord,
+        creator: prof || null,
+        profile: prof || null,
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, error: 'Failed to look up application status' });
+    }
+  });
+
+  // Creator authentication endpoint (cross-device persistent login)
+  app.post('/api/founding-creator/login', (req, res) => {
+    try {
+      const { email } = req.body || {};
+      const cleanEmail = String(email || '').trim().toLowerCase();
+      if (!cleanEmail) {
+        res.status(400).json({ success: false, error: 'Email address is required' });
+        return;
+      }
+
+      const prof = serverCreatorProfiles.find(
+        (p) => p.email?.toLowerCase() === cleanEmail
+      );
+
+      if (!prof) {
+        res.status(404).json({
+          success: false,
+          error: 'No creator registration found with this email. Please submit an application first.',
+        });
+        return;
+      }
+
+      const appRecord = serverCreatorApplications.find(
+        (a) =>
+          a.creatorId === prof.id ||
+          a.applicantEmail?.toLowerCase() === cleanEmail
+      );
+
+      res.json({
+        success: true,
+        creator: prof,
+        profile: prof,
+        application: appRecord || null,
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, error: 'Server authentication error' });
+    }
+  });
+
+  // Admin / Creator profile update endpoint (persists changes immediately)
+  app.post('/api/founding-creator/update-profile', (req, res) => {
+    try {
+      const body = req.body || {};
+      const { id, creatorId, email } = body;
+      const targetId = id || creatorId;
+      const cleanEmail = email ? String(email).trim().toLowerCase() : '';
+
+      const profIdx = serverCreatorProfiles.findIndex(
+        (p) =>
+          (targetId && (p.id === targetId || p.creatorId === targetId)) ||
+          (cleanEmail && p.email?.toLowerCase() === cleanEmail)
+      );
+
+      if (profIdx === -1) {
+        res.status(404).json({ success: false, error: 'Creator profile not found on server' });
+        return;
+      }
+
+      const now = new Date().toISOString();
+      serverCreatorProfiles[profIdx] = {
+        ...serverCreatorProfiles[profIdx],
+        ...body,
+        updatedAt: now,
+      };
+
+      // If accountStatus is explicitly updated (e.g. approved / pending / suspended), sync the linked application
+      if (body.accountStatus) {
+        const appIdx = serverCreatorApplications.findIndex(
+          (a) =>
+            a.creatorId === serverCreatorProfiles[profIdx].id ||
+            a.applicantEmail?.toLowerCase() === serverCreatorProfiles[profIdx].email?.toLowerCase()
+        );
+        if (appIdx !== -1) {
+          serverCreatorApplications[appIdx].applicationStatus =
+            body.accountStatus === 'approved'
+              ? 'approved'
+              : body.accountStatus === 'rejected'
+              ? 'rejected'
+              : 'pending_review';
+          serverCreatorApplications[appIdx].updatedAt = now;
+        }
+      }
+
+      savePersistedCreatorData(
+        serverCreatorApplications,
+        serverCreatorProfiles,
+        serverCreatorPaymentMethods,
+        serverCreatorTickets
+      );
+
+      res.json({
+        success: true,
+        profile: serverCreatorProfiles[profIdx],
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, error: 'Failed to update creator profile' });
     }
   });
 

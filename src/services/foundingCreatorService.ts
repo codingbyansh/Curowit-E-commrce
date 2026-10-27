@@ -1,6 +1,7 @@
 import { supabase } from '../supabase';
-import { storage } from '../firebase';
+import { storage, db } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
 import { foundingCreatorSyncService, syncEventBus, StoreDocument, StoreDocumentType } from '../lib/foundingCreatorSync';
 import { cloudinaryService } from './cloudinaryService';
 import {
@@ -172,7 +173,7 @@ export const foundingCreatorService = {
     const creatorId = `cr-${Date.now()}`;
     const appId = `app-${Date.now()}`;
 
-    const newCreator: CreatorProfile = {
+    let newCreator: CreatorProfile = {
       id: creatorId,
       userId: `usr_${Date.now()}`,
       creatorId: creatorIdentifier,
@@ -196,7 +197,7 @@ export const foundingCreatorService = {
       updatedAt: now,
     };
 
-    const newApplication: CreatorApplication = {
+    let newApplication: CreatorApplication = {
       id: appId,
       applicationId,
       creatorId,
@@ -241,7 +242,7 @@ export const foundingCreatorService = {
 
     // 1. Synchronize to Central Server Storage (ensures any device or browser sees it in Admin CMS)
     try {
-      await fetch('/api/founding-creator/apply', {
+      const resp = await fetch('/api/founding-creator/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -273,16 +274,40 @@ export const foundingCreatorService = {
           id: newApplication.id,
         }),
       });
+      if (resp.ok) {
+        const body = await resp.json();
+        if (body.application) {
+          newApplication = { ...newApplication, ...body.application };
+          const curApps = this.getAllApplications();
+          const aIdx = curApps.findIndex((a) => a.id === newApplication.id || a.applicationId === newApplication.applicationId);
+          if (aIdx !== -1) curApps[aIdx] = newApplication;
+          else curApps.unshift(newApplication);
+          localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(curApps));
+        }
+        if (body.creator) {
+          newCreator = { ...newCreator, ...body.creator };
+          const curProfs = this.getAllProfiles();
+          const pIdx = curProfs.findIndex((p) => p.id === newCreator.id || p.email === newCreator.email);
+          if (pIdx !== -1) curProfs[pIdx] = newCreator;
+          else curProfs.unshift(newCreator);
+          localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(curProfs));
+        }
+      }
     } catch (err) {
       console.warn('Notice: Background sync to server API endpoint notice:', err);
     }
 
-    // 2. Synchronize to Supabase database & reactive event bus via service layer
+    // 2. Synchronize to Firestore for cloud redundancy
     try {
-      await foundingCreatorSyncService.persistCreatorApplication(newApplication, newCreator);
+      await setDoc(doc(db, 'creator_applications', newApplication.applicationId), newApplication);
+      await setDoc(doc(db, 'creator_profiles', newCreator.id), newCreator);
     } catch (err) {
-      console.warn('Notice: Background sync to Supabase table queued:', err);
+      console.warn('Notice: Firestore apply sync notice:', err);
     }
+
+    // 3. Notify reactive event bus
+    syncEventBus.notify('APPLICATION_UPDATED', newApplication);
+    syncEventBus.notify('PROFILE_UPDATED', newCreator);
 
     return {
       success: true,
@@ -509,139 +534,383 @@ export const foundingCreatorService = {
   },
 
   // 7. ADMIN ACTIONS: APPLICATION REVIEW
-  approveApplication(applicationId: string, reviewerName: string = 'Curowit Admin', notes?: string) {
+  async approveApplication(applicationId: string, reviewerName: string = 'Curowit Admin', notes?: string): Promise<boolean> {
     const apps = this.getAllApplications();
     const appIndex = apps.findIndex((a) => a.applicationId === applicationId || a.id === applicationId);
-    if (appIndex === -1) return false;
-
-    const app = apps[appIndex];
+    const targetAppId = appIndex !== -1 ? apps[appIndex].applicationId : applicationId;
     const now = new Date().toISOString();
-    app.applicationStatus = 'approved';
-    app.reviewedAt = now;
-    app.reviewedBy = reviewerName;
-    if (notes) app.reviewNotes = notes;
-    apps[appIndex] = app;
-    localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
 
-    // Update creator profile
-    const profiles = this.getAllProfiles();
-    const profIndex = profiles.findIndex((p) => p.id === app.creatorId);
-    if (profIndex !== -1) {
-      profiles[profIndex].accountStatus = 'approved';
-      profiles[profIndex].isVerified = true;
-      profiles[profIndex].updatedAt = now;
-      localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
+    let updatedApp: CreatorApplication | null = null;
+    let updatedProf: CreatorProfile | null = null;
+
+    if (appIndex !== -1) {
+      apps[appIndex].applicationStatus = 'approved';
+      apps[appIndex].reviewedAt = now;
+      apps[appIndex].reviewedBy = reviewerName;
+      if (notes) apps[appIndex].reviewNotes = notes;
+      updatedApp = apps[appIndex];
+      localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
+
+      const profiles = this.getAllProfiles();
+      const profIndex = profiles.findIndex((p) => p.id === apps[appIndex].creatorId || p.email?.toLowerCase() === apps[appIndex].applicantEmail?.toLowerCase());
+      if (profIndex !== -1) {
+        profiles[profIndex].accountStatus = 'approved';
+        profiles[profIndex].isVerified = true;
+        profiles[profIndex].updatedAt = now;
+        updatedProf = profiles[profIndex];
+        localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
+      }
     }
 
     // Add notification
-    this.addNotification({
-      creatorId: app.creatorId,
-      type: 'announcement',
-      title: '🎉 Welcome to Founding Creators!',
-      message: 'Your application has been approved! You can now access your Creator Dashboard and submit products.',
-      isRead: false,
-    });
+    if (updatedApp) {
+      this.addNotification({
+        creatorId: updatedApp.creatorId,
+        type: 'announcement',
+        title: '🎉 Welcome to Founding Creators!',
+        message: 'Your application has been approved! You can now access your Creator Dashboard and submit products.',
+        isRead: false,
+      });
+    }
 
-    // Synchronize to Server endpoint
-    fetch('/api/founding-creator/review-application', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        applicationId: app.applicationId,
-        action: 'approve',
-        reviewer: reviewerName,
-        notes,
-      }),
-    }).catch(() => {});
+    // 1. Synchronize to Backend Express Server (persisted to disk)
+    try {
+      const resp = await fetch('/api/founding-creator/review-application', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          applicationId: targetAppId,
+          action: 'approve',
+          reviewer: reviewerName,
+          notes,
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.application) updatedApp = data.application;
+        if (data.profile) updatedProf = data.profile;
+      }
+    } catch (err) {
+      console.warn('Notice: Backend review-application notice:', err);
+    }
 
-    // Synchronize to Supabase via service layer
-    foundingCreatorSyncService
-      .updateApplicationStatus(app.applicationId, 'approved', {
-        reviewerName,
-        reviewNotes: notes,
-      })
-      .catch(() => {});
+    // 2. Synchronize to Firestore for cloud redundancy
+    try {
+      await updateDoc(doc(db, 'creator_applications', targetAppId), {
+        applicationStatus: 'approved',
+        reviewedAt: now,
+        reviewedBy: reviewerName,
+        reviewNotes: notes || 'Approved via Admin CRM.',
+      });
+      if (updatedProf) {
+        await updateDoc(doc(db, 'creator_profiles', updatedProf.id), {
+          accountStatus: 'approved',
+          isVerified: true,
+          updatedAt: now,
+        });
+      }
+    } catch (err) {
+      console.warn('Notice: Firestore review sync notice:', err);
+    }
+
+    if (updatedApp) syncEventBus.notify('APPLICATION_UPDATED', updatedApp);
+    if (updatedProf) syncEventBus.notify('PROFILE_UPDATED', updatedProf);
 
     return true;
   },
 
-  rejectApplication(applicationId: string, reason: string, reviewerName: string = 'Curowit Admin') {
+  async rejectApplication(applicationId: string, reason: string, reviewerName: string = 'Curowit Admin'): Promise<boolean> {
     const apps = this.getAllApplications();
     const appIndex = apps.findIndex((a) => a.applicationId === applicationId || a.id === applicationId);
-    if (appIndex === -1) return false;
-
-    const app = apps[appIndex];
+    const targetAppId = appIndex !== -1 ? apps[appIndex].applicationId : applicationId;
     const now = new Date().toISOString();
-    app.applicationStatus = 'rejected';
-    app.rejectionReason = reason;
-    app.reviewedAt = now;
-    app.reviewedBy = reviewerName;
-    apps[appIndex] = app;
-    localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
 
-    const profiles = this.getAllProfiles();
-    const profIndex = profiles.findIndex((p) => p.id === app.creatorId);
-    if (profIndex !== -1) {
-      profiles[profIndex].accountStatus = 'rejected';
-      profiles[profIndex].updatedAt = now;
-      localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
+    let updatedApp: CreatorApplication | null = null;
+    let updatedProf: CreatorProfile | null = null;
+
+    if (appIndex !== -1) {
+      apps[appIndex].applicationStatus = 'rejected';
+      apps[appIndex].rejectionReason = reason;
+      apps[appIndex].reviewedAt = now;
+      apps[appIndex].reviewedBy = reviewerName;
+      updatedApp = apps[appIndex];
+      localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
+
+      const profiles = this.getAllProfiles();
+      const profIndex = profiles.findIndex((p) => p.id === apps[appIndex].creatorId || p.email?.toLowerCase() === apps[appIndex].applicantEmail?.toLowerCase());
+      if (profIndex !== -1) {
+        profiles[profIndex].accountStatus = 'rejected';
+        profiles[profIndex].updatedAt = now;
+        updatedProf = profiles[profIndex];
+        localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
+      }
     }
 
     // Server sync
-    fetch('/api/founding-creator/review-application', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        applicationId: app.applicationId,
-        action: 'reject',
-        reviewer: reviewerName,
-        reason,
-      }),
-    }).catch(() => {});
+    try {
+      const resp = await fetch('/api/founding-creator/review-application', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          applicationId: targetAppId,
+          action: 'reject',
+          reviewer: reviewerName,
+          reason,
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.application) updatedApp = data.application;
+        if (data.profile) updatedProf = data.profile;
+      }
+    } catch (err) {
+      console.warn('Notice: Backend reject sync notice:', err);
+    }
 
-    foundingCreatorSyncService
-      .updateApplicationStatus(app.applicationId, 'rejected', {
-        reviewerName,
+    // Firestore sync
+    try {
+      await updateDoc(doc(db, 'creator_applications', targetAppId), {
+        applicationStatus: 'rejected',
         rejectionReason: reason,
-      })
-      .catch(() => {});
+        reviewedAt: now,
+        reviewedBy: reviewerName,
+      });
+      if (updatedProf) {
+        await updateDoc(doc(db, 'creator_profiles', updatedProf.id), {
+          accountStatus: 'rejected',
+          updatedAt: now,
+        });
+      }
+    } catch (err) {
+      console.warn('Notice: Firestore reject sync notice:', err);
+    }
+
+    if (updatedApp) syncEventBus.notify('APPLICATION_UPDATED', updatedApp);
+    if (updatedProf) syncEventBus.notify('PROFILE_UPDATED', updatedProf);
 
     return true;
   },
 
-  requestMoreInformation(applicationId: string, requestedInfo: string, reviewerName: string = 'Curowit Admin') {
+  async requestMoreInformation(applicationId: string, requestedInfo: string, reviewerName: string = 'Curowit Admin'): Promise<boolean> {
     const apps = this.getAllApplications();
     const appIndex = apps.findIndex((a) => a.applicationId === applicationId || a.id === applicationId);
-    if (appIndex === -1) return false;
-
-    const app = apps[appIndex];
+    const targetAppId = appIndex !== -1 ? apps[appIndex].applicationId : applicationId;
     const now = new Date().toISOString();
-    app.applicationStatus = 'additional_info_required';
-    app.requestedInfo = requestedInfo;
-    app.reviewedAt = now;
-    app.reviewedBy = reviewerName;
-    apps[appIndex] = app;
-    localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
+
+    let updatedApp: CreatorApplication | null = null;
+
+    if (appIndex !== -1) {
+      apps[appIndex].applicationStatus = 'additional_info_required';
+      apps[appIndex].reviewNotes = requestedInfo;
+      apps[appIndex].reviewedAt = now;
+      apps[appIndex].reviewedBy = reviewerName;
+      updatedApp = apps[appIndex];
+      localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
+    }
 
     // Server sync
-    fetch('/api/founding-creator/review-application', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        applicationId: app.applicationId,
-        action: 'request_info',
-        reviewer: reviewerName,
-        notes: requestedInfo,
-      }),
-    }).catch(() => {});
+    try {
+      const resp = await fetch('/api/founding-creator/review-application', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          applicationId: targetAppId,
+          action: 'request_info',
+          reviewer: reviewerName,
+          notes: requestedInfo,
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.application) updatedApp = data.application;
+      }
+    } catch (err) {
+      console.warn('Notice: Backend request_info notice:', err);
+    }
 
-    foundingCreatorSyncService
-      .updateApplicationStatus(app.applicationId, 'additional_info_required', {
-        requestedInfo,
-      })
-      .catch(() => {});
+    // Firestore sync
+    try {
+      await updateDoc(doc(db, 'creator_applications', targetAppId), {
+        applicationStatus: 'additional_info_required',
+        reviewNotes: requestedInfo,
+        reviewedAt: now,
+        reviewedBy: reviewerName,
+      });
+    } catch (err) {
+      console.warn('Notice: Firestore request_info sync notice:', err);
+    }
+
+    if (updatedApp) syncEventBus.notify('APPLICATION_UPDATED', updatedApp);
 
     return true;
+  },
+
+  // Update creator profile (commission, status, verification, bio, categories, etc.)
+  async updateCreatorProfile(profileData: Partial<CreatorProfile>): Promise<CreatorProfile | null> {
+    const profiles = this.getAllProfiles();
+    const idx = profiles.findIndex(
+      (p) => p.id === profileData.id || p.creatorId === profileData.creatorId || (profileData.email && p.email?.toLowerCase() === profileData.email?.toLowerCase())
+    );
+    const now = new Date().toISOString();
+    let updated: CreatorProfile;
+
+    if (idx !== -1) {
+      updated = { ...profiles[idx], ...profileData, updatedAt: now };
+      profiles[idx] = updated;
+      localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profiles));
+    } else {
+      updated = profileData as CreatorProfile;
+    }
+
+    // 1. Synchronize to Backend Server
+    try {
+      const resp = await fetch('/api/founding-creator/update-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      });
+      if (resp.ok) {
+        const body = await resp.json();
+        if (body.profile) {
+          updated = body.profile;
+        }
+      }
+    } catch (err) {
+      console.warn('Backend update-profile error:', err);
+    }
+
+    // 2. Synchronize to Firestore
+    try {
+      await updateDoc(doc(db, 'creator_profiles', updated.id), updated as any);
+    } catch (err) {
+      console.warn('Firestore update-profile notice:', err);
+    }
+
+    syncEventBus.notify('PROFILE_UPDATED', updated);
+    return updated;
+  },
+
+  // Real-time lookup for application status (by Application ID, email, or phone)
+  async fetchCreatorApplicationAsync(refOrEmail: string): Promise<CreatorApplication | null> {
+    const clean = refOrEmail.trim().toLowerCase();
+
+    // 1. Check Backend Server API
+    try {
+      const res = await fetch(`/api/founding-creator/status?query=${encodeURIComponent(clean)}`);
+      if (res.ok) {
+        const body = await res.json();
+        if (body.success && body.application) {
+          const app = body.application;
+          // Cache to local storage
+          const apps = this.getAllApplications();
+          const idx = apps.findIndex((a) => a.id === app.id || a.applicationId === app.applicationId);
+          if (idx !== -1) {
+            apps[idx] = app;
+          } else {
+            apps.unshift(app);
+          }
+          localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
+
+          if (body.creator) {
+            const profs = this.getAllProfiles();
+            const pIdx = profs.findIndex((p) => p.id === body.creator.id || p.email === body.creator.email);
+            if (pIdx !== -1) {
+              profs[pIdx] = body.creator;
+            } else {
+              profs.unshift(body.creator);
+            }
+            localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profs));
+          }
+
+          return app;
+        }
+      }
+    } catch (err) {
+      console.warn('Server application status lookup notice:', err);
+    }
+
+    // 2. Check Firestore
+    try {
+      const snap = await getDoc(doc(db, 'creator_applications', clean));
+      if (snap.exists()) {
+        return snap.data() as CreatorApplication;
+      }
+    } catch (err) {
+      // ignore
+    }
+
+    // 3. Fallback to local storage
+    const local = this.getAllApplications().find(
+      (a) =>
+        a.id.toLowerCase() === clean ||
+        a.applicationId.toLowerCase() === clean ||
+        a.applicantEmail.toLowerCase() === clean ||
+        a.applicantPhone?.replace(/\D/g, '') === clean.replace(/\D/g, '')
+    );
+    return local || null;
+  },
+
+  // Asynchronous creator login with server backend check
+  async loginCreatorAsync(email: string): Promise<{
+    success: boolean;
+    creator?: CreatorProfile;
+    application?: CreatorApplication;
+    error?: string;
+  }> {
+    const cleanEmail = email.trim().toLowerCase();
+
+    // 1. Query Server Backend API
+    try {
+      const res = await fetch('/api/founding-creator/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail }),
+      });
+      if (res.ok) {
+        const body = await res.json();
+        if (body.success && body.creator) {
+          this.setCurrentCreator(body.creator);
+
+          // Update local cache
+          const profs = this.getAllProfiles();
+          const pIdx = profs.findIndex((p) => p.id === body.creator.id || p.email?.toLowerCase() === cleanEmail);
+          if (pIdx !== -1) {
+            profs[pIdx] = body.creator;
+          } else {
+            profs.unshift(body.creator);
+          }
+          localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(profs));
+
+          if (body.application) {
+            const apps = this.getAllApplications();
+            const aIdx = apps.findIndex((a) => a.id === body.application.id || a.applicationId === body.application.applicationId);
+            if (aIdx !== -1) {
+              apps[aIdx] = body.application;
+            } else {
+              apps.unshift(body.application);
+            }
+            localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps));
+          }
+
+          return {
+            success: true,
+            creator: body.creator,
+            application: body.application,
+          };
+        }
+      } else if (res.status === 404) {
+        const errBody = await res.json().catch(() => ({}));
+        return {
+          success: false,
+          error: errBody.error || 'No creator registration found with this email. Please apply first.',
+        };
+      }
+    } catch (err) {
+      console.warn('Server login error, checking local store:', err);
+    }
+
+    // 2. Fallback to local
+    return this.loginCreator(cleanEmail);
   },
 
   // 8. PRODUCT MANAGEMENT

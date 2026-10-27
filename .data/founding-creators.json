@@ -1,4 +1,65 @@
 {
-  "applications": [],
-  "profiles": []
+  "applications": [
+    {
+      "id": "app-1793116830652",
+      "applicationId": "APP-FC-80916",
+      "creatorId": "cr-1793116830652",
+      "applicantName": "Rohan Sharma",
+      "applicantEmail": "rohan.crafts@example.com",
+      "applicantPhone": "+91 98765 43210",
+      "brandName": "Jaipur Loom Crafts",
+      "creatorType": "Individual",
+      "city": "Jaipur",
+      "state": "Rajasthan",
+      "pincode": "000000",
+      "categories": [],
+      "intro": "Traditional hand-block printing and organic cotton weaving.",
+      "craftDescription": "Traditional hand-block printing and organic cotton weaving.",
+      "yearsExperience": "1-3 years",
+      "monthlyCapacity": "20-50 pieces",
+      "craftMethod": "handmade",
+      "leadTime": "3-5 business days",
+      "acceptsCustomOrders": true,
+      "socialLinks": {},
+      "portfolioLinks": [],
+      "portfolioFiles": [],
+      "agreementAccepted": true,
+      "termsVersion": "v1.0-founding",
+      "acceptedAt": "2026-10-27T16:00:30.652Z",
+      "applicationStatus": "approved",
+      "submittedAt": "2026-10-27T16:00:30.652Z",
+      "createdAt": "2026-10-27T16:00:30.652Z",
+      "updatedAt": "2026-10-27T16:00:30.677Z",
+      "reviewedAt": "2026-10-27T16:00:30.672Z",
+      "reviewedBy": "Curowit Admin",
+      "reviewNotes": "Exceptional textile heritage portfolio approved."
+    }
+  ],
+  "profiles": [
+    {
+      "id": "cr-1793116830652",
+      "userId": "usr_1793116830652",
+      "creatorId": "CR-FC-80916",
+      "fullName": "Rohan Sharma",
+      "displayName": "Jaipur Loom Crafts",
+      "email": "rohan.crafts@example.com",
+      "phone": "+91 98765 43210",
+      "city": "Jaipur",
+      "state": "Rajasthan",
+      "pincode": "000000",
+      "country": "India",
+      "brandName": "Jaipur Loom Crafts",
+      "creatorType": "Individual",
+      "socialLinks": {},
+      "categories": [],
+      "accountStatus": "approved",
+      "isVerified": true,
+      "commissionPercentage": 20,
+      "creatorSharePercentage": 80,
+      "createdAt": "2026-10-27T16:00:30.652Z",
+      "updatedAt": "2026-10-27T16:00:30.677Z"
+    }
+  ],
+  "paymentMethods": [],
+  "tickets": []
 }
