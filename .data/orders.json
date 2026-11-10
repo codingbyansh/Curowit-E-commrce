@@ -1,0 +1,45 @@
+{
+  "orders": [
+    {
+      "id": "CW-5192",
+      "date": "10/11/2026",
+      "customer_name": "Pooja Verma",
+      "total": 1299,
+      "status": "Dispatched",
+      "shippingAddress": {
+        "fullName": "Pooja Verma",
+        "phone": "+91 91234 56789",
+        "street": "42 Indiranagar 100ft Road",
+        "city": "Bengaluru",
+        "postalCode": "560038"
+      },
+      "items": [
+        {
+          "product": {
+            "name": "Ceramic Mug"
+          },
+          "quantity": 1
+        }
+      ],
+      "updatedAt": "2026-11-10T09:57:31.445Z",
+      "createdAt": "2026-11-10T09:57:31.438Z",
+      "courierPartner": "Delhivery Express Surface",
+      "trackingAwb": "DLV-998877"
+    }
+  ],
+  "tracking": [
+    {
+      "id": "trk-1794304651445",
+      "order_id": "CW-5192",
+      "status": "Dispatched",
+      "title": "Order Dispatched",
+      "location": "Bengaluru Sorting Hub",
+      "date": "10/11/2026",
+      "time": "09:57 AM",
+      "description": "Package sorted and assigned to delivery associate.",
+      "carrier": "Delhivery Express Surface",
+      "awb_number": "DLV-998877",
+      "created_at": "2026-11-10T09:57:31.445Z"
+    }
+  ]
+}

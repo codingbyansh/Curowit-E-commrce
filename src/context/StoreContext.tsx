@@ -20,6 +20,7 @@ import {
   deleteOrderFromSupabase,
   mapSupabaseToOrder,
 } from '../supabase';
+import { realtimeService } from '../services/realtimeService';
 import {
   Product,
   PRODUCTS,
@@ -649,6 +650,22 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       handleFirestoreError(err, OperationType.WRITE, `workshop_bookings/${bookingId}`)
     );
 
+    // Sync seatsLeft on the workshop doc in Firestore
+    const currentWorkshop = workshops.find((w) => w.id === workshop.id);
+    const updatedSeats = Math.max(0, (currentWorkshop?.seatsLeft ?? workshop.seatsLeft) - 1);
+    setDoc(
+      doc(db, 'workshops', workshop.id),
+      { seatsLeft: updatedSeats, updatedAt: serverTimestamp() },
+      { merge: true }
+    ).catch(() => {});
+
+    // Sync with persistent backend & broadcast realtime to all buyers
+    fetch('/api/workshops/book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workshopId: workshop.id, booking: newBooking }),
+    }).catch(() => {});
+
     showToast(
       'Seat Reserved!',
       `Booked spot for "${workshop.title}". Access details added to your Profile.`
@@ -666,6 +683,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setDoc(doc(db, 'workshop_bookings', bookingId), cleanUpdates, { merge: true }).catch((err) =>
       handleFirestoreError(err, OperationType.WRITE, `workshop_bookings/${bookingId}`)
     );
+
+    fetch('/api/workshops/bookings/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingId, status: updates.status }),
+    }).catch(() => {});
+
     showToast('Booking Updated', 'Workshop booking record updated');
   };
 
@@ -685,7 +709,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
     setDoc(
       doc(db, 'workshops', workshopId),
-      { meetingLink, meetingNotes, meetingPlatform: platform },
+      { meetingLink, meetingNotes, meetingPlatform: platform, updatedAt: serverTimestamp() },
       { merge: true }
     ).catch(() => {});
 
@@ -708,6 +732,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           { merge: true }
         ).catch(() => {});
       });
+
+    // Sync with persistent backend & broadcast live
+    fetch(`/api/workshops/${encodeURIComponent(workshopId)}/meeting`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ meetingLink, meetingNotes, meetingPlatform: platform }),
+    }).catch(() => {});
 
     showToast('Meeting Link Broadcasted', `Live ${platform} link shared with all registered attendees.`);
   };
@@ -827,6 +858,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       updatedAt: serverTimestamp(),
     };
     if (w.location) payload.location = String(w.location).slice(0, 200);
+    if (w.meetingLink !== undefined) payload.meetingLink = String(w.meetingLink || '').slice(0, 500);
+    if (w.meetingPlatform) payload.meetingPlatform = String(w.meetingPlatform).slice(0, 60);
+    if (w.meetingNotes !== undefined) payload.meetingNotes = String(w.meetingNotes || '').slice(0, 1000);
     return payload;
   };
 
@@ -965,7 +999,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           setWorkshops(
             snapshot.docs.map((d) => {
               const data = d.data() as Workshop;
-              return { ...data, image: normalizeImageUrl(data.image) };
+              return {
+                ...data,
+                image: normalizeImageUrl(data.image),
+                meetingLink: data.meetingLink || '',
+                meetingPlatform: data.meetingPlatform || (data.format === 'Studio Offline' ? 'Studio Offline' : 'Google Meet'),
+                meetingNotes: data.meetingNotes || '',
+              };
             })
           );
         }
@@ -1129,21 +1169,41 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {}
   }, [orders]);
 
-  // Realtime Supabase synchronization for 'orders' and 'order_tracking'
+  // Realtime multi-layered synchronization for 'orders' (Server API + Realtime Stream + Supabase)
   useEffect(() => {
     let isMounted = true;
 
-    // 1. Initial fetch from Supabase
-    const initSupabaseOrders = async () => {
+    // 1. Initial fetch from Server Persistent API (with Supabase fallback)
+    const initOrders = async () => {
+      try {
+        const res = await fetch('/api/orders');
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.orders && Array.isArray(data.orders) && data.orders.length > 0) {
+            if (!isMounted) return;
+            setOrders((prev) => {
+              const map = new Map<string, Order>();
+              data.orders.forEach((o: Order) => map.set(o.id, o));
+              prev.forEach((o) => {
+                if (!map.has(o.id)) map.set(o.id, o);
+              });
+              return Array.from(map.values());
+            });
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Initial server orders sync notice:', err);
+      }
+
+      // Secondary fallback
       try {
         const remoteOrders = await fetchOrdersFromSupabase();
         if (!isMounted) return;
         if (remoteOrders && remoteOrders.length > 0) {
           setOrders((prev) => {
             const map = new Map<string, Order>();
-            // Remote orders from Supabase take priority
             remoteOrders.forEach((o) => map.set(o.id, o));
-            // Keep any local-only orders and push them to Supabase
             prev.forEach((o) => {
               if (!map.has(o.id)) {
                 map.set(o.id, o);
@@ -1158,67 +1218,164 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
     };
 
-    initSupabaseOrders();
+    initOrders();
 
-    // 2. Realtime listener for 'orders' table
-    const ordersChannel = supabase
-      .channel('realtime_public_orders')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'orders' },
-        (payload) => {
-          if (!isMounted) return;
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const mapped = mapSupabaseToOrder(payload.new);
-            setOrders((prev) => {
-              const exists = prev.some((o) => o.id === mapped.id);
-              if (exists) {
-                return prev.map((o) => (o.id === mapped.id ? { ...o, ...mapped } : o));
-              }
-              return [mapped, ...prev];
+    // 2. Realtime SSE & Broadcast subscription for instant zero-latency updates
+    const unsubRealtime = realtimeService.subscribe((msg) => {
+      if (!isMounted) return;
+      if (msg.type === 'ORDER_CREATED' || msg.type === 'ORDER_UPDATED') {
+        const orderData: Order = msg.data?.order || msg.data;
+        if (orderData && orderData.id) {
+          setOrders((prev) => {
+            const exists = prev.some((o) => o.id === orderData.id);
+            if (exists) {
+              return prev.map((o) => (o.id === orderData.id ? { ...o, ...orderData } : o));
+            }
+            return [orderData, ...prev];
+          });
+        }
+      } else if (msg.type === 'ORDER_DELETED') {
+        const deletedId = msg.data?.id;
+        if (deletedId) {
+          setOrders((prev) => prev.filter((o) => o.id !== deletedId));
+        }
+      } else if (msg.type === 'WORKSHOP_UPDATED') {
+        const ws: Workshop = msg.data;
+        if (ws && ws.id) {
+          setWorkshops((prev) => {
+            const exists = prev.some((w) => w.id === ws.id);
+            if (exists) {
+              return prev.map((w) => (w.id === ws.id ? { ...w, ...ws } : w));
+            }
+            return [...prev, ws];
+          });
+        }
+      } else if (msg.type === 'WORKSHOP_DELETED') {
+        const deletedId = msg.data?.id;
+        if (deletedId) {
+          setWorkshops((prev) => prev.filter((w) => w.id !== deletedId));
+        }
+      } else if (msg.type === 'WORKSHOP_BOOKED') {
+        const { workshopId, workshop, booking } = msg.data || {};
+        if (workshopId && workshop) {
+          setWorkshops((prev) =>
+            prev.map((w) => (w.id === workshopId ? { ...w, ...workshop } : w))
+          );
+        } else if (workshopId) {
+          setWorkshops((prev) =>
+            prev.map((w) =>
+              w.id === workshopId ? { ...w, seatsLeft: Math.max(0, w.seatsLeft - 1) } : w
+            )
+          );
+        }
+        if (booking && booking.id) {
+          setBookedWorkshops((prev) => {
+            if (prev.some((b) => b.id === booking.id)) return prev;
+            return [booking, ...prev];
+          });
+        }
+      } else if (msg.type === 'WORKSHOP_MEETING_UPDATED') {
+        const { workshopId, meetingLink, meetingPlatform, meetingNotes } = msg.data || {};
+        if (workshopId) {
+          setWorkshops((prev) =>
+            prev.map((w) =>
+              w.id === workshopId
+                ? {
+                    ...w,
+                    meetingLink: meetingLink !== undefined ? meetingLink : w.meetingLink,
+                    meetingPlatform: meetingPlatform || w.meetingPlatform,
+                    meetingNotes: meetingNotes !== undefined ? meetingNotes : w.meetingNotes,
+                  }
+                : w
+            )
+          );
+          setBookedWorkshops((prev) =>
+            prev.map((b) =>
+              b.workshopId === workshopId
+                ? {
+                    ...b,
+                    meetingLink: meetingLink !== undefined ? meetingLink : b.meetingLink,
+                    meetingPlatform: meetingPlatform || b.meetingPlatform,
+                    meetingNotes: meetingNotes !== undefined ? meetingNotes : b.meetingNotes,
+                  }
+                : b
+            )
+          );
+        }
+      } else if (msg.type === 'BOOKING_UPDATED') {
+        const updatedBooking = msg.data;
+        if (updatedBooking && updatedBooking.id) {
+          setBookedWorkshops((prev) =>
+            prev.map((b) => (b.id === updatedBooking.id ? { ...b, ...updatedBooking } : b))
+          );
+        }
+      }
+    });
+
+    // Initial fetch of workshops and bookings from persistent API
+    fetch('/api/workshops')
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data.success && Array.isArray(data.workshops) && data.workshops.length > 0) {
+          setWorkshops(data.workshops);
+        }
+      })
+      .catch(() => {});
+
+    fetch('/api/workshops/bookings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data.success && Array.isArray(data.bookings) && data.bookings.length > 0) {
+          setBookedWorkshops((prev) => {
+            const map = new Map<string, BookedWorkshop>();
+            data.bookings.forEach((b: BookedWorkshop) => map.set(b.id, b));
+            prev.forEach((b) => {
+              if (!map.has(b.id)) map.set(b.id, b);
             });
-          } else if (payload.eventType === 'DELETE') {
-            const deletedId = (payload.old as any)?.id;
-            if (deletedId) {
-              setOrders((prev) => prev.filter((o) => o.id !== deletedId));
+            return Array.from(map.values());
+          });
+        }
+      })
+      .catch(() => {});
+
+    // 3. Fallback listener for Supabase changes if channel is active
+    let ordersChannel: any = null;
+    try {
+      ordersChannel = supabase
+        .channel('realtime_public_orders')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'orders' },
+          (payload) => {
+            if (!isMounted) return;
+            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+              const mapped = mapSupabaseToOrder(payload.new);
+              setOrders((prev) => {
+                const exists = prev.some((o) => o.id === mapped.id);
+                if (exists) {
+                  return prev.map((o) => (o.id === mapped.id ? { ...o, ...mapped } : o));
+                }
+                return [mapped, ...prev];
+              });
+            } else if (payload.eventType === 'DELETE') {
+              const deletedId = (payload.old as any)?.id;
+              if (deletedId) {
+                setOrders((prev) => prev.filter((o) => o.id !== deletedId));
+              }
             }
           }
-        }
-      )
-      .subscribe();
-
-    // 3. Realtime listener for 'order_tracking' table
-    const trackingChannel = supabase
-      .channel('realtime_public_order_tracking')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'order_tracking' },
-        (payload) => {
-          if (!isMounted) return;
-          const track = payload.new as any;
-          if (track?.order_id && track?.status) {
-            setOrders((prev) =>
-              prev.map((o) => {
-                if (o.id === track.order_id) {
-                  return {
-                    ...o,
-                    status: track.status,
-                    ...(track.carrier ? { courierPartner: track.carrier } : {}),
-                    ...(track.awb_number ? { trackingAwb: track.awb_number } : {}),
-                  };
-                }
-                return o;
-              })
-            );
-          }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
+    } catch {}
 
     return () => {
       isMounted = false;
-      supabase.removeChannel(ordersChannel);
-      supabase.removeChannel(trackingChannel);
+      unsubRealtime();
+      if (ordersChannel) {
+        try {
+          supabase.removeChannel(ordersChannel);
+        } catch {}
+      }
     };
   }, []);
 
@@ -1482,6 +1639,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
     }
 
+    // Sync new customer order to Server API (Zero Data Loss & Realtime broadcast)
+    fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newOrder),
+    }).catch((err) => console.warn('Server orders sync notice:', err));
+
     // Sync new customer order to Supabase orders & order_tracking tables
     upsertOrderToSupabase(newOrder).catch((err) =>
       console.warn('Supabase upsertOrder error:', err)
@@ -1619,7 +1783,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast('Artisan Removed', 'Creator removed globally');
   };
 
-  // Workshop CRUD (Synced globally via Firestore)
+  // Workshop CRUD (Synced globally via Firestore & Realtime Backend)
   const addWorkshop = (workshopData: Omit<Workshop, 'id'> & { id?: string }) => {
     const cleanId = (workshopData.id || `ws-${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 128);
     const newWorkshop: Workshop = {
@@ -1631,6 +1795,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setDoc(doc(db, 'workshops', cleanId), payload).catch((error) =>
       handleFirestoreError(error, OperationType.CREATE, `workshops/${cleanId}`)
     );
+
+    // Sync with persistent server storage & broadcast live
+    fetch('/api/workshops', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newWorkshop),
+    }).catch(() => {});
+
     showToast('Workshop Created', `Published "${newWorkshop.title}" globally`);
   };
 
@@ -1644,6 +1816,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setDoc(doc(db, 'workshops', id), payload).catch((error) =>
       handleFirestoreError(error, OperationType.UPDATE, `workshops/${id}`)
     );
+
+    // Sync with persistent server storage & broadcast live
+    fetch('/api/workshops', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(merged),
+    }).catch(() => {});
+
     showToast('Workshop Updated', 'Details synced live across all devices');
   };
 
@@ -1652,6 +1832,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     deleteDoc(doc(db, 'workshops', id)).catch((error) =>
       handleFirestoreError(error, OperationType.DELETE, `workshops/${id}`)
     );
+
+    // Sync delete with persistent server storage & broadcast live
+    fetch(`/api/workshops/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    }).catch(() => {});
+
     showToast('Workshop Removed', 'Workshop deleted globally');
   };
 
@@ -1701,6 +1887,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const next = prev.map((order) => (order.id === id ? { ...order, ...updated } : order));
       const target = next.find((o) => o.id === id);
       if (target) {
+        // Sync to Server API with tracking milestone (Zero Data Loss)
+        fetch('/api/orders/update-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: id,
+            status: updated.status,
+            carrier: updated.courierPartner || target.courierPartner,
+            awb: updated.trackingAwb || target.trackingAwb,
+            ...trackingInfo,
+          }),
+        }).catch((err) => console.warn('Server update status notice:', err));
+
         // Sync order row to Supabase
         upsertOrderToSupabase(target).catch((err) =>
           console.warn('Supabase update order sync failed:', err)
@@ -1721,6 +1920,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const deleteOrder = (id: string) => {
     setOrders((prev) => prev.filter((order) => order.id !== id));
+    fetch(`/api/orders/${id}`, { method: 'DELETE' }).catch((err) =>
+      console.warn('Server delete order notice:', err)
+    );
     deleteOrderFromSupabase(id).catch((err) =>
       console.warn('Supabase delete order error:', err)
     );

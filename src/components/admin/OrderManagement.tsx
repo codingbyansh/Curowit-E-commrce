@@ -88,6 +88,18 @@ export const OrderManagement: React.FC = () => {
   const handleManualSync = async () => {
     setIsSyncing(true);
     try {
+      const res = await fetch('/api/orders');
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.orders && Array.isArray(data.orders)) {
+          data.orders.forEach((fo: Order) => {
+            updateOrder(fo.id, fo);
+          });
+          showToast('Database Synchronized', `Synchronized ${data.orders.length} orders live from persistent database`);
+          return;
+        }
+      }
+
       const freshOrders = await fetchOrdersFromSupabase();
       if (freshOrders && freshOrders.length > 0) {
         freshOrders.forEach((fo) => {
@@ -98,7 +110,7 @@ export const OrderManagement: React.FC = () => {
         showToast('Database Live', 'All orders are currently in sync with database');
       }
     } catch (err) {
-      showToast('Sync Notice', 'Failed to retrieve cloud orders', 'error');
+      showToast('Sync Notice', 'Operating with cached orders', 'info');
     } finally {
       setIsSyncing(false);
     }
@@ -193,11 +205,19 @@ export const OrderManagement: React.FC = () => {
     }
   };
 
-  // Open Supabase tracking timeline inspector
+  // Open tracking timeline inspector
   const openTrackingInspector = async (orderId: string) => {
     setInspectOrderId(orderId);
     setIsLoadingMilestones(true);
     try {
+      const res = await fetch(`/api/orders/tracking/${encodeURIComponent(orderId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.tracking && Array.isArray(data.tracking) && data.tracking.length > 0) {
+          setInspectMilestones(data.tracking);
+          return;
+        }
+      }
       const records = await fetchOrderTrackingFromSupabase(orderId);
       setInspectMilestones(records);
     } catch (err) {

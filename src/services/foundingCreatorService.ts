@@ -34,14 +34,10 @@ const STORAGE_KEYS = {
 const DEMO_APPLICATION_IDS = new Set([
   'app-meera-sharma',
   'app-aarav-patel',
-  'APP-FC-98421',
-  'APP-FC-10543',
 ]);
 const DEMO_CREATOR_IDS = new Set([
   'cr-meera-sharma',
   'cr-aarav-patel',
-  'CR-FC-98421',
-  'CR-FC-10543',
 ]);
 
 export function isDemoApplication(app: Partial<CreatorApplication>): boolean {

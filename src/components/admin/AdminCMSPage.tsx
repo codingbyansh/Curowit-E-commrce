@@ -1259,6 +1259,10 @@ export const AdminCMSPage: React.FC = () => {
           workshop={detailsWorkshop}
           attendees={bookedWorkshops.filter((b) => b.workshopId === detailsWorkshop.id)}
           onClose={() => setDetailsWorkshop(null)}
+          onEditWorkshop={(ws) => {
+            setDetailsWorkshop(null);
+            setEditingWorkshop(ws);
+          }}
           onUpdateMeetingDetails={(workshopId, link, notes, platform) => {
             updateWorkshopMeetingDetails(workshopId, link, notes, platform);
             setDetailsWorkshop((prev) =>
@@ -1809,11 +1813,12 @@ interface WorkshopDetailsModalProps {
   workshop: Workshop;
   attendees: BookedWorkshop[];
   onClose: () => void;
+  onEditWorkshop?: (workshop: Workshop) => void;
   onUpdateMeetingDetails: (
     workshopId: string,
     meetingLink: string,
     meetingNotes?: string,
-    platform?: 'Google Meet' | 'Zoom'
+    platform?: 'Google Meet' | 'Zoom' | 'Studio Offline'
   ) => void;
   onUpdateBookingStatus: (bookingId: string, status: 'Confirmed' | 'Completed' | 'Cancelled') => void;
   onAddTestBooking: (workshop: Workshop) => void;
@@ -1824,6 +1829,7 @@ const WorkshopDetailsModal: React.FC<WorkshopDetailsModalProps> = ({
   workshop,
   attendees,
   onClose,
+  onEditWorkshop,
   onUpdateMeetingDetails,
   onUpdateBookingStatus,
   onAddTestBooking,

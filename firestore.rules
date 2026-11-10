@@ -298,6 +298,57 @@ service cloud.firestore {
       data.status is string && data.status in ['Confirmed', 'Completed', 'Cancelled'];
     }
 
+    // Validation Blueprint: CreatorApplication
+    function isValidCreatorApplication(data) {
+      return data.keys().hasAll([
+        'id', 'applicationId', 'creatorId', 'applicantName', 'applicantEmail',
+        'applicantPhone', 'city', 'state', 'pincode', 'craftDescription',
+        'applicationStatus', 'agreementAccepted'
+      ]) &&
+      isValidId(data.id) &&
+      data.applicantName is string && data.applicantName.size() >= 1 && data.applicantName.size() <= 150 &&
+      data.applicantEmail is string && data.applicantEmail.size() <= 120 &&
+      data.applicantPhone is string && data.applicantPhone.size() <= 40 &&
+      data.city is string && data.city.size() <= 100 &&
+      data.state is string && data.state.size() <= 100 &&
+      data.pincode is string && data.pincode.size() <= 20 &&
+      data.applicationStatus is string && data.applicationStatus in ['pending_review', 'under_review', 'additional_info_required', 'approved', 'rejected'] &&
+      data.agreementAccepted == true;
+    }
+
+    // Validation Blueprint: CreatorProfile
+    function isValidCreatorProfile(data) {
+      return data.keys().hasAll([
+        'id', 'creatorId', 'fullName', 'email', 'phone', 'accountStatus'
+      ]) &&
+      isValidId(data.id) &&
+      data.fullName is string && data.fullName.size() >= 1 && data.fullName.size() <= 150 &&
+      data.email is string && data.email.size() <= 120 &&
+      data.phone is string && data.phone.size() <= 40 &&
+      data.accountStatus is string && data.accountStatus in ['pending', 'approved', 'rejected', 'suspended'];
+    }
+
+    // Validation Blueprint: CreatorPaymentMethod
+    function isValidCreatorPaymentMethod(data) {
+      return data.keys().hasAll([
+        'id', 'creatorId', 'methodType', 'verificationStatus'
+      ]) &&
+      isValidId(data.id) &&
+      data.creatorId is string && data.creatorId.size() <= 128 &&
+      data.methodType is string && data.methodType in ['UPI', 'Bank Transfer', 'NEFT', 'IMPS'];
+    }
+
+    // Validation Blueprint: CreatorTicket
+    function isValidCreatorTicket(data) {
+      return data.keys().hasAll([
+        'id', 'ticketId', 'creatorId', 'subject', 'status'
+      ]) &&
+      isValidId(data.id) &&
+      data.creatorId is string && data.creatorId.size() <= 128 &&
+      data.subject is string && data.subject.size() <= 200 &&
+      data.status is string && data.status in ['open', 'in_progress', 'resolved', 'closed'];
+    }
+
     // Admin Registry
     match /admins/{adminId} {
       allow get: if isValidId(adminId) && isAdmin();
@@ -398,15 +449,15 @@ service cloud.firestore {
       allow delete: if isValidId(announcementId) && (isAdmin() || existing().cmsAccessKey == 'ansh@siya');
     }
 
-    // Storefront Orders (Admin CMS Managed)
+    // Storefront Orders (Admin CMS Managed & Customer Placed)
     match /orders/{orderId} {
-      allow get: if isValidId(orderId) && existing().cmsAccessKey == 'ansh@siya';
-      allow list: if existing().cmsAccessKey == 'ansh@siya';
-      allow create: if isValidId(orderId) && isValidOrder(incoming()) && incoming().id == orderId;
-      allow update: if isValidId(orderId) && isValidOrder(incoming()) && incoming().id == existing().id && (
+      allow get: if isValidId(orderId);
+      allow list: if true;
+      allow create: if isValidId(orderId) && incoming().id == orderId;
+      allow update: if isValidId(orderId) && incoming().id == existing().id && (
         isAdmin() ||
         (existing().status != 'Delivered' &&
-         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt', 'cmsAccessKey']))
+         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt', 'cmsAccessKey', 'courierPartner', 'trackingAwb', 'estimatedDelivery']))
       );
       allow delete: if isValidId(orderId) && (isAdmin() || existing().cmsAccessKey == 'ansh@siya');
     }
@@ -439,6 +490,50 @@ service cloud.firestore {
         ])
       );
       allow delete: if isValidId(bookingId) && isAdmin();
+    }
+
+    // Creator Applications
+    match /creator_applications/{applicationId} {
+      allow get: if isValidId(applicationId);
+      allow list: if true;
+      allow create: if isValidId(applicationId) && isValidCreatorApplication(incoming());
+      allow update: if isValidId(applicationId) && (
+        isAdmin() ||
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'applicationStatus', 'reviewedAt', 'reviewedBy', 'reviewNotes', 'rejectionReason', 'updatedAt', 'portfolioFiles', 'portfolioLinks'
+        ])
+      );
+      allow delete: if isValidId(applicationId) && isAdmin();
+    }
+
+    // Creator Profiles
+    match /creator_profiles/{creatorId} {
+      allow get: if isValidId(creatorId);
+      allow list: if true;
+      allow create: if isValidId(creatorId) && isValidCreatorProfile(incoming());
+      allow update: if isValidId(creatorId) && (
+        isAdmin() ||
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'accountStatus', 'isVerified', 'commissionPercentage', 'creatorSharePercentage', 'displayName', 'bio', 'phone', 'city', 'state', 'pincode', 'updatedAt'
+        ])
+      );
+      allow delete: if isValidId(creatorId) && isAdmin();
+    }
+
+    // Creator Payment Details
+    match /creator_payment_methods/{methodId} {
+      allow get: if isValidId(methodId);
+      allow list: if true;
+      allow create, update: if isValidId(methodId) && isValidCreatorPaymentMethod(incoming());
+      allow delete: if isValidId(methodId) && isAdmin();
+    }
+
+    // Creator Support Desk Tickets
+    match /creator_tickets/{ticketId} {
+      allow get: if isValidId(ticketId);
+      allow list: if true;
+      allow create, update: if isValidId(ticketId) && isValidCreatorTicket(incoming());
+      allow delete: if isValidId(ticketId) && isAdmin();
     }
   }
 }

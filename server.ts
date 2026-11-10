@@ -17,9 +17,131 @@ const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '2y01LBJDaAddjDSh
 // Data persistence directory for zero data loss
 const DATA_DIR = path.join(__dirname, '.data');
 const DATA_FILE = path.join(DATA_DIR, 'founding-creators.json');
+const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
+const WORKSHOPS_FILE = path.join(DATA_DIR, 'workshops.json');
+const WORKSHOP_BOOKINGS_FILE = path.join(DATA_DIR, 'workshop-bookings.json');
+
+const DEFAULT_WORKSHOPS = [
+  {
+    id: 'ws-1',
+    title: 'Beginner Crochet: Stitch Your First Amigurumi Companion',
+    creatorName: "Siya Sharma (Siya's Creations)",
+    date: 'Saturday, Oct 12',
+    time: '4:00 PM – 6:00 PM IST',
+    duration: '2 Hours',
+    format: 'Live Online',
+    price: 499,
+    seatsLeft: 6,
+    image: '/images/curated_crochet_1790261016242.jpg',
+    description: 'Learn the magic ring, single crochet increases, and shaping techniques in an intimate live interactive cohort. Starter materials list sent upon registration.',
+    meetingLink: 'https://meet.google.com/cur-crochet-live',
+    meetingPlatform: 'Google Meet',
+    meetingNotes: 'Please join 5 mins early with 3.5mm crochet hook and cotton yarn ready.',
+  },
+  {
+    id: 'ws-2',
+    title: 'Wildflower Pressing & Artisanal Candle Pouring',
+    creatorName: 'Ananya Sen (Botanica Wax)',
+    date: 'Sunday, Oct 20',
+    time: '11:00 AM – 2:00 PM IST',
+    duration: '3 Hours',
+    format: 'Studio Offline',
+    location: 'Indiranagar Craft Studio, Bengaluru',
+    price: 1199,
+    seatsLeft: 4,
+    image: '/images/botanical_candle_1790261028567.jpg',
+    description: 'Hands-on candle creation with natural soy wax, essential oil scent formulation, and flower pressing techniques. Take home 2 large custom candles.',
+    meetingLink: '',
+    meetingPlatform: 'Studio Offline',
+    meetingNotes: 'Indiranagar Craft Studio, Bengaluru. Aprons and wax kits provided on arrival.',
+  },
+  {
+    id: 'ws-3',
+    title: 'Botanical Watercolor Floral Painting Masterclass',
+    creatorName: 'Priya Das (Mud & Petals)',
+    date: 'Saturday, Nov 02',
+    time: '3:30 PM – 6:00 PM IST',
+    duration: '2.5 Hours',
+    format: 'Live Online',
+    price: 599,
+    seatsLeft: 9,
+    image: '/images/hero_creators_1790260990626.jpg',
+    description: 'Master wet-on-wet watercolor washes, leaf gradients, and delicate petal layering to create framed botanical art for your living space.',
+    meetingLink: 'https://meet.google.com/botanical-art-live',
+    meetingPlatform: 'Google Meet',
+    meetingNotes: 'Cold press 300gsm watercolor paper, round brushes sizes 4 & 8.',
+  },
+  {
+    id: 'ws-4',
+    title: 'Hand-Built Studio Ceramics & Pinch Pottery',
+    creatorName: 'Mud & Petals Studio',
+    date: 'Sunday, Nov 10',
+    time: '10:30 AM – 1:30 PM IST',
+    duration: '3 Hours',
+    format: 'Studio Offline',
+    location: 'Pondicherry Clay Lab',
+    price: 1299,
+    seatsLeft: 5,
+    image: '/images/ceramic_mug_1790261053724.jpg',
+    description: 'Tactile journey into hand-building techniques without a wheel: pinching, coiling, slab construction, and custom sgraffito carving. Includes firing and glazing of 2 finished pieces.',
+    meetingLink: '',
+    meetingPlatform: 'Studio Offline',
+    meetingNotes: 'Pondicherry Clay Lab. Clay and pottery tools provided on-site.',
+  },
+];
+
+function loadPersistedWorkshops() {
+  ensureDataDir();
+  try {
+    if (fs.existsSync(WORKSHOPS_FILE)) {
+      const raw = fs.readFileSync(WORKSHOPS_FILE, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('Notice loading persisted workshops:', err);
+  }
+  // Initialize file with default workshops
+  savePersistedWorkshops(DEFAULT_WORKSHOPS);
+  return DEFAULT_WORKSHOPS;
+}
+
+function savePersistedWorkshops(workshops: any[]) {
+  ensureDataDir();
+  try {
+    fs.writeFileSync(WORKSHOPS_FILE, JSON.stringify(workshops, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Notice saving persisted workshops:', err);
+  }
+}
+
+function loadPersistedWorkshopBookings() {
+  ensureDataDir();
+  try {
+    if (fs.existsSync(WORKSHOP_BOOKINGS_FILE)) {
+      const raw = fs.readFileSync(WORKSHOP_BOOKINGS_FILE, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (err) {
+    console.warn('Notice loading persisted workshop bookings:', err);
+  }
+  return [];
+}
+
+function savePersistedWorkshopBookings(bookings: any[]) {
+  ensureDataDir();
+  try {
+    fs.writeFileSync(WORKSHOP_BOOKINGS_FILE, JSON.stringify(bookings, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Notice saving persisted workshop bookings:', err);
+  }
+}
 
 const DEMO_EMAILS = new Set(['meera@studiodhaga.in', 'aarav@mittifire.in']);
-const DEMO_IDS = new Set(['app-meera-sharma', 'app-aarav-patel', 'cr-meera-sharma', 'cr-aarav-patel', 'APP-FC-98421', 'APP-FC-10543']);
+const DEMO_IDS = new Set(['app-meera-sharma', 'app-aarav-patel', 'cr-meera-sharma', 'cr-aarav-patel']);
 
 function isDemoRecord(record: any): boolean {
   if (!record) return false;
@@ -29,6 +151,36 @@ function isDemoRecord(record: any): boolean {
   const email = (record.applicantEmail || record.email || '').toLowerCase();
   if (DEMO_EMAILS.has(email)) return true;
   return false;
+}
+
+function loadPersistedOrders() {
+  ensureDataDir();
+  try {
+    if (fs.existsSync(ORDERS_FILE)) {
+      const raw = fs.readFileSync(ORDERS_FILE, 'utf-8');
+      const parsed = JSON.parse(raw);
+      return {
+        orders: Array.isArray(parsed.orders) ? parsed.orders : [],
+        tracking: Array.isArray(parsed.tracking) ? parsed.tracking : [],
+      };
+    }
+  } catch (err) {
+    console.warn('Notice loading persisted orders:', err);
+  }
+  return { orders: [], tracking: [] };
+}
+
+function savePersistedOrders(orders: any[], tracking: any[] = []) {
+  ensureDataDir();
+  try {
+    fs.writeFileSync(
+      ORDERS_FILE,
+      JSON.stringify({ orders, tracking }, null, 2),
+      'utf-8'
+    );
+  } catch (err) {
+    console.warn('Notice saving persisted orders:', err);
+  }
 }
 
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
@@ -271,6 +423,352 @@ async function startServer() {
   });
 
   // ==============================================================================
+  // REAL-TIME BROADCAST ENGINE (SSE - Server-Sent Events)
+  // Ensures sub-second live database updates across Full Website & Admin Panel
+  // ==============================================================================
+  const realtimeClients = new Set<express.Response>();
+
+  function broadcastRealtimeEvent(type: string, data: any) {
+    const payload = `data: ${JSON.stringify({ type, data, timestamp: new Date().toISOString() })}\n\n`;
+    for (const client of realtimeClients) {
+      try {
+        client.write(payload);
+      } catch {
+        realtimeClients.delete(client);
+      }
+    }
+  }
+
+  // Heartbeat to keep SSE stream alive in all browser environments
+  setInterval(() => {
+    for (const client of realtimeClients) {
+      try {
+        client.write(`:keepalive\n\n`);
+      } catch {
+        realtimeClients.delete(client);
+      }
+    }
+  }, 15000);
+
+  // SSE Stream endpoint for browser clients & admin dashboard
+  app.get('/api/realtime/stream', (req, res) => {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+    });
+    res.write(`:connected\n\n`);
+    realtimeClients.add(res);
+
+    req.on('close', () => {
+      realtimeClients.delete(res);
+    });
+  });
+
+  // Client broadcast trigger endpoint (for catalog changes, products, workshops, stories)
+  app.post('/api/realtime/broadcast', (req, res) => {
+    const { type, data } = req.body || {};
+    if (type) {
+      broadcastRealtimeEvent(type, data);
+    }
+    res.json({ success: true });
+  });
+
+  // ==============================================================================
+  // ORDERS & SHIPMENT TRACKING PERSISTENCE (Zero Data Loss)
+  // ==============================================================================
+  const initialOrdersData = loadPersistedOrders();
+  const serverOrders: any[] = initialOrdersData.orders;
+  const serverOrderTracking: any[] = initialOrdersData.tracking;
+
+  // Get all orders
+  app.get('/api/orders', (_req, res) => {
+    res.json({
+      success: true,
+      orders: serverOrders,
+      total: serverOrders.length,
+    });
+  });
+
+  // Create or upsert an order
+  app.post('/api/orders', (req, res) => {
+    try {
+      const order = req.body;
+      if (!order || !order.id) {
+        res.status(400).json({ error: 'Order id is required' });
+        return;
+      }
+      const existingIdx = serverOrders.findIndex((o) => o.id === order.id);
+      const now = new Date().toISOString();
+      const updatedOrder = {
+        ...order,
+        updatedAt: now,
+        createdAt: existingIdx !== -1 ? (serverOrders[existingIdx].createdAt || now) : now,
+      };
+
+      if (existingIdx !== -1) {
+        serverOrders[existingIdx] = updatedOrder;
+      } else {
+        serverOrders.unshift(updatedOrder);
+      }
+
+      savePersistedOrders(serverOrders, serverOrderTracking);
+      broadcastRealtimeEvent(existingIdx !== -1 ? 'ORDER_UPDATED' : 'ORDER_CREATED', updatedOrder);
+      res.json({ success: true, order: updatedOrder });
+    } catch (err) {
+      console.error('[Orders] Failed to save order:', err);
+      res.status(500).json({ error: 'Failed to save order' });
+    }
+  });
+
+  // Update order status with tracking milestone
+  app.post('/api/orders/update-status', (req, res) => {
+    try {
+      const { orderId, status, carrier, awb, location, description } = req.body || {};
+      if (!orderId || !status) {
+        res.status(400).json({ error: 'orderId and status are required' });
+        return;
+      }
+      const idx = serverOrders.findIndex((o) => o.id === orderId);
+      if (idx === -1) {
+        res.status(404).json({ error: 'Order not found' });
+        return;
+      }
+
+      const now = new Date().toISOString();
+      serverOrders[idx].status = status;
+      if (carrier) serverOrders[idx].courierPartner = carrier;
+      if (awb) serverOrders[idx].trackingAwb = awb;
+      serverOrders[idx].updatedAt = now;
+
+      // Append tracking milestone
+      const milestone = {
+        id: `trk-${Date.now()}`,
+        order_id: orderId,
+        status,
+        title: `Order ${status}`,
+        location: location || 'Curowit Fulfillment Hub, Bengaluru',
+        date: new Date().toLocaleDateString('en-GB'),
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        description: description || `Status updated to ${status}`,
+        carrier: carrier || serverOrders[idx].courierPartner || 'Delhivery Eco Surface Logistics',
+        awb_number: awb || serverOrders[idx].trackingAwb,
+        created_at: now,
+      };
+      serverOrderTracking.push(milestone);
+
+      savePersistedOrders(serverOrders, serverOrderTracking);
+      broadcastRealtimeEvent('ORDER_UPDATED', {
+        order: serverOrders[idx],
+        tracking: milestone,
+      });
+
+      res.json({
+        success: true,
+        order: serverOrders[idx],
+        tracking: milestone,
+      });
+    } catch (err) {
+      console.error('[Orders] Failed to update status:', err);
+      res.status(500).json({ error: 'Failed to update order status' });
+    }
+  });
+
+  // Get order tracking history
+  app.get('/api/orders/tracking/:orderId', (req, res) => {
+    const { orderId } = req.params;
+    const history = serverOrderTracking.filter((t) => t.order_id === orderId);
+    res.json({ success: true, tracking: history });
+  });
+
+  // Delete order
+  app.delete('/api/orders/:orderId', (req, res) => {
+    const { orderId } = req.params;
+    const idx = serverOrders.findIndex((o) => o.id === orderId);
+    if (idx !== -1) {
+      serverOrders.splice(idx, 1);
+      savePersistedOrders(serverOrders, serverOrderTracking);
+      broadcastRealtimeEvent('ORDER_DELETED', { id: orderId });
+    }
+    res.json({ success: true, deleted: idx !== -1 });
+  });
+
+  // ==============================================================================
+  // WORKSHOPS & BUYER BOOKINGS PERSISTENCE & REALTIME BROADCAST
+  // ==============================================================================
+  const serverWorkshops: any[] = loadPersistedWorkshops();
+  const serverWorkshopBookings: any[] = loadPersistedWorkshopBookings();
+
+  // Get all active workshops
+  app.get('/api/workshops', (_req, res) => {
+    res.json({
+      success: true,
+      workshops: serverWorkshops,
+      total: serverWorkshops.length,
+    });
+  });
+
+  // Create or update a workshop
+  app.post('/api/workshops', (req, res) => {
+    try {
+      const workshopData = req.body;
+      if (!workshopData || !workshopData.id) {
+        res.status(400).json({ error: 'Missing workshop data or ID' });
+        return;
+      }
+
+      const idx = serverWorkshops.findIndex((w) => w.id === workshopData.id);
+      if (idx !== -1) {
+        serverWorkshops[idx] = {
+          ...serverWorkshops[idx],
+          ...workshopData,
+          updatedAt: new Date().toISOString(),
+        };
+      } else {
+        serverWorkshops.push({
+          ...workshopData,
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
+      savePersistedWorkshops(serverWorkshops);
+      const savedItem = idx !== -1 ? serverWorkshops[idx] : serverWorkshops[serverWorkshops.length - 1];
+      broadcastRealtimeEvent('WORKSHOP_UPDATED', savedItem);
+
+      res.json({ success: true, workshop: savedItem });
+    } catch (err) {
+      console.error('[Workshops] Failed to upsert:', err);
+      res.status(500).json({ error: 'Failed to save workshop' });
+    }
+  });
+
+  // Update master meeting details
+  app.post('/api/workshops/:workshopId/meeting', (req, res) => {
+    try {
+      const { workshopId } = req.params;
+      const { meetingLink, meetingPlatform, meetingNotes } = req.body || {};
+
+      const idx = serverWorkshops.findIndex((w) => w.id === workshopId);
+      if (idx === -1) {
+        res.status(404).json({ error: 'Workshop not found' });
+        return;
+      }
+
+      serverWorkshops[idx] = {
+        ...serverWorkshops[idx],
+        meetingLink: meetingLink !== undefined ? meetingLink : serverWorkshops[idx].meetingLink,
+        meetingPlatform: meetingPlatform || serverWorkshops[idx].meetingPlatform || 'Google Meet',
+        meetingNotes: meetingNotes !== undefined ? meetingNotes : serverWorkshops[idx].meetingNotes,
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Also update any bookings for this workshop
+      serverWorkshopBookings.forEach((b) => {
+        if (b.workshopId === workshopId) {
+          if (meetingLink !== undefined) b.meetingLink = meetingLink;
+          if (meetingPlatform) b.meetingPlatform = meetingPlatform;
+          if (meetingNotes !== undefined) b.meetingNotes = meetingNotes;
+        }
+      });
+
+      savePersistedWorkshops(serverWorkshops);
+      savePersistedWorkshopBookings(serverWorkshopBookings);
+
+      broadcastRealtimeEvent('WORKSHOP_UPDATED', serverWorkshops[idx]);
+      broadcastRealtimeEvent('WORKSHOP_MEETING_UPDATED', {
+        workshopId,
+        meetingLink,
+        meetingPlatform,
+        meetingNotes,
+      });
+
+      res.json({ success: true, workshop: serverWorkshops[idx] });
+    } catch (err) {
+      console.error('[Workshops] Failed to update meeting:', err);
+      res.status(500).json({ error: 'Failed to update meeting details' });
+    }
+  });
+
+  // Delete workshop
+  app.delete('/api/workshops/:workshopId', (req, res) => {
+    const { workshopId } = req.params;
+    const idx = serverWorkshops.findIndex((w) => w.id === workshopId);
+    if (idx !== -1) {
+      serverWorkshops.splice(idx, 1);
+      savePersistedWorkshops(serverWorkshops);
+      broadcastRealtimeEvent('WORKSHOP_DELETED', { id: workshopId });
+    }
+    res.json({ success: true, deleted: idx !== -1 });
+  });
+
+  // Book a workshop spot (buyer checkout / reservation)
+  app.post('/api/workshops/book', (req, res) => {
+    try {
+      const { workshopId, booking } = req.body || {};
+      if (!workshopId || !booking) {
+        res.status(400).json({ error: 'Missing workshopId or booking payload' });
+        return;
+      }
+
+      const wsIdx = serverWorkshops.findIndex((w) => w.id === workshopId);
+      if (wsIdx !== -1) {
+        const currentSeats = Number(serverWorkshops[wsIdx].seatsLeft) || 0;
+        serverWorkshops[wsIdx].seatsLeft = Math.max(0, currentSeats - 1);
+        savePersistedWorkshops(serverWorkshops);
+      }
+
+      // Record booking
+      const newBooking = {
+        ...booking,
+        id: booking.id || `BK-${Math.floor(1000 + Math.random() * 9000)}`,
+        bookedAt: booking.bookedAt || new Date().toISOString(),
+      };
+      serverWorkshopBookings.unshift(newBooking);
+      savePersistedWorkshopBookings(serverWorkshopBookings);
+
+      const updatedWorkshop = wsIdx !== -1 ? serverWorkshops[wsIdx] : null;
+      broadcastRealtimeEvent('WORKSHOP_BOOKED', {
+        workshopId,
+        workshop: updatedWorkshop,
+        booking: newBooking,
+      });
+      if (updatedWorkshop) {
+        broadcastRealtimeEvent('WORKSHOP_UPDATED', updatedWorkshop);
+      }
+
+      res.json({
+        success: true,
+        booking: newBooking,
+        workshop: updatedWorkshop,
+      });
+    } catch (err) {
+      console.error('[Workshops] Failed to book spot:', err);
+      res.status(500).json({ error: 'Failed to process workshop booking' });
+    }
+  });
+
+  // Get all workshop bookings (for admin or buyer roster)
+  app.get('/api/workshops/bookings', (_req, res) => {
+    res.json({
+      success: true,
+      bookings: serverWorkshopBookings,
+    });
+  });
+
+  // Update booking status
+  app.post('/api/workshops/bookings/status', (req, res) => {
+    const { bookingId, status } = req.body || {};
+    const b = serverWorkshopBookings.find((item) => item.id === bookingId);
+    if (b && status) {
+      b.status = status;
+      savePersistedWorkshopBookings(serverWorkshopBookings);
+      broadcastRealtimeEvent('BOOKING_UPDATED', b);
+    }
+    res.json({ success: true, booking: b });
+  });
+
+  // ==============================================================================
   // FOUNDING CREATOR PORTAL SERVER ENDPOINTS & PERSISTENT STORE
   // ==============================================================================
   const initialData = loadPersistedCreatorData();
@@ -473,7 +971,12 @@ async function startServer() {
         serverCreatorTickets
       );
 
-      console.log(`[Founding Creator] New application registered on server: ${applicationId} by ${fullName} (${email})`);
+      broadcastRealtimeEvent('APPLICATION_SUBMITTED', {
+        application: applicationRecord,
+        creator: profileRecord,
+      });
+
+      console.log(`[Founding Creator] New application registered on server: ${applicationId} by ${resolvedName} (${resolvedEmail})`);
 
       res.json({
         success: true,
@@ -538,6 +1041,17 @@ async function startServer() {
           serverCreatorPaymentMethods,
           serverCreatorTickets
         );
+
+        broadcastRealtimeEvent('APPLICATION_REVIEWED', {
+          applicationId,
+          action,
+          updatedStatus: newStatus,
+          application: serverCreatorApplications[appIdx],
+          profile:
+            profIdx !== -1
+              ? serverCreatorProfiles[profIdx]
+              : null,
+        });
       }
 
       console.log(`[Founding Creator] Application ${applicationId} reviewed: ${action} by ${reviewer || 'Admin'}`);
@@ -700,6 +1214,10 @@ async function startServer() {
         serverCreatorTickets
       );
 
+      broadcastRealtimeEvent('PROFILE_UPDATED', {
+        profile: serverCreatorProfiles[profIdx],
+      });
+
       res.json({
         success: true,
         profile: serverCreatorProfiles[profIdx],
@@ -809,6 +1327,10 @@ async function startServer() {
         serverCreatorTickets
       );
 
+      broadcastRealtimeEvent('PAYMENT_METHODS_UPDATED', {
+        paymentMethod: updatedMethod,
+      });
+
       console.log(`[Founding Creator] Payment details updated for creator ${creatorId}: UPI=${updatedMethod.upiId}, Bank=${updatedMethod.bankName}`);
       res.json({
         success: true,
@@ -891,6 +1413,10 @@ async function startServer() {
         serverCreatorTickets
       );
 
+      broadcastRealtimeEvent('TICKETS_UPDATED', {
+        ticket: newTicket,
+      });
+
       console.log(`[Founding Creator] Support ticket raised: ${ticketId} by ${creatorName || creatorId}`);
       res.json({
         success: true,
@@ -948,6 +1474,10 @@ async function startServer() {
         serverCreatorPaymentMethods,
         serverCreatorTickets
       );
+
+      broadcastRealtimeEvent('TICKETS_UPDATED', {
+        ticket,
+      });
 
       console.log(`[Founding Creator] Ticket ${ticket.ticketId} updated. Status: ${ticket.status}, message added.`);
       res.json({

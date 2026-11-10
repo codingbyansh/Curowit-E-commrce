@@ -782,6 +782,68 @@
         "bookedAt",
         "status"
       ]
+    },
+    "CreatorApplication": {
+      "title": "CreatorApplication",
+      "description": "Artisan application for the Curowit Founding Creator Cohort.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "applicationId": { "type": "string", "maxLength": 64 },
+        "creatorId": { "type": "string", "maxLength": 128 },
+        "applicantName": { "type": "string", "maxLength": 150 },
+        "applicantEmail": { "type": "string", "format": "email", "maxLength": 120 },
+        "applicantPhone": { "type": "string", "maxLength": 40 },
+        "city": { "type": "string", "maxLength": 100 },
+        "state": { "type": "string", "maxLength": 100 },
+        "pincode": { "type": "string", "maxLength": 20 },
+        "craftDescription": { "type": "string", "maxLength": 2000 },
+        "applicationStatus": { "type": "string", "enum": ["pending_review", "under_review", "additional_info_required", "approved", "rejected"] },
+        "agreementAccepted": { "type": "boolean" }
+      },
+      "required": ["id", "applicationId", "creatorId", "applicantName", "applicantEmail", "applicantPhone", "city", "state", "pincode", "craftDescription", "applicationStatus", "agreementAccepted"]
+    },
+    "CreatorProfile": {
+      "title": "CreatorProfile",
+      "description": "Creator profile record for storefront curation and commercial split.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "creatorId": { "type": "string", "maxLength": 64 },
+        "fullName": { "type": "string", "maxLength": 150 },
+        "email": { "type": "string", "format": "email", "maxLength": 120 },
+        "phone": { "type": "string", "maxLength": 40 },
+        "accountStatus": { "type": "string", "enum": ["pending", "approved", "rejected", "suspended"] },
+        "isVerified": { "type": "boolean" },
+        "commissionPercentage": { "type": "number" },
+        "creatorSharePercentage": { "type": "number" }
+      },
+      "required": ["id", "creatorId", "fullName", "email", "phone", "accountStatus"]
+    },
+    "CreatorPaymentMethod": {
+      "title": "CreatorPaymentMethod",
+      "description": "Creator bank or UPI settlement details for automated payouts.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "creatorId": { "type": "string", "maxLength": 128 },
+        "methodType": { "type": "string", "enum": ["UPI", "Bank Transfer", "NEFT", "IMPS"] },
+        "verificationStatus": { "type": "string", "maxLength": 40 }
+      },
+      "required": ["id", "creatorId", "methodType", "verificationStatus"]
+    },
+    "CreatorTicket": {
+      "title": "CreatorTicket",
+      "description": "Creator support desk queries and resolutions.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "ticketId": { "type": "string", "maxLength": 64 },
+        "creatorId": { "type": "string", "maxLength": 128 },
+        "subject": { "type": "string", "maxLength": 200 },
+        "status": { "type": "string", "enum": ["open", "in_progress", "resolved", "closed"] }
+      },
+      "required": ["id", "ticketId", "creatorId", "subject", "status"]
     }
   },
   "firestore": {
@@ -824,6 +886,22 @@
     "/workshop_bookings/{bookingId}": {
       "schema": { "$ref": "#/entities/WorkshopBooking" },
       "description": "Workshop seat bookings and attendee roster."
+    },
+    "/creator_applications/{applicationId}": {
+      "schema": { "$ref": "#/entities/CreatorApplication" },
+      "description": "Founding creator applications submitted from portal."
+    },
+    "/creator_profiles/{creatorId}": {
+      "schema": { "$ref": "#/entities/CreatorProfile" },
+      "description": "Founding creator profiles with approval and split configuration."
+    },
+    "/creator_payment_methods/{methodId}": {
+      "schema": { "$ref": "#/entities/CreatorPaymentMethod" },
+      "description": "Founding creator registered payout destinations."
+    },
+    "/creator_tickets/{ticketId}": {
+      "schema": { "$ref": "#/entities/CreatorTicket" },
+      "description": "Founding creator queries and support communication tickets."
     }
   }
 }

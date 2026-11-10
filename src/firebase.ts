@@ -2,6 +2,9 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import {
   initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  memoryLocalCache,
   setLogLevel,
   doc,
   getDocFromServer,
@@ -13,9 +16,22 @@ import firebaseConfig from '../firebase-applet-config.json';
 setLogLevel('silent');
 
 const app = initializeApp(firebaseConfig);
+
+// Multi-tab offline persistence using IndexedDB cache with graceful memory fallback
+let localCacheConfig;
+try {
+  localCacheConfig = persistentLocalCache({
+    tabManager: persistentMultipleTabManager(),
+  });
+} catch (err) {
+  console.warn('Firestore offline persistence fallback to memory cache:', err);
+  localCacheConfig = memoryLocalCache();
+}
+
 export const db = initializeFirestore(
   app,
   {
+    localCache: localCacheConfig,
     experimentalAutoDetectLongPolling: true,
   },
   firebaseConfig.firestoreDatabaseId

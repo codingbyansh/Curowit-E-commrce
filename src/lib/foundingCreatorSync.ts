@@ -2,6 +2,7 @@ import { supabase } from '../supabase';
 import { storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { cloudinaryService } from '../services/cloudinaryService';
+import { realtimeService } from '../services/realtimeService';
 import {
   CreatorProfile,
   CreatorApplication,
@@ -144,6 +145,10 @@ class FoundingCreatorSyncService {
    */
   public initRealtimeSubscription() {
     if (this.isRealtimeInitialized || typeof window === 'undefined') return;
+
+    try {
+      realtimeService.connect();
+    } catch {}
 
     try {
       this.realtimeChannel = supabase
