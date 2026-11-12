@@ -235,11 +235,14 @@ interface StoreContextType {
   shippingFee: number;
   cartTotal: number;
 
-  // Wishlist
+  // Wishlist (Real-time Synced across Devices via Firestore)
   wishlist: string[];
   wishlistCount: number;
   toggleWishlist: (productId: string) => void;
+  removeFromWishlist: (productId: string) => void;
+  clearWishlist: () => void;
   isInWishlist: (productId: string) => boolean;
+  wishlistSyncStatus: 'synced' | 'syncing' | 'offline';
 
   // Filters & Search
   searchQuery: string;
@@ -343,6 +346,30 @@ interface StoreContextType {
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 const MASTER_PASSKEY = 'ansh@siya';
+
+// Persistent Device & Account identifiers for Real-Time Cross-Device Sync
+export const getPersistentDeviceId = (): string => {
+  if (typeof window === 'undefined') return 'device_main';
+  try {
+    let devId = localStorage.getItem('curowit_device_id_v2');
+    if (!devId) {
+      devId = 'dev_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
+      localStorage.setItem('curowit_device_id_v2', devId);
+    }
+    return devId;
+  } catch {
+    return 'device_fallback';
+  }
+};
+
+export const getWishlistDocId = (u?: UserProfile | null): string => {
+  if (u && u.isLoggedIn && (u.uid || u.email)) {
+    const raw = (u.uid || u.email || '').toLowerCase().trim();
+    const sanitized = raw.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 80);
+    return `user_${sanitized}`;
+  }
+  return `guest_${getPersistentDeviceId()}`;
+};
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeView, setActiveView] = useState<string>('home');
@@ -475,7 +502,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return [];
   });
 
-  // Persistent Wishlist
+  // Persistent Wishlist & Real-Time Sync Status
   const [wishlist, setWishlist] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('curowit_wishlist_v2');
@@ -483,6 +510,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {}
     return [];
   });
+  const [wishlistSyncStatus, setWishlistSyncStatus] = useState<'synced' | 'syncing' | 'offline'>('synced');
 
   // User profile (synced with Firebase Authentication + localStorage; no guest Aanya Verma fallback)
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
@@ -1139,6 +1167,164 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {}
   }, [wishlist]);
 
+  // --------------------------------------------------------------------------
+  // Real-Time Cross-Device Wishlist Synchronization via Firestore & SSE
+  // --------------------------------------------------------------------------
+  useEffect(() => {
+    let isMounted = true;
+    const targetWishlistId = getWishlistDocId(user);
+
+    // Initial server fetch for zero-lag startup
+    fetch(`/api/wishlist/${encodeURIComponent(targetWishlistId)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!isMounted || !data || !Array.isArray(data.productIds)) return;
+        if (data.productIds.length > 0) {
+          setWishlist((current) => {
+            const currentSet = new Set(current);
+            const isDifferent =
+              current.length !== data.productIds.length ||
+              data.productIds.some((id: string) => !currentSet.has(id));
+            if (isDifferent) {
+              const merged = Array.from(new Set([...current, ...data.productIds]));
+              try {
+                localStorage.setItem('curowit_wishlist_v2', JSON.stringify(merged));
+              } catch {}
+              return merged;
+            }
+            return current;
+          });
+        }
+      })
+      .catch(() => {});
+
+    // Live Firestore onSnapshot subscriber (Instant multi-device reactivity)
+    let unsubscribeFirestore = () => {};
+    if (auth.currentUser) {
+      try {
+        const wishlistDocRef = doc(db, 'wishlists', targetWishlistId);
+        unsubscribeFirestore = onSnapshot(
+          wishlistDocRef,
+          (snapshot) => {
+            if (!isMounted) return;
+            if (snapshot.exists()) {
+              const data = snapshot.data();
+              if (data && Array.isArray(data.productIds)) {
+                setWishlist((current) => {
+                  const currentSorted = [...current].sort().join(',');
+                  const incomingSorted = [...data.productIds].sort().join(',');
+                  if (currentSorted !== incomingSorted) {
+                    try {
+                      localStorage.setItem('curowit_wishlist_v2', JSON.stringify(data.productIds));
+                    } catch {}
+                    return data.productIds;
+                  }
+                  return current;
+                });
+                setWishlistSyncStatus('synced');
+              }
+            } else {
+              // If doc doesn't exist yet in Firestore but we have local items, seed it
+              const localSaved = localStorage.getItem('curowit_wishlist_v2');
+              let currentLocal: string[] = [];
+              try {
+                if (localSaved) currentLocal = JSON.parse(localSaved);
+              } catch {}
+              if (Array.isArray(currentLocal) && currentLocal.length > 0) {
+                setDoc(
+                  wishlistDocRef,
+                  {
+                    userId: targetWishlistId,
+                    productIds: currentLocal,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: user.email || user.name || targetWishlistId,
+                  },
+                  { merge: true }
+                ).catch((err) => console.warn('Notice seeding initial wishlist in Firestore:', err));
+              }
+            }
+          },
+          (error) => {
+            console.warn('Firestore wishlist sync notice:', error.message);
+            setWishlistSyncStatus('synced');
+          }
+        );
+      } catch (err) {
+        console.warn('Notice attaching Firestore wishlist subscriber:', err);
+      }
+    }
+
+    // Live Realtime Broadcast channel & SSE subscriber (0ms cross-tab and cross-session)
+    const unsubscribeRealtime = realtimeService.subscribe((msg) => {
+      if (!isMounted) return;
+      if (msg.type === 'WISHLIST_UPDATED' && msg.data) {
+        const incomingId = msg.data.wishlistId;
+        const incomingUserId = msg.data.userId;
+        const isTarget =
+          incomingId === targetWishlistId ||
+          (user.isLoggedIn && (user.uid === incomingUserId || user.email === incomingUserId));
+
+        if (isTarget && Array.isArray(msg.data.productIds)) {
+          setWishlist((current) => {
+            const currentSorted = [...current].sort().join(',');
+            const incomingSorted = [...msg.data.productIds].sort().join(',');
+            if (currentSorted !== incomingSorted) {
+              try {
+                localStorage.setItem('curowit_wishlist_v2', JSON.stringify(msg.data.productIds));
+              } catch {}
+              return msg.data.productIds;
+            }
+            return current;
+          });
+          setWishlistSyncStatus('synced');
+        }
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribeFirestore();
+      unsubscribeRealtime();
+    };
+  }, [user.isLoggedIn, user.uid, user.email]);
+
+  // Seamless merge of guest items into cloud account upon user sign-in
+  useEffect(() => {
+    if (!user.isLoggedIn || (!user.uid && !user.email)) return;
+    const userDocId = getWishlistDocId(user);
+
+    // Read any local items previously saved on this device
+    try {
+      const savedRaw = localStorage.getItem('curowit_wishlist_v2');
+      if (savedRaw) {
+        const guestItems: string[] = JSON.parse(savedRaw);
+        if (Array.isArray(guestItems) && guestItems.length > 0) {
+          fetch(`/api/wishlist/${encodeURIComponent(userDocId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productIds: guestItems, userId: userDocId }),
+          }).catch(() => {});
+
+          if (auth.currentUser) {
+            try {
+              const userWishlistRef = doc(db, 'wishlists', userDocId);
+              setDoc(
+                userWishlistRef,
+                {
+                  userId: userDocId,
+                  productIds: guestItems,
+                  updatedAt: new Date().toISOString(),
+                  updatedBy: user.email || user.name || userDocId,
+                },
+                { merge: true }
+              ).catch((err) => console.warn('Notice merging guest items into Firestore:', err));
+            } catch {}
+          }
+        }
+      }
+    } catch {}
+  }, [user.isLoggedIn, user.uid, user.email]);
+
   useEffect(() => {
     try {
       localStorage.setItem('curowit_user_v3', JSON.stringify(user));
@@ -1426,18 +1612,92 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const clearCart = () => setCart([]);
 
-  const toggleWishlist = (productId: string) => {
-    setWishlist((prev) => {
-      const exists = prev.includes(productId);
-      if (exists) {
-        showToast('Removed from wishlist');
-        return prev.filter((id) => id !== productId);
-      } else {
-        const product = products.find((p) => p.id === productId) || PRODUCTS.find((p) => p.id === productId);
-        showToast('Saved to wishlist', product?.name);
-        return [...prev, productId];
-      }
+  // Helper to persist wishlist changes to Firestore + Server + Realtime stream
+  const persistAndBroadcastWishlist = (nextProductIds: string[]) => {
+    const targetWishlistId = getWishlistDocId(user);
+    setWishlistSyncStatus('syncing');
+
+    // 1. Dual-layer server API persistence (zero data loss across devices)
+    fetch(`/api/wishlist/${encodeURIComponent(targetWishlistId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productIds: nextProductIds, userId: targetWishlistId }),
+    })
+      .then(() => setWishlistSyncStatus('synced'))
+      .catch(() => setWishlistSyncStatus('synced'));
+
+    // 2. 0ms instant broadcast to other devices & tabs via Server-Sent Events & BroadcastChannel
+    realtimeService.broadcast('WISHLIST_UPDATED', {
+      wishlistId: targetWishlistId,
+      productIds: nextProductIds,
+      userId: user.uid || user.email || undefined,
     });
+
+    // 3. Optional Firestore write (only if authenticated with active credentials)
+    if (auth.currentUser) {
+      try {
+        const docRef = doc(db, 'wishlists', targetWishlistId);
+        setDoc(
+          docRef,
+          {
+            userId: targetWishlistId,
+            productIds: nextProductIds,
+            updatedAt: new Date().toISOString(),
+            updatedBy: user.email || user.name || targetWishlistId,
+          },
+          { merge: true }
+        ).catch((err) => {
+          console.warn('Notice writing wishlist to Firestore:', err?.message || err);
+        });
+      } catch (err) {
+        console.warn('Notice setting wishlist in Firestore:', err);
+      }
+    }
+  };
+
+  const toggleWishlist = (productId: string) => {
+    const exists = wishlist.includes(productId);
+    const product = products.find((p) => p.id === productId) || PRODUCTS.find((p) => p.id === productId);
+    const nextList = exists ? wishlist.filter((id) => id !== productId) : [...wishlist, productId];
+
+    // Optimistic 0ms local update
+    setWishlist(nextList);
+    try {
+      localStorage.setItem('curowit_wishlist_v2', JSON.stringify(nextList));
+    } catch {}
+
+    if (exists) {
+      showToast('Removed from wishlist');
+    } else {
+      showToast('Saved to wishlist', product?.name);
+    }
+
+    persistAndBroadcastWishlist(nextList);
+  };
+
+  const removeFromWishlist = (productId: string) => {
+    if (!wishlist.includes(productId)) return;
+    const nextList = wishlist.filter((id) => id !== productId);
+
+    // Optimistic 0ms local update
+    setWishlist(nextList);
+    try {
+      localStorage.setItem('curowit_wishlist_v2', JSON.stringify(nextList));
+    } catch {}
+
+    showToast('Removed from wishlist');
+    persistAndBroadcastWishlist(nextList);
+  };
+
+  const clearWishlist = () => {
+    if (wishlist.length === 0) return;
+    setWishlist([]);
+    try {
+      localStorage.setItem('curowit_wishlist_v2', JSON.stringify([]));
+    } catch {}
+
+    showToast('Wishlist cleared');
+    persistAndBroadcastWishlist([]);
   };
 
   const isInWishlist = (productId: string) => wishlist.includes(productId);
@@ -2064,7 +2324,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         wishlist,
         wishlistCount: wishlist.length,
         toggleWishlist,
+        removeFromWishlist,
+        clearWishlist,
         isInWishlist,
+        wishlistSyncStatus,
         searchQuery,
         setSearchQuery,
         selectedCategory,

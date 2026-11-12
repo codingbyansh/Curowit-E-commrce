@@ -20,6 +20,30 @@ const DATA_FILE = path.join(DATA_DIR, 'founding-creators.json');
 const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const WORKSHOPS_FILE = path.join(DATA_DIR, 'workshops.json');
 const WORKSHOP_BOOKINGS_FILE = path.join(DATA_DIR, 'workshop-bookings.json');
+const WISHLISTS_FILE = path.join(DATA_DIR, 'wishlists.json');
+
+function loadPersistedWishlists(): Record<string, { userId: string; productIds: string[]; updatedAt: string }> {
+  ensureDataDir();
+  try {
+    if (fs.existsSync(WISHLISTS_FILE)) {
+      const raw = fs.readFileSync(WISHLISTS_FILE, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') return parsed;
+    }
+  } catch (err) {
+    console.warn('Notice loading persisted wishlists:', err);
+  }
+  return {};
+}
+
+function savePersistedWishlists(data: Record<string, any>) {
+  ensureDataDir();
+  try {
+    fs.writeFileSync(WISHLISTS_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Notice saving persisted wishlists:', err);
+  }
+}
 
 const DEFAULT_WORKSHOPS = [
   {
@@ -473,6 +497,40 @@ async function startServer() {
       broadcastRealtimeEvent(type, data);
     }
     res.json({ success: true });
+  });
+
+  // ==============================================================================
+  // REAL-TIME WISHLIST PERSISTENCE & SYNC
+  // ==============================================================================
+  const serverWishlists = loadPersistedWishlists();
+
+  app.get('/api/wishlist/:id', (req, res) => {
+    const id = req.params.id;
+    const found = serverWishlists[id];
+    res.json({
+      success: true,
+      wishlistId: id,
+      productIds: found?.productIds || [],
+      updatedAt: found?.updatedAt || null,
+    });
+  });
+
+  app.post('/api/wishlist/:id', (req, res) => {
+    const id = req.params.id;
+    const { productIds, userId } = req.body || {};
+    const items = Array.isArray(productIds) ? productIds : [];
+    serverWishlists[id] = {
+      userId: userId || id,
+      productIds: items,
+      updatedAt: new Date().toISOString(),
+    };
+    savePersistedWishlists(serverWishlists);
+    broadcastRealtimeEvent('WISHLIST_UPDATED', {
+      wishlistId: id,
+      userId: userId || id,
+      productIds: items,
+    });
+    res.json({ success: true, wishlistId: id, productIds: items });
   });
 
   // ==============================================================================

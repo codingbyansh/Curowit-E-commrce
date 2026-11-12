@@ -844,6 +844,33 @@
         "status": { "type": "string", "enum": ["open", "in_progress", "resolved", "closed"] }
       },
       "required": ["id", "ticketId", "creatorId", "subject", "status"]
+    },
+    "Wishlist": {
+      "title": "Wishlist",
+      "description": "User craft wishlist synced across devices in real time.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "maxLength": 128,
+          "description": "Unique user or client device identifier."
+        },
+        "productIds": {
+          "type": "array",
+          "description": "Array of saved product identifiers.",
+          "items": {
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last synchronization timestamp."
+        }
+      },
+      "required": ["userId", "productIds"]
     }
   },
   "firestore": {
@@ -902,6 +929,10 @@
     "/creator_tickets/{ticketId}": {
       "schema": { "$ref": "#/entities/CreatorTicket" },
       "description": "Founding creator queries and support communication tickets."
+    },
+    "/wishlists/{wishlistId}": {
+      "schema": { "$ref": "#/entities/Wishlist" },
+      "description": "User craft wishlist synced across devices."
     }
   }
 }

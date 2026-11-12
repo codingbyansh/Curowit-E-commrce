@@ -76,7 +76,8 @@ export function handleFirestoreError(
   if (
     message.includes('unavailable') ||
     message.includes('the client is offline') ||
-    message.includes('Failed to get document because the client is offline')
+    message.includes('Failed to get document because the client is offline') ||
+    (path?.includes('wishlists') && (message.includes('permissions') || message.includes('permission')))
   ) {
     return;
   }

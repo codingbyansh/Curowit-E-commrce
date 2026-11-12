@@ -535,5 +535,21 @@ service cloud.firestore {
       allow create, update: if isValidId(ticketId) && isValidCreatorTicket(incoming());
       allow delete: if isValidId(ticketId) && isAdmin();
     }
+
+    // Validation Blueprint: Wishlist (Cross-device real-time sync)
+    function isValidWishlist(data) {
+      return data.keys().hasAll(['userId', 'productIds']) &&
+             data.keys().hasOnly(['userId', 'productIds', 'updatedAt', 'updatedBy']) &&
+             isValidId(data.userId) &&
+             data.productIds is list && data.productIds.size() <= 200;
+    }
+
+    // Real-time Wishlists synced across devices
+    match /wishlists/{wishlistId} {
+      allow get: if isValidId(wishlistId);
+      allow list: if true;
+      allow create, update: if isValidId(wishlistId) && isValidWishlist(incoming());
+      allow delete: if isValidId(wishlistId);
+    }
   }
 }
